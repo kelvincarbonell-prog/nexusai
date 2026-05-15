@@ -3,6 +3,90 @@
 -- Run after 20260515201000_accounting_pgc.sql in the Supabase SQL editor.
 
 -- =============================================================================
+-- 0. PREFLIGHT: helpers defensivos (por si faltan en el proyecto Supabase).
+--    Si tu proyecto ya tiene estas funciones con la misma firma,
+--    `create or replace` las deja igual.
+-- =============================================================================
+create extension if not exists pgcrypto;
+
+create or replace function public.set_updated_at()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
+create or replace function public.is_admin()
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1 from public.perfiles
+    where id = auth.uid() and rol = 'admin'
+  );
+$$;
+
+-- Asegura que existe la columna owner_user_id antes de la definición de la función
+-- (la usan migraciones previas y la función can_access_empresa de abajo).
+alter table public.empresas add column if not exists owner_user_id uuid references auth.users(id) on delete set null;
+
+do $preflight$
+declare
+  has_portal boolean;
+begin
+  has_portal := to_regclass('public.portal_accesos') is not null;
+
+  if has_portal then
+    execute $func$
+      create or replace function public.can_access_empresa(target_empresa uuid)
+      returns boolean
+      language sql
+      stable
+      security definer
+      set search_path = public
+      as $body$
+        select exists (
+          select 1 from public.empresas e
+          where e.id = target_empresa
+            and (e.gestor_id = auth.uid() or e.owner_user_id = auth.uid())
+        )
+        or exists (
+          select 1 from public.portal_accesos pa
+          where pa.empresa_id = target_empresa
+            and pa.user_id = auth.uid()
+            and pa.estado = 'activo'
+        )
+        or public.is_admin();
+      $body$;
+    $func$;
+  else
+    execute $func$
+      create or replace function public.can_access_empresa(target_empresa uuid)
+      returns boolean
+      language sql
+      stable
+      security definer
+      set search_path = public
+      as $body$
+        select exists (
+          select 1 from public.empresas e
+          where e.id = target_empresa
+            and (e.gestor_id = auth.uid() or e.owner_user_id = auth.uid())
+        )
+        or public.is_admin();
+      $body$;
+    $func$;
+  end if;
+end;
+$preflight$;
+
+-- =============================================================================
 -- 1. EMPRESAS: forwarding email alias
 -- =============================================================================
 alter table public.empresas add column if not exists inbox_alias text;
