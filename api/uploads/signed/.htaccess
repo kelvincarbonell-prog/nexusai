@@ -1,0 +1,7 @@
+Options -Indexes
+# Bloquear acceso directo a los documentos firmados.
+# Solo se pueden descargar a través de get_signed.php (con auth)
+<FilesMatch "\.(p7s|pdf)$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>

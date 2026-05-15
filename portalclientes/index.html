@@ -1,0 +1,2009 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portal Cliente | Nexus AI</title>
+<script>
+  const SUPABASE_URL      = 'https://tewmywtgkqeaiyqbrgnk.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRld215d3Rna3FlYWl5cWJyZ25rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU2NTA0MjYsImV4cCI6MjA5MTIyNjQyNn0.Qxwvz2P72ImBfydFcoaHQHTW-csk3vXbk5tXNmN0dY0';
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --primary: #4f46e5; --primary-dark: #3730a3;
+  --success: #10b981; --warning: #f59e0b; --danger: #ef4444;
+  --surface: #ffffff; --bg: #f1f5f9; --border: #e2e8f0;
+  --text: #0f172a; --muted: #64748b;
+}
+* { box-sizing: border-box; }
+body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); color: var(--text); margin: 0; overflow: hidden; }
+.sidebar-item { display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:12px; font-size:13px; font-weight:600; cursor:pointer; color:#64748b; transition:all .2s; }
+.sidebar-item:hover { background:#f1f5f9; color:#334155; }
+.sidebar-item.active { background:#ede9fe; color:#4f46e5; }
+.sidebar-item .lucide { width:16px; height:16px; flex-shrink:0; }
+.card { background:#fff; border:1px solid var(--border); border-radius:20px; }
+.btn { display:inline-flex; align-items:center; gap:8px; padding:9px 18px; border-radius:10px; font-size:13px; font-weight:700; cursor:pointer; border:none; transition:all .2s; }
+.btn-primary { background:#4f46e5; color:#fff; }
+.btn-primary:hover { background:#3730a3; transform:translateY(-1px); }
+.btn-ghost { background:#f1f5f9; color:#334155; }
+.btn-ghost:hover { background:#e2e8f0; }
+.btn-success { background:#d1fae5; color:#065f46; }
+.btn-danger { background:#fee2e2; color:#ef4444; }
+.input { width:100%; padding:10px 14px; border:1.5px solid #e2e8f0; border-radius:10px; font-size:13px; font-family:inherit; outline:none; transition:border .2s; background:#fff; }
+.input:focus { border-color:#4f46e5; }
+.label { font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:.5px; margin-bottom:4px; display:block; }
+.pill { display:inline-flex; align-items:center; padding:3px 10px; border-radius:20px; font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.5px; }
+.modal-bg { position:fixed; inset:0; background:rgba(15,23,42,.5); backdrop-filter:blur(4px); z-index:200; display:none; align-items:center; justify-content:center; padding:20px; }
+.modal-bg.open { display:flex; }
+.modal { background:#fff; border-radius:24px; max-width:640px; width:100%; max-height:90vh; overflow-y:auto; box-shadow:0 25px 60px rgba(0,0,0,.15); }
+.modal-header { padding:24px 28px 0; display:flex; align-items:center; justify-content:space-between; padding-bottom:16px; border-bottom:1px solid #f1f5f9; }
+.modal-body { padding:24px 28px; }
+.modal-footer { padding:0 28px 24px; display:flex; justify-content:flex-end; gap:10px; }
+.toast { position:fixed; bottom:28px; left:50%; transform:translateX(-50%) translateY(120px); transition:all .4s cubic-bezier(.34,1.56,.64,1); background:#1e293b; color:#fff; padding:12px 22px; border-radius:14px; font-size:13px; font-weight:700; display:flex; align-items:center; gap:8px; z-index:999; box-shadow:0 12px 40px rgba(0,0,0,.25); }
+.toast.show { transform:translateX(-50%) translateY(0); }
+.view-section { display:none; flex-direction:column; flex:1; overflow-y:auto; padding:32px; }
+.view-section.active { display:flex; }
+.ai-gradient { background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); }
+@keyframes fadeUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+.fade-up { animation:fadeUp .3s ease-out; }
+@keyframes spin { to { transform:rotate(360deg); } }
+.spinner { display:inline-block; width:16px; height:16px; border:2px solid rgba(255,255,255,.3); border-top-color:white; border-radius:50%; animation:spin .8s linear infinite; }
+.chat-msg-user { background:#4f46e5; color:#fff; border-radius:18px 18px 4px 18px; padding:11px 15px; max-width:72%; align-self:flex-end; font-size:13px; }
+.chat-msg-gestor { background:#f1f5f9; color:#1e293b; border-radius:18px 18px 18px 4px; padding:11px 15px; max-width:76%; align-self:flex-start; font-size:13px; line-height:1.6; }
+.tab-btn { padding:7px 16px; border-radius:9px; font-size:12px; font-weight:700; cursor:pointer; border:none; background:transparent; color:#64748b; transition:all .2s; }
+.tab-btn.active { background:#4f46e5; color:#fff; }
+.solicitud-card { border:1px solid #e2e8f0; border-radius:16px; padding:16px; background:#fff; transition:all .2s; }
+.solicitud-card:hover { border-color:#a5b4fc; box-shadow:0 0 0 3px #ede9fe; }
+</style>
+</head>
+<body>
+
+<!-- ═══ PANTALLA LOGIN ═══ -->
+<div id="screen-login" style="display:flex;position:fixed;inset:0;z-index:100;background:#f1f5f9;min-height:100vh">
+
+  <!-- Panel izquierdo branding -->
+  <div class="ai-gradient" style="width:45%;display:flex;flex-direction:column;justify-content:center;padding:60px;position:relative;overflow:hidden;flex-shrink:0">
+    <div style="position:absolute;inset:0;background-image:radial-gradient(circle,rgba(255,255,255,.12) 1px,transparent 1px);background-size:22px 22px;pointer-events:none"></div>
+    <div style="position:relative;z-index:1">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:48px">
+        <div style="width:44px;height:44px;background:rgba(255,255,255,.2);border-radius:14px;display:flex;align-items:center;justify-content:center">
+          <i data-lucide="cpu" style="width:20px;height:20px;color:white"></i>
+        </div>
+        <span style="color:white;font-size:20px;font-weight:900;letter-spacing:-1px">NEXUS AI</span>
+      </div>
+      <h1 style="font-size:32px;font-weight:900;color:white;line-height:1.15;margin:0 0 14px">Tu portal de<br>cliente.</h1>
+      <p style="color:rgba(255,255,255,.75);font-size:14px;line-height:1.7;max-width:300px;margin:0 0 40px">Consulta tus facturas, documentos y estado fiscal. Envía solicitudes y comunícate con tu gestoría.</p>
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">
+        <div style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:14px;padding:14px">
+          <p style="font-size:18px;font-weight:900;color:white;margin:0">24/7</p>
+          <p style="font-size:11px;color:rgba(255,255,255,.6);margin:3px 0 0">Acceso siempre</p>
+        </div>
+        <div style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:14px;padding:14px">
+          <p style="font-size:18px;font-weight:900;color:white;margin:0">100%</p>
+          <p style="font-size:11px;color:rgba(255,255,255,.6);margin:3px 0 0">Seguro y cifrado</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Panel derecho formulario -->
+  <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:40px">
+    <div style="width:100%;max-width:400px">
+      <h2 style="font-size:26px;font-weight:900;color:#0f172a;margin:0 0 6px">Accede a tu portal</h2>
+      <p style="color:#64748b;font-size:14px;margin:0 0 32px">Usa las credenciales que te envió tu gestoría.</p>
+
+      <div style="display:flex;flex-direction:column;gap:14px" id="form-login">
+        <div>
+          <label class="label">Email</label>
+          <input type="email" id="login-email" class="input" placeholder="tu@empresa.com" onkeydown="if(event.key==='Enter')doLogin()">
+        </div>
+        <div>
+          <label class="label">Contraseña</label>
+          <input type="password" id="login-pass" class="input" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+        </div>
+        <div id="login-error" style="display:none;background:#fee2e2;color:#dc2626;padding:10px 14px;border-radius:10px;font-size:13px;font-weight:600"></div>
+        <button onclick="doLogin()" class="btn btn-primary" style="width:100%;justify-content:center;padding:13px;font-size:14px;margin-top:4px">
+          <i data-lucide="log-in" class="w-4 h-4"></i>Acceder al portal
+        </button>
+      </div>
+
+      <p style="margin-top:24px;font-size:12px;color:#94a3b8;text-align:center">¿Eres gestor? <a href="/dashboard/" style="color:#4f46e5;font-weight:700">Ir al panel de gestión →</a></p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ APP PORTAL ═══ -->
+<div id="screen-app" style="display:none;height:100vh;flex-direction:column">
+
+  <!-- Header -->
+  <header style="background:white;border-bottom:1px solid #e2e8f0;height:62px;display:flex;align-items:center;justify-content:space-between;padding:0 28px;position:sticky;top:0;z-index:50;flex-shrink:0">
+    <div style="display:flex;align-items:center;gap:12px">
+      <div id="header-logo" class="w-9 h-9 ai-gradient rounded-xl flex items-center justify-center text-white font-black text-sm">N</div>
+      <div>
+        <p class="text-sm font-black text-slate-800" id="header-gestoria">Mi Gestoría</p>
+        <p class="text-[10px] text-slate-400">Portal del cliente</p>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:14px">
+      <!-- Badge mensajes -->
+      <button onclick="navTo('mensajes')" class="relative btn btn-ghost text-xs">
+        <i data-lucide="message-square" class="w-4 h-4"></i>
+        <span id="badge-mensajes" class="hidden absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center">0</span>
+      </button>
+      <!-- Badge solicitudes -->
+      <button onclick="navTo('solicitudes')" class="relative btn btn-ghost text-xs">
+        <i data-lucide="bell" class="w-4 h-4"></i>
+        <span id="badge-solicitudes" class="hidden absolute -top-1 -right-1 w-4 h-4 bg-amber-500 text-white text-[9px] font-black rounded-full flex items-center justify-center">0</span>
+      </button>
+      <!-- Usuario -->
+      <div style="display:flex;align-items:center;gap:9px">
+        <div class="w-8 h-8 ai-gradient rounded-full flex items-center justify-center text-white text-xs font-black" id="header-avatar">C</div>
+        <div class="hidden sm:block">
+          <p class="text-xs font-bold text-slate-800" id="header-nombre">Cliente</p>
+          <p class="text-[10px] text-slate-400" id="header-empresa">—</p>
+        </div>
+      </div>
+      <button onclick="doLogout()" class="btn btn-ghost text-xs"><i data-lucide="log-out" class="w-3 h-3"></i>Salir</button>
+    </div>
+  </header>
+
+  <div style="display:flex;flex:1;overflow:hidden">
+
+    <!-- Sidebar -->
+    <aside style="width:210px;background:white;border-right:1px solid #e2e8f0;padding:14px 10px;flex-shrink:0;display:flex;flex-direction:column;gap:3px;overflow-y:auto">
+      <div onclick="navTo('inicio')"       id="m-inicio"       class="sidebar-item active"><i data-lucide="home"></i>Inicio</div>
+      <div onclick="navTo('facturas')"     id="m-facturas"     class="sidebar-item"><i data-lucide="file-text"></i>Facturas</div>
+      <div onclick="navTo('gastos')"       id="m-gastos"       class="sidebar-item"><i data-lucide="receipt"></i>Gastos & OCR</div>
+      <div onclick="navTo('albaranes')"    id="m-albaranes"    class="sidebar-item"><i data-lucide="package"></i>Albaranes</div>
+      <div onclick="navTo('laboral')"      id="m-laboral"      class="sidebar-item"><i data-lucide="users"></i>Laboral</div>
+      <div onclick="navTo('solicitudes')"  id="m-solicitudes"  class="sidebar-item"><i data-lucide="send"></i>Solicitudes <span id="nav-badge-sol" class="hidden ml-auto bg-amber-100 text-amber-700 text-[9px] font-black px-1.5 py-0.5 rounded-full">0</span></div>
+      <div onclick="navTo('documentos')"   id="m-documentos"   class="sidebar-item"><i data-lucide="folder"></i>Documentos</div>
+      <div onclick="navTo('obligaciones')" id="m-obligaciones" class="sidebar-item"><i data-lucide="calendar-clock"></i>Obligaciones</div>
+      <div onclick="navTo('mensajes')"     id="m-mensajes"     class="sidebar-item"><i data-lucide="message-square"></i>Mensajes <span id="nav-badge-msg" class="hidden ml-auto bg-red-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full">0</span></div>
+
+      <!-- Info gestor abajo -->
+      <div style="margin-top:auto;padding:12px;background:#f8fafc;border-radius:14px;border:1px solid #e2e8f0">
+        <p class="text-[10px] font-bold text-slate-400 uppercase mb-1">Tu asesor</p>
+        <p class="text-xs font-black text-slate-700" id="sidebar-asesor">—</p>
+        <button onclick="navTo('mensajes')" class="btn btn-primary text-xs mt-2 w-full justify-center" style="padding:7px">
+          <i data-lucide="message-square" class="w-3 h-3"></i>Escribir
+        </button>
+      </div>
+    </aside>
+
+    <!-- Contenido principal -->
+    <main style="flex:1;overflow-y:auto;background:#f1f5f9">
+
+      <!-- ══ INICIO ══ -->
+      <div id="v-inicio" class="view-section active fade-up">
+        <div class="flex justify-between items-start mb-6">
+          <div>
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Bienvenido/a</p>
+            <h2 class="text-2xl font-black text-slate-900 mt-1" id="inicio-empresa">Tu empresa</h2>
+            <p class="text-xs text-slate-400 mt-1" id="inicio-nif">NIF: — · Actualizado ahora</p>
+          </div>
+          <button onclick="navTo('solicitudes');abrirModalSolicitud('general')" class="btn btn-primary">
+            <i data-lucide="plus" class="w-4 h-4"></i>Nueva solicitud
+          </button>
+        </div>
+
+        <!-- KPIs -->
+        <div class="grid grid-cols-4 gap-4 mb-6" id="inicio-kpis">
+          <!-- populated by JS -->
+        </div>
+
+        <!-- Grid principal -->
+        <div class="grid grid-cols-3 gap-5">
+
+          <!-- Últimas facturas -->
+          <div class="card overflow-hidden">
+            <div class="p-4 border-b flex justify-between items-center">
+              <h4 class="font-black text-slate-800 text-sm">Últimas facturas</h4>
+              <button onclick="navTo('facturas')" class="text-xs text-indigo-500 font-bold">Ver todas →</button>
+            </div>
+            <div id="inicio-facturas" class="divide-y"></div>
+          </div>
+
+          <!-- Solicitudes recientes -->
+          <div class="card overflow-hidden">
+            <div class="p-4 border-b flex justify-between items-center">
+              <h4 class="font-black text-slate-800 text-sm">Mis solicitudes</h4>
+              <button onclick="navTo('solicitudes')" class="text-xs text-indigo-500 font-bold">Ver todas →</button>
+            </div>
+            <div id="inicio-solicitudes" class="divide-y"></div>
+          </div>
+
+          <!-- Próximas obligaciones -->
+          <div class="card overflow-hidden">
+            <div class="p-4 border-b flex justify-between items-center">
+              <h4 class="font-black text-slate-800 text-sm">Obligaciones</h4>
+              <button onclick="navTo('obligaciones')" class="text-xs text-indigo-500 font-bold">Ver →</button>
+            </div>
+            <div id="inicio-obligaciones" class="divide-y"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ FACTURAS ══ -->
+      <div id="v-facturas" class="view-section fade-up">
+        <div class="flex justify-between items-center mb-5">
+          <h3 class="text-xl font-black text-slate-800">Mis facturas</h3>
+          <div class="flex gap-2">
+            <select class="input w-36 text-xs" id="fact-filtro-tipo" onchange="renderFacturas()">
+              <option value="">Todos los tipos</option>
+              <option value="emitida">Emitidas</option>
+              <option value="recibida">Recibidas</option>
+            </select>
+            <select class="input w-36 text-xs" id="fact-filtro-estado" onchange="renderFacturas()">
+              <option value="">Todos los estados</option>
+              <option value="cobrada">Cobradas</option>
+              <option value="enviada">Enviadas</option>
+              <option value="vencida">Vencidas</option>
+              <option value="pendiente">Pendientes</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- KPIs facturas -->
+        <div class="grid grid-cols-4 gap-4 mb-5" id="fact-kpis"></div>
+
+        <div class="card overflow-hidden">
+          <div id="fact-tabla" class="divide-y"></div>
+        </div>
+      </div>
+
+      <!-- ══ GASTOS & OCR ══ -->
+      <div id="v-gastos" class="view-section fade-up">
+        <div class="flex justify-between items-center mb-5">
+          <div>
+            <h3 class="text-xl font-black text-slate-800">Gastos & OCR</h3>
+            <p class="text-xs text-slate-400 mt-1">Sube tus facturas recibidas y tickets para que tu gestor las registre</p>
+          </div>
+        </div>
+
+        <!-- Drop zone -->
+        <div id="ocr-dropzone" class="border-2 border-dashed border-slate-200 rounded-2xl p-10 text-center mb-6 cursor-pointer hover:border-indigo-400 hover:bg-indigo-50/30 transition"
+          onclick="document.getElementById('ocr-input').click()"
+          ondragover="event.preventDefault();this.style.borderColor='#4f46e5'"
+          ondragleave="this.style.borderColor=''"
+          ondrop="handleOCRDrop(event)">
+          <i data-lucide="upload-cloud" class="w-12 h-12 text-slate-300 mx-auto mb-3"></i>
+          <p class="text-sm font-bold text-slate-500">Arrastra facturas o tickets aquí</p>
+          <p class="text-xs text-slate-400 mt-1">PDF, JPG, PNG · Máx. 20MB por archivo</p>
+          <button class="btn btn-primary mt-4 text-sm"><i data-lucide="plus" class="w-4 h-4"></i>Seleccionar archivos</button>
+          <input type="file" id="ocr-input" multiple accept="image/*,.pdf" class="hidden" onchange="subirGastos(this)">
+        </div>
+
+        <!-- Estado de subidas -->
+        <div id="ocr-queue" class="space-y-2 mb-5"></div>
+
+        <!-- Lista gastos registrados -->
+        <div class="flex justify-between items-center mb-3">
+          <h4 class="font-black text-slate-800 text-sm">Mis gastos registrados</h4>
+          <select class="input w-36 text-xs" id="gastos-filtro" onchange="renderGastos()">
+            <option value="">Todos</option>
+            <option value="pendiente">Pendientes</option>
+            <option value="conciliado">Conciliados</option>
+          </select>
+        </div>
+        <div class="card overflow-hidden">
+          <div id="gastos-lista" class="divide-y"></div>
+        </div>
+      </div>
+
+      <!-- ══ ALBARANES ══ -->
+      <div id="v-albaranes" class="view-section fade-up">
+        <div class="flex justify-between items-center mb-5">
+          <div>
+            <h3 class="text-xl font-black text-slate-800">Albaranes</h3>
+            <p class="text-xs text-slate-400 mt-1">Genera albaranes de entrega para tus clientes</p>
+          </div>
+          <button onclick="openModalAlbaran()" class="btn btn-primary">
+            <i data-lucide="plus" class="w-4 h-4"></i>Nuevo albarán
+          </button>
+        </div>
+
+        <div class="card overflow-hidden">
+          <div id="albaranes-lista" class="divide-y"></div>
+        </div>
+      </div>
+
+      <!-- ══ LABORAL ══ -->
+      <div id="v-laboral" class="view-section fade-up">
+        <div class="flex justify-between items-center mb-5">
+          <div>
+            <h3 class="text-xl font-black text-slate-800">Laboral</h3>
+            <p class="text-xs text-slate-400 mt-1">Consulta tu plantilla y nóminas · Solo lectura — para cambios usa solicitudes</p>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="openModalSolicitud('alta_ss')" class="btn btn-ghost text-sm">
+              <i data-lucide="user-plus" class="w-4 h-4"></i>Solicitar alta
+            </button>
+            <button onclick="openModalSolicitud('baja_ss')" class="btn btn-ghost text-sm">
+              <i data-lucide="user-minus" class="w-4 h-4"></i>Solicitar baja
+            </button>
+          </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="flex gap-1 bg-slate-100 p-1 rounded-xl w-fit mb-5">
+          <button class="tab-btn active" onclick="setLaboralTab(this,'trabajadores')">Plantilla</button>
+          <button class="tab-btn" onclick="setLaboralTab(this,'nominas')">Nóminas</button>
+          <button class="tab-btn" onclick="setLaboralTab(this,'bajas')">Bajas e IT</button>
+          <button class="tab-btn" onclick="setLaboralTab(this,'vacaciones')">Vacaciones</button>
+        </div>
+
+        <!-- Trabajadores -->
+        <div id="lt-trabajadores">
+          <div class="grid grid-cols-3 gap-4" id="trabajadores-grid"></div>
+        </div>
+
+        <!-- Nóminas -->
+        <div id="lt-nominas" class="hidden">
+          <div class="flex gap-3 mb-4">
+            <select class="input w-40 text-xs" id="nom-filtro-trab" onchange="renderNominas()">
+              <option value="">Todos los trabajadores</option>
+            </select>
+            <select class="input w-32 text-xs" id="nom-filtro-year" onchange="renderNominas()">
+              <option value="2026">2026</option>
+              <option value="2025">2025</option>
+            </select>
+          </div>
+          <div class="card overflow-hidden">
+            <div id="nominas-lista" class="divide-y"></div>
+          </div>
+        </div>
+
+        <!-- Bajas IT -->
+        <div id="lt-bajas" class="hidden">
+          <div class="flex justify-between items-center mb-4">
+            <p class="text-sm font-bold text-slate-600">Bajas médicas e IT activas y pasadas</p>
+            <button onclick="openModalSolicitud('it_baja')" class="btn btn-ghost text-sm">
+              <i data-lucide="plus" class="w-3 h-3"></i>Comunicar IT
+            </button>
+          </div>
+          <div class="card overflow-hidden"><div id="bajas-lista" class="divide-y"></div></div>
+        </div>
+
+        <!-- Vacaciones -->
+        <div id="lt-vacaciones" class="hidden">
+          <div class="flex justify-between items-center mb-4">
+            <p class="text-sm font-bold text-slate-600">Vacaciones y permisos</p>
+            <button onclick="openModalSolicitud('vacaciones')" class="btn btn-ghost text-sm">
+              <i data-lucide="plus" class="w-3 h-3"></i>Solicitar vacaciones
+            </button>
+          </div>
+          <div class="card overflow-hidden"><div id="vacaciones-lista" class="divide-y"></div></div>
+        </div>
+      </div>
+
+      <!-- ══ SOLICITUDES ══ -->
+      <div id="v-solicitudes" class="view-section fade-up">
+        <div class="flex justify-between items-center mb-5">
+          <div>
+            <h3 class="text-xl font-black text-slate-800">Solicitudes al gestor</h3>
+            <p class="text-xs text-slate-400 mt-1">Envía peticiones y consulta su estado</p>
+          </div>
+          <button onclick="openModalSolicitud('general')" class="btn btn-primary">
+            <i data-lucide="plus" class="w-4 h-4"></i>Nueva solicitud
+          </button>
+        </div>
+
+        <!-- Filtros por tipo -->
+        <div class="flex gap-1 bg-slate-100 p-1 rounded-xl w-fit mb-5">
+          <button class="tab-btn active text-xs" onclick="setSolicitudTab(this,'todas')">Todas</button>
+          <button class="tab-btn text-xs" onclick="setSolicitudTab(this,'pendiente')">Pendientes</button>
+          <button class="tab-btn text-xs" onclick="setSolicitudTab(this,'en_proceso')">En proceso</button>
+          <button class="tab-btn text-xs" onclick="setSolicitudTab(this,'completada')">Completadas</button>
+        </div>
+
+        <div class="space-y-3" id="solicitudes-lista"></div>
+      </div>
+
+      <!-- ══ DOCUMENTOS ══ -->
+      <div id="v-documentos" class="view-section fade-up">
+        <div class="flex justify-between items-center mb-5">
+          <div>
+            <h3 class="text-xl font-black text-slate-800">Mis documentos</h3>
+            <p class="text-xs text-slate-400 mt-1">Documentos compartidos por tu gestoría + los que tú subes</p>
+          </div>
+          <button onclick="document.getElementById('doc-upload-input').click()" class="btn btn-primary">
+            <i data-lucide="upload" class="w-4 h-4"></i>Subir documento
+          </button>
+          <input type="file" id="doc-upload-input" multiple accept="image/*,.pdf,.xlsx,.csv" class="hidden" onchange="subirDocumentos(this)">
+        </div>
+
+        <!-- Tabs categorías -->
+        <div class="flex gap-1 bg-slate-100 p-1 rounded-xl w-fit mb-5">
+          <button class="tab-btn active text-xs" onclick="setDocTab(this,'todos')">Todos</button>
+          <button class="tab-btn text-xs" onclick="setDocTab(this,'impuesto')">Impuestos</button>
+          <button class="tab-btn text-xs" onclick="setDocTab(this,'laboral')">Laboral</button>
+          <button class="tab-btn text-xs" onclick="setDocTab(this,'contable')">Contable</button>
+          <button class="tab-btn text-xs" onclick="setDocTab(this,'nomina')">Nóminas</button>
+        </div>
+
+        <div class="space-y-2" id="docs-lista"></div>
+      </div>
+
+      <!-- ══ OBLIGACIONES ══ -->
+      <div id="v-obligaciones" class="view-section fade-up">
+        <h3 class="text-xl font-black text-slate-800 mb-5">Obligaciones fiscales</h3>
+        <div class="grid grid-cols-3 gap-4 mb-5" id="oblig-kpis"></div>
+        <div class="card overflow-hidden">
+          <div class="p-4 border-b"><h4 class="font-black text-slate-800 text-sm">Calendario 2026</h4></div>
+          <div id="oblig-lista" class="divide-y max-h-[500px] overflow-y-auto"></div>
+        </div>
+      </div>
+
+      <!-- ══ MENSAJES ══ -->
+      <div id="v-mensajes" class="view-section fade-up" style="padding:0">
+        <div style="display:flex;height:calc(100vh - 62px)">
+
+          <!-- Lista de conversaciones (solo con gestor) -->
+          <div style="width:260px;background:white;border-right:1px solid #e2e8f0;display:flex;flex-direction:column">
+            <div class="p-4 border-b">
+              <h4 class="font-black text-slate-800 text-sm">Mensajes</h4>
+            </div>
+            <div class="p-3">
+              <!-- Solo una conversación: con el gestor -->
+              <div id="conv-gestor" class="flex items-center gap-3 p-3 rounded-14px hover:bg-slate-50 cursor-pointer rounded-xl bg-indigo-50" onclick="abrirConversacion()">
+                <div class="w-10 h-10 ai-gradient rounded-xl flex items-center justify-center text-white font-black text-sm flex-shrink-0" id="conv-gestor-avatar">G</div>
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-bold text-slate-800 truncate" id="conv-gestor-nombre">Tu gestor</p>
+                  <p class="text-[10px] text-slate-400" id="conv-ultimo-msg">—</p>
+                </div>
+                <span id="conv-badge" class="hidden w-5 h-5 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center">0</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Área de chat -->
+          <div style="flex:1;display:flex;flex-direction:column">
+            <div class="p-4 border-b bg-white flex items-center gap-3">
+              <div class="w-9 h-9 ai-gradient rounded-xl flex items-center justify-center text-white font-black text-sm" id="chat-gestor-avatar">G</div>
+              <div>
+                <p class="font-black text-slate-800 text-sm" id="chat-gestor-nombre">Tu gestor</p>
+                <p class="text-[10px] text-slate-400" id="chat-gestoria-nombre">Mi Gestoría</p>
+              </div>
+            </div>
+            <div id="chat-mensajes" class="flex-1 overflow-y-auto p-5 space-y-3" style="background:#f8fafc;display:flex;flex-direction:column"></div>
+            <div class="p-4 bg-white border-t">
+              <div style="display:flex;gap:10px">
+                <input type="text" id="chat-input" class="input flex-1 text-sm" placeholder="Escribe un mensaje..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();enviarMensaje()}">
+                <button onclick="enviarMensaje()" class="btn btn-primary"><i data-lucide="send" class="w-4 h-4"></i></button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="toast"></div>
+
+<!-- ═══ MODALES ═══ -->
+
+<!-- Modal: Nueva solicitud -->
+<div id="modal-solicitud" class="modal-bg">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="text-base font-black" id="modal-sol-titulo">Nueva solicitud</h3>
+      <button onclick="closeModal('modal-solicitud')"><i data-lucide="x" class="w-5 h-5 text-slate-400"></i></button>
+    </div>
+    <div class="modal-body space-y-4">
+
+      <div>
+        <label class="label">Tipo de solicitud</label>
+        <select class="input" id="sol-tipo" onchange="actualizarFormSolicitud()">
+          <option value="general">Consulta general</option>
+          <option value="alta_ss">Alta en Seguridad Social</option>
+          <option value="baja_ss">Baja en Seguridad Social</option>
+          <option value="vacaciones">Solicitar vacaciones / permiso</option>
+          <option value="it_baja">Comunicar IT / baja médica</option>
+          <option value="it_alta">Alta médica (vuelta al trabajo)</option>
+          <option value="cambio_datos">Cambio de datos de trabajador</option>
+          <option value="nuevo_contrato">Nuevo contrato / extensión</option>
+          <option value="extincion">Extinción de contrato</option>
+        </select>
+      </div>
+
+      <div id="sol-campos-dinamicos">
+        <!-- populated by actualizarFormSolicitud() -->
+      </div>
+
+      <div>
+        <label class="label">Prioridad</label>
+        <div class="flex gap-2">
+          <button onclick="setPrioridad(this,'normal')"   class="tab-btn active text-xs" data-p="normal">Normal</button>
+          <button onclick="setPrioridad(this,'alta')"     class="tab-btn text-xs" data-p="alta">Alta</button>
+          <button onclick="setPrioridad(this,'urgente')"  class="tab-btn text-xs" data-p="urgente">⚡ Urgente</button>
+        </div>
+        <input type="hidden" id="sol-prioridad" value="normal">
+      </div>
+
+      <div>
+        <label class="label">Notas adicionales</label>
+        <textarea class="input" id="sol-notas" rows="3" placeholder="Información adicional para tu gestor..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button onclick="closeModal('modal-solicitud')" class="btn btn-ghost">Cancelar</button>
+      <button onclick="enviarSolicitud()" class="btn btn-primary"><i data-lucide="send" class="w-4 h-4"></i>Enviar solicitud</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Nuevo albarán -->
+<div id="modal-albaran" class="modal-bg">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="text-base font-black">Nuevo albarán</h3>
+      <button onclick="closeModal('modal-albaran')"><i data-lucide="x" class="w-5 h-5 text-slate-400"></i></button>
+    </div>
+    <div class="modal-body space-y-4">
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="label">Destinatario</label>
+          <input type="text" id="alb-destinatario" class="input" placeholder="Empresa o persona">
+        </div>
+        <div>
+          <label class="label">Fecha</label>
+          <input type="date" id="alb-fecha" class="input">
+        </div>
+      </div>
+      <div>
+        <label class="label">Referencia / descripción</label>
+        <input type="text" id="alb-referencia" class="input" placeholder="Ej: Entrega materiales obra principal">
+      </div>
+      <!-- Líneas del albarán -->
+      <div>
+        <div class="flex justify-between items-center mb-2">
+          <label class="label" style="margin-bottom:0">Líneas</label>
+          <button onclick="addLineaAlbaran()" class="btn btn-ghost text-xs"><i data-lucide="plus" class="w-3 h-3"></i>Añadir línea</button>
+        </div>
+        <div id="alb-lineas" class="space-y-2">
+          <!-- populated -->
+        </div>
+      </div>
+      <div>
+        <label class="label">Notas</label>
+        <textarea id="alb-notas" class="input" rows="2" placeholder="Condiciones de entrega, observaciones..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button onclick="closeModal('modal-albaran')" class="btn btn-ghost">Cancelar</button>
+      <button onclick="generarAlbaran()" class="btn btn-primary"><i data-lucide="file-text" class="w-4 h-4"></i>Generar albarán</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ JAVASCRIPT ═══ -->
+<script>
+// ─────────────────────────────────────────────────────────
+// ESTADO GLOBAL
+// ─────────────────────────────────────────────────────────
+let _sb = null, _user = null, _acceso = null, _empresa = null, _gestor = null;
+let _facturas = [], _gastos = [], _trabajadores = [], _nominas = [];
+let _solicitudes = [], _documentos = [], _mensajes = [], _albaranes = [];
+let _it_bajas = [], _vacaciones = [];
+let _solicitudTabActual = 'todas';
+let _albaranLineas = [];
+let _chatInterval = null;
+
+// ─────────────────────────────────────────────────────────
+// INIT SUPABASE
+// ─────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────
+// ACTIVACIÓN POR TOKEN (primer acceso desde enlace de invitación)
+// ─────────────────────────────────────────────────────────
+async function activarCuentaPortal(token, emailParam) {
+  const sb = getSB();
+
+  // Mostrar pantalla de activación
+  mostrarPantallaActivacion('Verificando tu invitación...');
+
+  // 1. Buscar el acceso por token
+  const { data: acceso, error: errAcceso } = await sb
+    .from('portal_accesos')
+    .select('*')
+    .eq('token_invitacion', token)
+    .single();
+
+  if(errAcceso || !acceso) {
+    mostrarPantallaActivacion(null, 'Enlace inválido o ya utilizado. Contacta con tu gestoría.');
+    return;
+  }
+
+  if(acceso.estado === 'bloqueado') {
+    mostrarPantallaActivacion(null, 'Tu acceso ha sido revocado. Contacta con tu gestoría.');
+    return;
+  }
+
+  const email = acceso.email || emailParam;
+
+  // 2. Si ya tiene sesión activa y el email coincide → activar directamente
+  const { data: { session } } = await sb.auth.getSession();
+  if(session && session.user.email === email) {
+    _user = session.user;
+    await vincularYActivar(acceso);
+    return;
+  }
+
+  // 3. Mostrar formulario de contraseña para activar la cuenta
+  mostrarFormActivacion(acceso, email);
+}
+
+function mostrarPantallaActivacion(mensaje, error) {
+  // Ocultar login y app
+  document.getElementById('screen-login').style.display = 'none';
+  document.getElementById('screen-app').style.display   = 'none';
+
+  // Crear/mostrar pantalla de activación
+  let el = document.getElementById('screen-activacion');
+  if(!el) {
+    el = document.createElement('div');
+    el.id = 'screen-activacion';
+    el.style.cssText = 'position:fixed;inset:0;z-index:200;background:#f1f5f9;display:flex;align-items:center;justify-content:center;padding:20px';
+    document.body.appendChild(el);
+  }
+  el.style.display = 'flex';
+
+  if(error) {
+    el.innerHTML = `
+      <div style="text-align:center;max-width:400px">
+        <div style="width:64px;height:64px;background:#fee2e2;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px">
+          <i data-lucide="x" style="width:28px;height:28px;color:#dc2626"></i>
+        </div>
+        <h2 style="font-size:20px;font-weight:900;color:#0f172a;margin:0 0 10px">Enlace no válido</h2>
+        <p style="color:#64748b;font-size:14px;line-height:1.6;margin:0 0 24px">${error}</p>
+        <a href="/portalclientes/" style="display:inline-flex;align-items:center;gap:8px;background:#4f46e5;color:white;padding:11px 22px;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none">
+          Ir al inicio de sesión
+        </a>
+      </div>`;
+  } else {
+    el.innerHTML = `
+      <div style="text-align:center">
+        <div style="width:44px;height:44px;border:3px solid #e2e8f0;border-top-color:#4f46e5;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 16px"></div>
+        <p style="color:#64748b;font-size:14px;font-weight:600">${mensaje}</p>
+      </div>`;
+  }
+  lucide.createIcons();
+}
+
+function mostrarFormActivacion(acceso, email) {
+  let el = document.getElementById('screen-activacion');
+  el.innerHTML = `
+    <div style="background:white;border-radius:24px;padding:40px;max-width:440px;width:100%;box-shadow:0 25px 60px rgba(0,0,0,.1)">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:24px">
+        <div style="width:42px;height:42px;background:linear-gradient(135deg,#4f46e5,#7c3aed);border-radius:14px;display:flex;align-items:center;justify-content:center">
+          <i data-lucide="cpu" style="width:20px;height:20px;color:white"></i>
+        </div>
+        <span style="font-size:18px;font-weight:900;color:#0f172a;letter-spacing:-0.5px">NEXUS AI</span>
+      </div>
+      <h2 style="font-size:22px;font-weight:900;color:#0f172a;margin:0 0 6px">Activa tu cuenta</h2>
+      <p style="color:#64748b;font-size:13px;margin:0 0 8px">Hola, <strong>${acceso.nombre}</strong>. Crea una contraseña para acceder al portal.</p>
+      <p style="font-size:12px;color:#94a3b8;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:8px 12px;margin:0 0 24px">
+        📧 ${email}
+      </p>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div>
+          <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px">Nueva contraseña</label>
+          <input type="password" id="act-pass" style="width:100%;padding:10px 14px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none;transition:border .2s"
+            placeholder="Mínimo 8 caracteres" onfocus="this.style.borderColor='#4f46e5'" onblur="this.style.borderColor='#e2e8f0'">
+        </div>
+        <div>
+          <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px">Confirmar contraseña</label>
+          <input type="password" id="act-pass2" style="width:100%;padding:10px 14px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none;transition:border .2s"
+            placeholder="Repite la contraseña" onfocus="this.style.borderColor='#4f46e5'" onblur="this.style.borderColor='#e2e8f0'"
+            onkeydown="if(event.key==='Enter')completarActivacion('${acceso.id}','${email}')">
+        </div>
+        <div id="act-error" style="display:none;background:#fee2e2;color:#dc2626;padding:10px 14px;border-radius:10px;font-size:13px;font-weight:600"></div>
+        <button onclick="completarActivacion('${acceso.id}','${email}')"
+          id="btn-activar"
+          style="background:#4f46e5;color:white;padding:13px;border-radius:10px;font-size:14px;font-weight:700;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
+          <i data-lucide="check-circle" style="width:18px;height:18px"></i>
+          Activar mi cuenta y entrar
+        </button>
+      </div>
+    </div>`;
+  lucide.createIcons();
+}
+
+async function completarActivacion(accesoId, email) {
+  const pass  = document.getElementById('act-pass')?.value;
+  const pass2 = document.getElementById('act-pass2')?.value;
+  const errEl = document.getElementById('act-error');
+  const btn   = document.getElementById('btn-activar');
+
+  if(!pass || pass.length < 8) {
+    errEl.innerText = 'La contraseña debe tener al menos 8 caracteres.';
+    errEl.style.display = 'block'; return;
+  }
+  if(pass !== pass2) {
+    errEl.innerText = 'Las contraseñas no coinciden.';
+    errEl.style.display = 'block'; return;
+  }
+  errEl.style.display = 'none';
+
+  btn.innerHTML = '<span style="display:inline-block;width:16px;height:16px;border:2px solid white;border-top-color:transparent;border-radius:50%;animation:spin .8s linear infinite;vertical-align:middle"></span> Activando...';
+  btn.disabled = true;
+
+  const sb = getSB();
+
+  // Registrar usuario en Supabase Auth (signUp)
+  const { data: authData, error: authErr } = await sb.auth.signUp({ email, password: pass });
+
+  if(authErr && !authErr.message.includes('already registered')) {
+    errEl.innerText = 'Error: ' + authErr.message;
+    errEl.style.display = 'block';
+    btn.innerHTML = '<i data-lucide="check-circle" style="width:18px;height:18px"></i>Activar mi cuenta y entrar';
+    btn.disabled = false;
+    lucide.createIcons();
+    return;
+  }
+
+  // Si el usuario ya existía, hacer signIn directamente
+  if(authErr?.message.includes('already registered')) {
+    const { data: signInData, error: signInErr } = await sb.auth.signInWithPassword({ email, password: pass });
+    if(signInErr) {
+      errEl.innerText = 'Esta cuenta ya existe. Si olvidaste la contraseña contacta con tu gestor.';
+      errEl.style.display = 'block';
+      btn.innerHTML = '<i data-lucide="check-circle" style="width:18px;height:18px"></i>Activar mi cuenta y entrar';
+      btn.disabled = false;
+      lucide.createIcons();
+      return;
+    }
+    _user = signInData.user;
+  } else {
+    // Nuevo usuario: hacer signIn (signUp puede requerir confirmación de email en algunos proyectos)
+    const { data: signInData, error: signInErr } = await sb.auth.signInWithPassword({ email, password: pass });
+    if(signInErr) {
+      // Si requiere confirmación de email
+      mostrarPantallaActivacion(null, `Cuenta creada. Revisa tu email (${email}) para confirmar y luego inicia sesión normalmente.`);
+      return;
+    }
+    _user = signInData.user;
+  }
+
+  // Vincular el auth.user con el portal_acceso
+  const acceso = await vincularYActivar({ id: accesoId });
+  if(acceso) {
+    // Limpiar token de la URL sin recargar
+    window.history.replaceState({}, '', '/portalclientes/');
+  }
+}
+
+async function vincularYActivar(accesoPartial) {
+  const sb = getSB();
+
+  // Actualizar portal_acceso: vincular user_id y marcar como activo
+  const { data: acceso, error } = await sb
+    .from('portal_accesos')
+    .update({
+      user_id:      _user.id,
+      estado:       'activo',
+      fecha_acceso: new Date().toISOString(),
+    })
+    .eq('id', accesoPartial.id)
+    .select('*, empresas(*)')
+    .single();
+
+  if(error || !acceso) {
+    mostrarPantallaActivacion(null, 'Error al activar el acceso: ' + (error?.message || 'inténtalo de nuevo'));
+    return null;
+  }
+
+  // Ocultar pantalla de activación
+  const pantallaAct = document.getElementById('screen-activacion');
+  if(pantallaAct) pantallaAct.style.display = 'none';
+
+  // Continuar con initApp usando el acceso ya cargado
+  _acceso  = acceso;
+  _empresa = acceso.empresas;
+
+  const { data: gestor } = await sb
+    .from('perfiles')
+    .select('nombre, apellidos, nombre_gestoria, foto_url')
+    .eq('id', acceso.gestor_id)
+    .single();
+  _gestor = gestor;
+
+  actualizarHeaderUI();
+
+  await Promise.all([
+    cargarFacturas(), cargarGastos(), cargarTrabajadores(),
+    cargarSolicitudes(), cargarDocumentos(), cargarMensajes(),
+  ]);
+
+  renderInicio();
+  renderObligaciones();
+  _chatInterval = setInterval(cargarMensajes, 30000);
+
+  showScreen('app');
+  showToast('¡Bienvenido/a, ' + (acceso.nombre || '') + '! 🎉');
+  lucide.createIcons();
+  return acceso;
+}
+
+function getSB() {
+  if(_sb) return _sb;
+  try { _sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); } catch(e){}
+  return _sb;
+}
+
+// ─────────────────────────────────────────────────────────
+// BOOT
+// ─────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', async () => {
+  lucide.createIcons();
+  const sb = getSB();
+  if(!sb) { showScreen('login'); return; }
+
+  // Comprobar si viene con token de invitación en la URL
+  const params = new URLSearchParams(window.location.search);
+  const token  = params.get('token');
+  const email  = params.get('email');
+
+  if(token) {
+    // Flujo de activación por enlace
+    await activarCuentaPortal(token, email);
+    return;
+  }
+
+  const { data: { session } } = await sb.auth.getSession();
+  if(!session) { showScreen('login'); return; }
+
+  _user = session.user;
+  await initApp();
+});
+
+async function initApp() {
+  const sb = getSB();
+
+  // Buscar portal_acceso del usuario
+  const { data: acceso } = await sb
+    .from('portal_accesos')
+    .select('*, empresas(*)')
+    .eq('user_id', _user.id)
+    .eq('estado', 'activo')
+    .single();
+
+  if(!acceso) {
+    // No es cliente portal → redirigir al dashboard del gestor
+    window.location.replace('/dashboard/');
+    return;
+  }
+
+  _acceso  = acceso;
+  _empresa = acceso.empresas;
+
+  // Cargar datos del gestor
+  const { data: gestor } = await sb
+    .from('perfiles')
+    .select('nombre, apellidos, nombre_gestoria, foto_url')
+    .eq('id', _acceso.gestor_id)
+    .single();
+  _gestor = gestor;
+
+  // Actualizar UI con datos de la empresa
+  actualizarHeaderUI();
+
+  // Cargar datos en paralelo
+  await Promise.all([
+    cargarFacturas(),
+    cargarGastos(),
+    cargarTrabajadores(),
+    cargarSolicitudes(),
+    cargarDocumentos(),
+    cargarMensajes(),
+  ]);
+
+  // Actualizar inicio
+  renderInicio();
+  renderObligaciones();
+
+  // Polling mensajes cada 30s
+  _chatInterval = setInterval(cargarMensajes, 30000);
+
+  showScreen('app');
+  lucide.createIcons();
+}
+
+function actualizarHeaderUI() {
+  const p  = _acceso;
+  const e  = _empresa;
+  const g  = _gestor;
+  const ini = ((p.nombre||'C')[0]).toUpperCase();
+
+  document.getElementById('header-avatar').innerText   = ini;
+  document.getElementById('header-nombre').innerText   = p.nombre || p.email;
+  document.getElementById('header-empresa').innerText  = e?.razon_social || '—';
+  document.getElementById('header-gestoria').innerText = g?.nombre_gestoria || 'Mi Gestoría';
+  document.getElementById('inicio-empresa').innerText  = e?.razon_social || 'Tu empresa';
+  document.getElementById('inicio-nif').innerText      = `NIF: ${e?.nif||'—'} · ${e?.sector||''} · Actualizado ahora`;
+  document.getElementById('sidebar-asesor').innerText  = g ? `${g.nombre} ${g.apellidos}` : '—';
+
+  const gini = ((g?.nombre||'G')[0]).toUpperCase();
+  ['conv-gestor-avatar','chat-gestor-avatar'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.innerText = gini;
+  });
+  document.getElementById('conv-gestor-nombre').innerText  = g ? `${g.nombre} ${g.apellidos}` : 'Tu gestor';
+  document.getElementById('chat-gestor-nombre').innerText  = g ? `${g.nombre} ${g.apellidos}` : 'Tu gestor';
+  document.getElementById('chat-gestoria-nombre').innerText = g?.nombre_gestoria || 'Mi Gestoría';
+}
+
+// ─────────────────────────────────────────────────────────
+// CARGA DE DATOS
+// ─────────────────────────────────────────────────────────
+async function cargarFacturas() {
+  if(!_empresa) return;
+  const { data } = await getSB().from('facturas')
+    .select('*').eq('empresa_id', _empresa.id)
+    .order('fecha_emision', { ascending: false }).limit(100);
+  _facturas = data || [];
+}
+
+async function cargarGastos() {
+  if(!_empresa) return;
+  const { data } = await getSB().from('gastos')
+    .select('*').eq('empresa_id', _empresa.id)
+    .order('fecha', { ascending: false }).limit(100);
+  _gastos = data || [];
+}
+
+async function cargarTrabajadores() {
+  if(!_empresa || !_acceso.perm_laboral) return;
+  const { data: t } = await getSB().from('trabajadores')
+    .select('*').eq('empresa_id', _empresa.id).order('apellidos');
+  _trabajadores = t || [];
+
+  const { data: n } = await getSB().from('nominas')
+    .select('*').eq('empresa_id', _empresa.id)
+    .order('año', { ascending: false });
+  _nominas = n || [];
+
+  const { data: it } = await getSB().from('it_bajas')
+    .select('*').eq('empresa_id', _empresa.id).order('fecha_inicio', { ascending: false });
+  _it_bajas = it || [];
+
+  const { data: v } = await getSB().from('vacaciones')
+    .select('*').eq('empresa_id', _empresa.id).order('fecha_inicio', { ascending: false });
+  _vacaciones = v || [];
+
+  // Poblar selector de nóminas
+  const sel = document.getElementById('nom-filtro-trab');
+  if(sel) {
+    sel.innerHTML = '<option value="">Todos los trabajadores</option>' +
+      _trabajadores.map(t=>`<option value="${t.id}">${t.nombre} ${t.apellidos}</option>`).join('');
+  }
+}
+
+async function cargarSolicitudes() {
+  if(!_empresa) return;
+  const { data } = await getSB().from('solicitudes_laborales')
+    .select('*').eq('empresa_id', _empresa.id)
+    .order('created_at', { ascending: false });
+  _solicitudes = data || [];
+}
+
+async function cargarDocumentos() {
+  if(!_empresa) return;
+  const { data } = await getSB().from('documentos')
+    .select('*').eq('empresa_id', _empresa.id)
+    .eq('visible_portal', true)
+    .order('created_at', { ascending: false });
+  _documentos = data || [];
+}
+
+async function cargarMensajes() {
+  if(!_empresa) return;
+  const { data } = await getSB().from('mensajes')
+    .select('*').eq('empresa_id', _empresa.id)
+    .order('created_at', { ascending: true });
+  _mensajes = data || [];
+  actualizarBadgesMensajes();
+}
+
+// ─────────────────────────────────────────────────────────
+// PANTALLAS Y NAVEGACIÓN
+// ─────────────────────────────────────────────────────────
+function showScreen(name) {
+  document.getElementById('screen-login').style.display = name === 'login' ? 'flex' : 'none';
+  document.getElementById('screen-app').style.display   = name === 'app'   ? 'flex' : 'none';
+}
+
+function navTo(view) {
+  document.querySelectorAll('.view-section').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.sidebar-item').forEach(i=>i.classList.remove('active'));
+  const el  = document.getElementById('v-'+view);
+  const nav = document.getElementById('m-'+view);
+  if(el)  { el.classList.add('active'); el.classList.add('fade-up'); }
+  if(nav) nav.classList.add('active');
+
+  switch(view) {
+    case 'inicio':      renderInicio(); break;
+    case 'facturas':    renderFacturas(); break;
+    case 'gastos':      renderGastos(); break;
+    case 'albaranes':   renderAlbaranes(); break;
+    case 'laboral':     renderLaboralTab(); break;
+    case 'solicitudes': renderSolicitudes(); break;
+    case 'documentos':  renderDocumentos(); break;
+    case 'obligaciones':renderObligaciones(); break;
+    case 'mensajes':    renderMensajes(); marcarMensajesLeidos(); break;
+  }
+  lucide.createIcons();
+}
+
+// ─────────────────────────────────────────────────────────
+// AUTH
+// ─────────────────────────────────────────────────────────
+async function doLogin() {
+  const email = document.getElementById('login-email')?.value.trim();
+  const pass  = document.getElementById('login-pass')?.value.trim();
+  if(!email || !pass) { showLoginError('Introduce email y contraseña.'); return; }
+
+  const sb = getSB();
+  const btn = document.querySelector('#form-login button');
+  if(btn) { btn.innerHTML = '<span class="spinner"></span> Entrando...'; btn.disabled=true; }
+
+  const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+
+  if(btn) { btn.innerHTML = '<i data-lucide="log-in" class="w-4 h-4"></i>Acceder al portal'; btn.disabled=false; lucide.createIcons(); }
+
+  if(error) { showLoginError('Email o contraseña incorrectos.'); return; }
+
+  _user = data.user;
+  await initApp();
+}
+
+function showLoginError(msg) {
+  const el = document.getElementById('login-error');
+  if(el) { el.innerText = msg; el.style.display = 'block'; }
+}
+
+async function doLogout() {
+  if(_chatInterval) clearInterval(_chatInterval);
+  const sb = getSB();
+  if(sb) await sb.auth.signOut();
+  _user = null; _acceso = null; _empresa = null;
+  showScreen('login');
+}
+
+// ─────────────────────────────────────────────────────────
+// INICIO — DASHBOARD
+// ─────────────────────────────────────────────────────────
+function renderInicio() {
+  // KPIs
+  const totalFact    = _facturas.filter(f=>f.tipo==='emitida').reduce((s,f)=>s+(f.total||0),0);
+  const pendCobro    = _facturas.filter(f=>f.estado==='enviada'||f.estado==='vencida').reduce((s,f)=>s+(f.total||0),0);
+  const trabActivos  = _trabajadores.filter(t=>t.activo).length;
+  const solPendientes= _solicitudes.filter(s=>s.estado==='pendiente'||s.estado==='en_proceso').length;
+
+  document.getElementById('inicio-kpis').innerHTML = `
+    <div class="card p-5 border-l-4 border-indigo-500">
+      <p class="text-[10px] font-bold text-slate-400 uppercase">Facturación total</p>
+      <p class="text-2xl font-black text-indigo-600 mt-1">${totalFact.toLocaleString('es',{minimumFractionDigits:2})} €</p>
+    </div>
+    <div class="card p-5 border-l-4 border-amber-400">
+      <p class="text-[10px] font-bold text-slate-400 uppercase">Pendiente de cobro</p>
+      <p class="text-2xl font-black text-amber-600 mt-1">${pendCobro.toLocaleString('es',{minimumFractionDigits:2})} €</p>
+    </div>
+    <div class="card p-5 border-l-4 border-emerald-500">
+      <p class="text-[10px] font-bold text-slate-400 uppercase">Trabajadores activos</p>
+      <p class="text-2xl font-black text-emerald-600 mt-1">${trabActivos}</p>
+    </div>
+    <div class="card p-5 border-l-4 border-violet-400">
+      <p class="text-[10px] font-bold text-slate-400 uppercase">Solicitudes activas</p>
+      <p class="text-2xl font-black text-violet-600 mt-1">${solPendientes}</p>
+    </div>`;
+
+  // Últimas facturas
+  const ultFact = _facturas.slice(0,5);
+  const SC = { cobrada:'bg-emerald-100 text-emerald-700', enviada:'bg-sky-100 text-sky-700', vencida:'bg-red-100 text-red-700', pendiente:'bg-amber-100 text-amber-700', borrador:'bg-slate-100 text-slate-500' };
+  document.getElementById('inicio-facturas').innerHTML = ultFact.length
+    ? ultFact.map(f=>`<div class="px-4 py-3 flex items-center gap-3">
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-bold truncate">${f.numero_completo||f.numero||'—'}</p>
+          <p class="text-[10px] text-slate-400">${f.contacto_nombre||'—'} · ${f.fecha_emision||''}</p>
+        </div>
+        <div class="text-right">
+          <p class="text-sm font-black">${(f.total||0).toLocaleString('es')} €</p>
+          <span class="pill ${SC[f.estado]||'bg-slate-100 text-slate-500'}">${f.estado}</span>
+        </div>
+      </div>`).join('')
+    : '<p class="p-5 text-xs text-center text-slate-300">Sin facturas aún</p>';
+
+  // Solicitudes recientes
+  const ultSol = _solicitudes.slice(0,4);
+  const SS = { pendiente:'bg-amber-100 text-amber-700', en_proceso:'bg-blue-100 text-blue-700', completada:'bg-emerald-100 text-emerald-700', rechazada:'bg-red-100 text-red-700' };
+  document.getElementById('inicio-solicitudes').innerHTML = ultSol.length
+    ? ultSol.map(s=>`<div class="px-4 py-3 flex items-center gap-3">
+        <div class="flex-1"><p class="text-sm font-bold">${tipoSolLabel(s.tipo)}</p>
+          <p class="text-[10px] text-slate-400">${new Date(s.created_at).toLocaleDateString('es')}</p></div>
+        <span class="pill ${SS[s.estado]||'bg-slate-100 text-slate-500'}">${s.estado}</span>
+      </div>`).join('')
+    : '<p class="p-5 text-xs text-center text-slate-300">Sin solicitudes</p>';
+}
+
+// ─────────────────────────────────────────────────────────
+// FACTURAS
+// ─────────────────────────────────────────────────────────
+function renderFacturas() {
+  const tipo   = document.getElementById('fact-filtro-tipo')?.value   || '';
+  const estado = document.getElementById('fact-filtro-estado')?.value || '';
+
+  let data = _facturas.filter(f => {
+    if(tipo   && f.tipo   !== tipo)   return false;
+    if(estado && f.estado !== estado) return false;
+    return true;
+  });
+
+  // KPIs
+  const emitidas   = _facturas.filter(f=>f.tipo==='emitida');
+  const cobradas   = emitidas.filter(f=>f.estado==='cobrada').reduce((s,f)=>s+(f.total||0),0);
+  const pendientes = emitidas.filter(f=>['enviada','pendiente'].includes(f.estado)).reduce((s,f)=>s+(f.total||0),0);
+  const vencidas   = emitidas.filter(f=>f.estado==='vencida').reduce((s,f)=>s+(f.total||0),0);
+  const totalFact  = emitidas.reduce((s,f)=>s+(f.total||0),0);
+
+  document.getElementById('fact-kpis').innerHTML = [
+    { label:'Total facturado', val: totalFact,   color:'indigo' },
+    { label:'Cobrado',         val: cobradas,    color:'emerald' },
+    { label:'Pendiente',       val: pendientes,  color:'amber' },
+    { label:'Vencido',         val: vencidas,    color:'red' },
+  ].map(k=>`<div class="card p-4 border-l-4 border-${k.color}-400">
+    <p class="text-[10px] font-bold text-slate-400 uppercase">${k.label}</p>
+    <p class="text-xl font-black text-${k.color}-600 mt-1">${k.val.toLocaleString('es',{minimumFractionDigits:2})} €</p>
+  </div>`).join('');
+
+  const SC = { cobrada:'bg-emerald-100 text-emerald-700', enviada:'bg-sky-100 text-sky-700', vencida:'bg-red-100 text-red-700', pendiente:'bg-amber-100 text-amber-700', borrador:'bg-slate-100 text-slate-500', registrada:'bg-blue-100 text-blue-700', pagada:'bg-emerald-100 text-emerald-700' };
+
+  document.getElementById('fact-tabla').innerHTML = data.length
+    ? data.map(f=>`<div class="px-5 py-4 flex items-center gap-4 hover:bg-slate-50">
+        <div class="flex-1">
+          <p class="text-sm font-bold text-slate-800">${f.numero_completo||f.numero||'—'}</p>
+          <p class="text-xs text-slate-400">${f.contacto_nombre||'—'} · ${f.tipo}</p>
+        </div>
+        <p class="text-xs text-slate-500">${f.fecha_emision||'—'}</p>
+        <span class="pill ${SC[f.estado]||'bg-slate-100 text-slate-500'}">${f.estado}</span>
+        <p class="font-black text-sm w-28 text-right">${(f.total||0).toLocaleString('es',{minimumFractionDigits:2})} €</p>
+      </div>`).join('')
+    : '<p class="p-8 text-xs text-center text-slate-300">No hay facturas con estos filtros</p>';
+}
+
+// ─────────────────────────────────────────────────────────
+// GASTOS & OCR
+// ─────────────────────────────────────────────────────────
+async function subirGastos(input) {
+  const files = Array.from(input.files);
+  if(!files.length) return;
+
+  const queue = document.getElementById('ocr-queue');
+
+  for(const file of files) {
+    const rowId = 'ocr-' + Math.random().toString(36).substr(2,8);
+    queue.insertAdjacentHTML('afterbegin', `
+      <div id="${rowId}" class="flex items-center gap-3 bg-white border border-slate-200 rounded-xl p-3">
+        <div class="spinner" style="border-color:#e2e8f0;border-top-color:#4f46e5;flex-shrink:0"></div>
+        <div class="flex-1"><p class="text-sm font-bold">${file.name}</p><p class="text-xs text-slate-400">Subiendo...</p></div>
+      </div>`);
+
+    try {
+      const path  = `${_empresa.id}/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g,'_')}`;
+      const { error: uploadErr } = await getSB().storage.from('ocr_uploads').upload(path, file);
+
+      if(uploadErr) throw uploadErr;
+
+      // Registrar gasto en BD (pendiente de procesamiento por el gestor)
+      const { error: dbErr } = await getSB().from('gastos').insert({
+        empresa_id:    _empresa.id,
+        proveedor:     'Por clasificar',
+        fecha:         new Date().toISOString().split('T')[0],
+        categoria:     'Pendiente',
+        base_imponible: 0,
+        tipo_iva:       21,
+        cuota_iva:      0,
+        total:          0,
+        estado:         'pendiente',
+        ocr_confianza:  'pendiente',
+        documento_url:  path,
+      });
+
+      if(dbErr) throw dbErr;
+
+      document.getElementById(rowId).innerHTML = `
+        <div style="width:18px;height:18px;background:#d1fae5;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i data-lucide="check" style="width:11px;height:11px;color:#059669"></i></div>
+        <div class="flex-1"><p class="text-sm font-bold">${file.name}</p><p class="text-xs text-emerald-600">Subido · Tu gestor lo procesará</p></div>`;
+      lucide.createIcons();
+      await cargarGastos();
+
+    } catch(e) {
+      document.getElementById(rowId).innerHTML = `
+        <div style="width:18px;height:18px;background:#fee2e2;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i data-lucide="x" style="width:11px;height:11px;color:#dc2626"></i></div>
+        <div class="flex-1"><p class="text-sm font-bold">${file.name}</p><p class="text-xs text-red-500">Error al subir · ${e.message}</p></div>`;
+      lucide.createIcons();
+    }
+  }
+  input.value = '';
+}
+
+function handleOCRDrop(e) {
+  e.preventDefault();
+  document.getElementById('ocr-dropzone').style.borderColor = '';
+  const dt = e.dataTransfer;
+  if(dt?.files?.length) {
+    const inp = document.getElementById('ocr-input');
+    inp.files = dt.files;
+    subirGastos(inp);
+  }
+}
+
+function renderGastos() {
+  const filtro = document.getElementById('gastos-filtro')?.value || '';
+  const data   = filtro ? _gastos.filter(g=>g.estado===filtro) : _gastos;
+  const SC = { pendiente:'bg-amber-100 text-amber-700', conciliado:'bg-emerald-100 text-emerald-700', pagado:'bg-blue-100 text-blue-700' };
+
+  document.getElementById('gastos-lista').innerHTML = data.length
+    ? data.map(g=>`<div class="px-5 py-4 flex items-center gap-4 hover:bg-slate-50">
+        <div class="flex-1">
+          <p class="text-sm font-bold">${g.proveedor}</p>
+          <p class="text-xs text-slate-400">${g.categoria} · ${g.fecha}</p>
+        </div>
+        <span class="pill ${SC[g.estado]||'bg-slate-100 text-slate-500'}">${g.estado}</span>
+        <p class="font-black text-sm w-24 text-right">${(g.total||0).toLocaleString('es',{minimumFractionDigits:2})} €</p>
+      </div>`).join('')
+    : '<p class="p-8 text-xs text-center text-slate-300">Sin gastos registrados</p>';
+}
+
+// ─────────────────────────────────────────────────────────
+// ALBARANES
+// ─────────────────────────────────────────────────────────
+function openModalAlbaran() {
+  _albaranLineas = [{ desc:'', cantidad:1, unidad:'ud', precio:0 }];
+  document.getElementById('alb-fecha').value = new Date().toISOString().split('T')[0];
+  document.getElementById('alb-destinatario').value = '';
+  document.getElementById('alb-referencia').value = '';
+  document.getElementById('alb-notas').value = '';
+  renderLineasAlbaran();
+  openModal('modal-albaran');
+}
+
+function addLineaAlbaran() {
+  _albaranLineas.push({ desc:'', cantidad:1, unidad:'ud', precio:0 });
+  renderLineasAlbaran();
+}
+
+function renderLineasAlbaran() {
+  document.getElementById('alb-lineas').innerHTML = _albaranLineas.map((l,i)=>`
+    <div class="grid grid-cols-12 gap-2 items-center">
+      <input class="input col-span-5 text-xs" placeholder="Descripción" value="${l.desc}"
+        oninput="_albaranLineas[${i}].desc=this.value">
+      <input class="input col-span-2 text-xs text-center" type="number" placeholder="Cant." value="${l.cantidad}"
+        oninput="_albaranLineas[${i}].cantidad=parseFloat(this.value)||1">
+      <input class="input col-span-2 text-xs" placeholder="Unidad" value="${l.unidad}"
+        oninput="_albaranLineas[${i}].unidad=this.value">
+      <input class="input col-span-2 text-xs text-right" type="number" placeholder="Precio" value="${l.precio||''}"
+        oninput="_albaranLineas[${i}].precio=parseFloat(this.value)||0">
+      <button onclick="_albaranLineas.splice(${i},1);renderLineasAlbaran()" class="col-span-1 text-slate-300 hover:text-red-400 flex justify-center">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+    </div>`).join('');
+  lucide.createIcons();
+}
+
+async function generarAlbaran() {
+  const dest = document.getElementById('alb-destinatario').value.trim();
+  const ref  = document.getElementById('alb-referencia').value.trim();
+  if(!dest) { showToast('Indica el destinatario.'); return; }
+
+  const num = `ALB-${new Date().getFullYear()}-${String(_albaranes.length+1).padStart(3,'0')}`;
+  const nuevo = {
+    num, dest, ref,
+    fecha: document.getElementById('alb-fecha').value,
+    notas: document.getElementById('alb-notas').value,
+    lineas: [..._albaranLineas],
+    empresa: _empresa?.razon_social,
+  };
+  _albaranes.unshift(nuevo);
+  closeModal('modal-albaran');
+  renderAlbaranes();
+  showToast('✓ Albarán generado correctamente');
+
+  // Generar PDF automáticamente
+  await descargarAlbaranPDF(nuevo);
+}
+
+function renderAlbaranes() {
+  const el = document.getElementById('albaranes-lista');
+  el.innerHTML = _albaranes.length
+    ? _albaranes.map((a,i)=>`
+      <div class="px-5 py-4 flex items-center gap-4 hover:bg-slate-50">
+        <div class="flex-1">
+          <p class="text-sm font-bold">${a.num}</p>
+          <p class="text-xs text-slate-400">${a.dest} · ${a.fecha}</p>
+          <p class="text-xs text-slate-300">${a.ref||'—'}</p>
+        </div>
+        <span class="pill bg-emerald-100 text-emerald-700">${a.lineas?.length||0} líneas</span>
+        <button onclick="descargarAlbaranPDF(_albaranes[${i}])" class="btn btn-ghost text-xs">
+          <i data-lucide="download" class="w-3 h-3"></i>PDF
+        </button>
+      </div>`).join('')
+    : '<p class="p-8 text-xs text-center text-slate-300">No hay albaranes generados aún</p>';
+  lucide.createIcons();
+}
+
+async function descargarAlbaranPDF(alb) {
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+  const W = 210, ml = 20, mr = 20, usableW = W - ml - mr;
+  let y = 20;
+
+  // Cabecera
+  pdf.setFillColor(79, 70, 229);
+  pdf.rect(0, 0, W, 35, 'F');
+  pdf.setTextColor(255, 255, 255);
+  pdf.setFontSize(18); pdf.setFont(undefined,'bold');
+  pdf.text('ALBARÁN DE ENTREGA', ml, 15);
+  pdf.setFontSize(10); pdf.setFont(undefined,'normal');
+  pdf.text(`${alb.num}   ·   ${alb.fecha}`, ml, 24);
+  pdf.text(_empresa?.razon_social || '', W-mr, 15, { align:'right' });
+  y = 45;
+
+  // Datos
+  pdf.setTextColor(30, 41, 59);
+  pdf.setFontSize(9);
+  pdf.text(`Destinatario: ${alb.dest}`, ml, y); y += 6;
+  if(alb.ref) { pdf.text(`Referencia: ${alb.ref}`, ml, y); y += 6; }
+  y += 4;
+
+  // Tabla de líneas
+  pdf.setFillColor(248, 250, 252);
+  pdf.rect(ml, y, usableW, 8, 'F');
+  pdf.setFont(undefined,'bold');
+  pdf.text('Descripción', ml+2, y+5.5);
+  pdf.text('Cant.', ml+110, y+5.5, { align:'right' });
+  pdf.text('Unidad', ml+130, y+5.5, { align:'right' });
+  pdf.text('Precio', ml+150, y+5.5, { align:'right' });
+  pdf.text('Importe', ml+usableW-2, y+5.5, { align:'right' });
+  y += 10;
+
+  pdf.setFont(undefined,'normal');
+  let totalAlb = 0;
+  (alb.lineas||[]).forEach(l => {
+    const importe = (l.cantidad||1) * (l.precio||0);
+    totalAlb += importe;
+    pdf.line(ml, y-1, ml+usableW, y-1);
+    pdf.text(l.desc||'—', ml+2, y+4);
+    pdf.text(String(l.cantidad||1), ml+110, y+4, { align:'right' });
+    pdf.text(l.unidad||'ud', ml+130, y+4, { align:'right' });
+    pdf.text(`${(l.precio||0).toFixed(2)} €`, ml+150, y+4, { align:'right' });
+    pdf.text(`${importe.toFixed(2)} €`, ml+usableW-2, y+4, { align:'right' });
+    y += 9;
+  });
+
+  pdf.line(ml, y, ml+usableW, y); y += 5;
+  pdf.setFont(undefined,'bold');
+  pdf.text('TOTAL', ml+usableW-50, y+4);
+  pdf.text(`${totalAlb.toFixed(2)} €`, ml+usableW-2, y+4, { align:'right' }); y += 12;
+
+  if(alb.notas) {
+    pdf.setFont(undefined,'normal'); pdf.setFontSize(8);
+    pdf.text(`Notas: ${alb.notas}`, ml, y);
+  }
+
+  // Footer
+  pdf.setTextColor(148, 163, 184); pdf.setFontSize(8);
+  pdf.text('Documento generado con Nexus AI · nexusai.es', W/2, 285, { align:'center' });
+
+  pdf.save(`${alb.num}.pdf`);
+}
+
+// ─────────────────────────────────────────────────────────
+// LABORAL (solo lectura)
+// ─────────────────────────────────────────────────────────
+function setLaboralTab(btn, tab) {
+  document.querySelectorAll('#v-laboral .tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  ['trabajadores','nominas','bajas','vacaciones'].forEach(t=>document.getElementById('lt-'+t)?.classList.add('hidden'));
+  document.getElementById('lt-'+tab)?.classList.remove('hidden');
+  switch(tab) {
+    case 'trabajadores': renderTrabajadores(); break;
+    case 'nominas':      renderNominas(); break;
+    case 'bajas':        renderBajas(); break;
+    case 'vacaciones':   renderVacacionesList(); break;
+  }
+  lucide.createIcons();
+}
+
+function renderLaboralTab() {
+  renderTrabajadores();
+}
+
+function renderTrabajadores() {
+  const activos   = _trabajadores.filter(t=>t.activo);
+  const inactivos = _trabajadores.filter(t=>!t.activo);
+
+  document.getElementById('trabajadores-grid').innerHTML = [
+    ...activos.map(t => renderTrabajadorCard(t, true)),
+    ...inactivos.map(t => renderTrabajadorCard(t, false))
+  ].join('') || '<p class="col-span-3 p-8 text-xs text-center text-slate-300">Sin trabajadores registrados</p>';
+  lucide.createIcons();
+}
+
+function renderTrabajadorCard(t, activo) {
+  const ini = ((t.nombre||'?')[0] + (t.apellidos||'')[0]).toUpperCase();
+  const itActiva = _it_bajas.some(it=>it.trabajador_id===t.id && !it.fecha_alta);
+  return `
+    <div class="card p-5 ${!activo?'opacity-60':''}">
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-10 h-10 ai-gradient rounded-xl flex items-center justify-center text-white font-black text-sm flex-shrink-0">${ini}</div>
+        <div class="flex-1 min-w-0">
+          <p class="font-black text-slate-800 truncate">${t.nombre} ${t.apellidos}</p>
+          <p class="text-xs text-slate-400">${t.categoria||'—'}</p>
+        </div>
+        ${itActiva ? '<span class="pill bg-amber-100 text-amber-700">IT</span>' : ''}
+        ${!activo  ? '<span class="pill bg-slate-100 text-slate-500">Baja</span>' : ''}
+      </div>
+      <div class="space-y-1.5 text-xs text-slate-500">
+        <div class="flex justify-between"><span>Contrato</span><span class="font-bold">${t.tipo_contrato||'—'}</span></div>
+        <div class="flex justify-between"><span>Salario bruto</span><span class="font-bold">${(t.salario_bruto||0).toLocaleString('es')} €/mes</span></div>
+        <div class="flex justify-between"><span>Alta desde</span><span class="font-bold">${t.fecha_alta||'—'}</span></div>
+        <div class="flex justify-between"><span>IRPF</span><span class="font-bold">${t.irpf_pct||'—'}%</span></div>
+      </div>
+      <div class="flex gap-2 mt-4">
+        <button onclick="openModalSolicitud('cambio_datos','${t.id}')" class="btn btn-ghost text-xs flex-1 justify-center">
+          <i data-lucide="edit-2" class="w-3 h-3"></i>Cambiar datos
+        </button>
+        <button onclick="navTo('nominas');document.getElementById('nom-filtro-trab').value='${t.id}';renderNominas()" class="btn btn-ghost text-xs">
+          <i data-lucide="file-text" class="w-3 h-3"></i>Nóminas
+        </button>
+      </div>
+    </div>`;
+}
+
+function renderNominas() {
+  const filtTrab = document.getElementById('nom-filtro-trab')?.value || '';
+  const filtYear = parseInt(document.getElementById('nom-filtro-year')?.value) || 2026;
+  const MESES = ['—','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+  let data = _nominas.filter(n => {
+    if(filtTrab && n.trabajador_id !== filtTrab) return false;
+    if(n.año !== filtYear) return false;
+    return true;
+  });
+
+  document.getElementById('nominas-lista').innerHTML = data.length
+    ? data.map(n => {
+        const trab = _trabajadores.find(t=>t.id===n.trabajador_id);
+        return `<div class="px-5 py-4 flex items-center gap-4 hover:bg-slate-50">
+          <div class="flex-1">
+            <p class="text-sm font-bold">${trab ? trab.nombre+' '+trab.apellidos : '—'}</p>
+            <p class="text-xs text-slate-400">${MESES[n.mes]||n.mes} ${n.año} · Estado: ${n.estado}</p>
+          </div>
+          <div class="text-right">
+            <p class="text-sm font-black text-slate-700">${(n.liquido||0).toLocaleString('es',{minimumFractionDigits:2})} €</p>
+            <p class="text-[10px] text-slate-400">neto</p>
+          </div>
+          ${n.pdf_url ? `<button onclick="descargarNominaPortal('${n.pdf_url}')" class="btn btn-ghost text-xs">
+            <i data-lucide="download" class="w-3 h-3"></i>PDF</button>` : '<span class="text-xs text-slate-300">Sin PDF</span>'}
+        </div>`;
+      }).join('')
+    : '<p class="p-8 text-xs text-center text-slate-300">Sin nóminas para este período</p>';
+  lucide.createIcons();
+}
+
+async function descargarNominaPortal(path) {
+  const { data, error } = await getSB().storage.from('nominas').createSignedUrl(path, 300);
+  if(error) { showToast('Error al obtener el PDF.'); return; }
+  window.open(data.signedUrl, '_blank');
+}
+
+function renderBajas() {
+  const SC = { comun:'bg-amber-100 text-amber-700', accidente_trabajo:'bg-red-100 text-red-700', maternidad:'bg-pink-100 text-pink-700', paternidad:'bg-blue-100 text-blue-700' };
+  document.getElementById('bajas-lista').innerHTML = _it_bajas.length
+    ? _it_bajas.map(it=>{
+        const trab = _trabajadores.find(t=>t.id===it.trabajador_id);
+        const activa = !it.fecha_alta;
+        return `<div class="px-5 py-4 flex items-center gap-4 hover:bg-slate-50">
+          <div class="flex-1">
+            <p class="text-sm font-bold">${trab ? trab.nombre+' '+trab.apellidos : '—'}</p>
+            <p class="text-xs text-slate-400">Inicio: ${it.fecha_inicio} · ${it.fecha_alta?'Alta: '+it.fecha_alta:'Activa'}</p>
+          </div>
+          <span class="pill ${SC[it.tipo_it]||'bg-slate-100 text-slate-500'}">${it.tipo_it?.replace('_',' ')}</span>
+          ${activa ? '<span class="pill bg-red-100 text-red-600">Activa</span>' : '<span class="pill bg-slate-100 text-slate-400">Cerrada</span>'}
+        </div>`;
+      }).join('')
+    : '<p class="p-8 text-xs text-center text-slate-300">Sin bajas registradas</p>';
+}
+
+function renderVacacionesList() {
+  const SC = { pendiente:'bg-amber-100 text-amber-700', aprobada:'bg-emerald-100 text-emerald-700', rechazada:'bg-red-100 text-red-700' };
+  document.getElementById('vacaciones-lista').innerHTML = _vacaciones.length
+    ? _vacaciones.map(v=>{
+        const trab = _trabajadores.find(t=>t.id===v.trabajador_id);
+        return `<div class="px-5 py-4 flex items-center gap-4 hover:bg-slate-50">
+          <div class="flex-1">
+            <p class="text-sm font-bold">${trab ? trab.nombre+' '+trab.apellidos : '—'}</p>
+            <p class="text-xs text-slate-400">${v.tipo} · ${v.fecha_inicio} → ${v.fecha_fin} · ${v.dias} días</p>
+          </div>
+          <span class="pill ${SC[v.estado]||'bg-slate-100 text-slate-500'}">${v.estado}</span>
+        </div>`;
+      }).join('')
+    : '<p class="p-8 text-xs text-center text-slate-300">Sin solicitudes de vacaciones</p>';
+}
+
+// ─────────────────────────────────────────────────────────
+// SOLICITUDES
+// ─────────────────────────────────────────────────────────
+function openModalSolicitud(tipo, trabajadorId) {
+  const sel = document.getElementById('sol-tipo');
+  if(sel) sel.value = tipo || 'general';
+  document.getElementById('sol-notas').value = '';
+  document.getElementById('sol-prioridad').value = 'normal';
+  document.querySelectorAll('#modal-solicitud .tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelector('#modal-solicitud .tab-btn[data-p="normal"]')?.classList.add('active');
+  actualizarFormSolicitud(trabajadorId);
+  openModal('modal-solicitud');
+}
+
+function actualizarFormSolicitud(prefillTrabId) {
+  const tipo = document.getElementById('sol-tipo')?.value || 'general';
+  const tLbl = tipoSolLabel(tipo);
+  document.getElementById('modal-sol-titulo').innerText = tLbl;
+
+  const campos = document.getElementById('sol-campos-dinamicos');
+  let html = '';
+
+  // Selector de trabajador (para todos los tipos laborales)
+  const necesitaTrab = ['alta_ss','baja_ss','vacaciones','it_baja','it_alta','cambio_datos','nuevo_contrato','extincion'].includes(tipo);
+  if(necesitaTrab) {
+    const opsTrab = _trabajadores.map(t=>`<option value="${t.id}" ${prefillTrabId===t.id?'selected':''}>${t.nombre} ${t.apellidos}</option>`).join('');
+    html += `<div>
+      <label class="label">Trabajador</label>
+      <select class="input" id="sol-trab-id" onchange="onTrabSolChange()">
+        <option value="">— Seleccionar o nuevo →</option>${opsTrab}
+        <option value="nuevo">➕ Nuevo trabajador</option>
+      </select>
+    </div>
+    <div id="sol-nuevo-trab-form" class="hidden space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+      <p class="text-xs font-bold text-slate-600 uppercase">Datos del nuevo trabajador</p>
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="label">Nombre</label><input id="sol-trab-nombre" class="input text-sm" placeholder="Nombre"></div>
+        <div><label class="label">Apellidos</label><input id="sol-trab-apellidos" class="input text-sm" placeholder="Apellidos"></div>
+        <div><label class="label">NIF/NIE</label><input id="sol-trab-nif" class="input text-sm" placeholder="12345678A"></div>
+        <div><label class="label">Email</label><input id="sol-trab-email" class="input text-sm" placeholder="trabajador@email.com"></div>
+      </div>
+    </div>`;
+  }
+
+  // Campos específicos por tipo
+  if(tipo === 'alta_ss') {
+    html += `<div class="grid grid-cols-2 gap-3">
+      <div><label class="label">Tipo de contrato</label>
+        <select class="input text-sm" id="sol-tipo-contrato">
+          <option value="indefinido">Indefinido</option>
+          <option value="temporal">Temporal</option>
+          <option value="practicas">Prácticas</option>
+          <option value="formacion">Formación</option>
+        </select></div>
+      <div><label class="label">Fecha de inicio</label><input type="date" id="sol-fecha-inicio" class="input text-sm"></div>
+      <div><label class="label">Categoría / puesto</label><input id="sol-categoria" class="input text-sm" placeholder="Administrativo, Técnico..."></div>
+      <div><label class="label">Salario bruto mensual</label><input type="number" id="sol-salario" class="input text-sm" placeholder="1800"></div>
+    </div>`;
+  } else if(tipo === 'baja_ss' || tipo === 'extincion') {
+    html += `<div class="grid grid-cols-2 gap-3">
+      <div><label class="label">Fecha efectos</label><input type="date" id="sol-fecha-efectos" class="input text-sm"></div>
+      <div><label class="label">Motivo</label>
+        <select class="input text-sm" id="sol-motivo-baja">
+          <option value="voluntaria">Baja voluntaria</option>
+          <option value="despido">Despido</option>
+          <option value="mutuo_acuerdo">Mutuo acuerdo</option>
+          <option value="fin_contrato">Fin de contrato</option>
+          <option value="jubilacion">Jubilación</option>
+        </select></div>
+    </div>`;
+  } else if(tipo === 'vacaciones') {
+    html += `<div class="grid grid-cols-2 gap-3">
+      <div><label class="label">Fecha inicio</label><input type="date" id="sol-vac-inicio" class="input text-sm"></div>
+      <div><label class="label">Fecha fin</label><input type="date" id="sol-vac-fin" class="input text-sm"></div>
+      <div><label class="label">Tipo</label>
+        <select class="input text-sm" id="sol-vac-tipo">
+          <option value="vacaciones">Vacaciones anuales</option>
+          <option value="permiso_retribuido">Permiso retribuido</option>
+          <option value="asuntos_propios">Asuntos propios</option>
+        </select></div>
+    </div>`;
+  } else if(tipo === 'it_baja') {
+    html += `<div class="grid grid-cols-2 gap-3">
+      <div><label class="label">Fecha de baja</label><input type="date" id="sol-it-inicio" class="input text-sm"></div>
+      <div><label class="label">Tipo de IT</label>
+        <select class="input text-sm" id="sol-it-tipo">
+          <option value="comun">Enfermedad común</option>
+          <option value="accidente_trabajo">Accidente de trabajo</option>
+          <option value="maternidad">Maternidad/Paternidad</option>
+        </select></div>
+      <div class="col-span-2"><label class="label">Código diagnóstico (opcional)</label><input id="sol-it-codigo" class="input text-sm" placeholder="A00, J02..."></div>
+    </div>`;
+  } else if(tipo === 'it_alta') {
+    html += `<div><label class="label">Fecha de alta médica</label><input type="date" id="sol-it-alta-fecha" class="input text-sm"></div>`;
+  }
+
+  campos.innerHTML = html;
+
+  // Set today as default date
+  const hoy = new Date().toISOString().split('T')[0];
+  ['sol-fecha-inicio','sol-fecha-efectos','sol-vac-inicio','sol-vac-fin','sol-it-inicio','sol-it-alta-fecha'].forEach(id=>{
+    const el = document.getElementById(id); if(el && !el.value) el.value = hoy;
+  });
+
+  lucide.createIcons();
+}
+
+function onTrabSolChange() {
+  const val = document.getElementById('sol-trab-id')?.value;
+  const frm = document.getElementById('sol-nuevo-trab-form');
+  if(frm) frm.classList.toggle('hidden', val !== 'nuevo');
+}
+
+function setPrioridad(btn, val) {
+  document.querySelectorAll('#modal-solicitud .tab-btn[data-p]').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('sol-prioridad').value = val;
+}
+
+async function enviarSolicitud() {
+  if(!_empresa) { showToast('Error: empresa no cargada.'); return; }
+  const tipo      = document.getElementById('sol-tipo')?.value;
+  const notas     = document.getElementById('sol-notas')?.value;
+  const prioridad = document.getElementById('sol-prioridad')?.value || 'normal';
+
+  // Recopilar datos específicos del tipo
+  const datos = {};
+  const trabId = document.getElementById('sol-trab-id')?.value;
+  if(trabId === 'nuevo') {
+    datos.trabajador_nuevo = {
+      nombre:    document.getElementById('sol-trab-nombre')?.value,
+      apellidos: document.getElementById('sol-trab-apellidos')?.value,
+      nif:       document.getElementById('sol-trab-nif')?.value,
+      email:     document.getElementById('sol-trab-email')?.value,
+    };
+  } else if(trabId) {
+    datos.trabajador_id = trabId;
+    const t = _trabajadores.find(x=>x.id===trabId);
+    if(t) datos.trabajador_nombre = `${t.nombre} ${t.apellidos}`;
+  }
+
+  // Datos específicos
+  if(tipo==='alta_ss') {
+    datos.tipo_contrato  = document.getElementById('sol-tipo-contrato')?.value;
+    datos.fecha_inicio   = document.getElementById('sol-fecha-inicio')?.value;
+    datos.categoria      = document.getElementById('sol-categoria')?.value;
+    datos.salario        = document.getElementById('sol-salario')?.value;
+  } else if(['baja_ss','extincion'].includes(tipo)) {
+    datos.fecha_efectos  = document.getElementById('sol-fecha-efectos')?.value;
+    datos.motivo         = document.getElementById('sol-motivo-baja')?.value;
+  } else if(tipo==='vacaciones') {
+    datos.fecha_inicio   = document.getElementById('sol-vac-inicio')?.value;
+    datos.fecha_fin      = document.getElementById('sol-vac-fin')?.value;
+    datos.tipo_permiso   = document.getElementById('sol-vac-tipo')?.value;
+  } else if(tipo==='it_baja') {
+    datos.fecha_inicio   = document.getElementById('sol-it-inicio')?.value;
+    datos.tipo_it        = document.getElementById('sol-it-tipo')?.value;
+    datos.codigo         = document.getElementById('sol-it-codigo')?.value;
+  } else if(tipo==='it_alta') {
+    datos.fecha_alta     = document.getElementById('sol-it-alta-fecha')?.value;
+  }
+
+  const { error } = await getSB().from('solicitudes_laborales').insert({
+    empresa_id:        _empresa.id,
+    gestor_id:         _acceso.gestor_id,
+    portal_acceso_id:  _acceso.id,
+    origen:            'portal',
+    tipo,
+    trabajador_id:     trabId && trabId !== 'nuevo' ? trabId : null,
+    trabajador_nombre: datos.trabajador_nombre || datos.trabajador_nuevo?.nombre || null,
+    datos,
+    prioridad,
+    notas_cliente:     notas,
+    estado:            'pendiente',
+  });
+
+  if(error) { showToast('Error al enviar: ' + error.message); return; }
+
+  await cargarSolicitudes();
+  closeModal('modal-solicitud');
+  renderSolicitudes();
+  showToast('✓ Solicitud enviada a tu gestor');
+}
+
+function setSolicitudTab(btn, estado) {
+  document.querySelectorAll('#v-solicitudes .tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  _solicitudTabActual = estado;
+  renderSolicitudes();
+}
+
+function renderSolicitudes() {
+  const data = _solicitudTabActual === 'todas'
+    ? _solicitudes
+    : _solicitudes.filter(s=>s.estado===_solicitudTabActual);
+
+  const SC = { pendiente:'bg-amber-100 text-amber-700', en_proceso:'bg-blue-100 text-blue-700', completada:'bg-emerald-100 text-emerald-700', rechazada:'bg-red-100 text-red-700' };
+  const PC = { urgente:'border-l-red-500', alta:'border-l-amber-500', normal:'border-l-slate-200', baja:'border-l-slate-100' };
+
+  document.getElementById('solicitudes-lista').innerHTML = data.length
+    ? data.map(s=>`
+      <div class="solicitud-card border-l-4 ${PC[s.prioridad]||'border-l-slate-200'}">
+        <div class="flex items-start justify-between">
+          <div class="flex-1">
+            <div class="flex items-center gap-2 mb-1">
+              <p class="font-black text-slate-800 text-sm">${tipoSolLabel(s.tipo)}</p>
+              ${s.prioridad==='urgente'?'<span class="pill bg-red-100 text-red-600">⚡ Urgente</span>':''}
+              ${s.prioridad==='alta'?'<span class="pill bg-amber-100 text-amber-700">↑ Alta</span>':''}
+            </div>
+            <p class="text-xs text-slate-400">${new Date(s.created_at).toLocaleDateString('es',{day:'2-digit',month:'short',year:'numeric'})}</p>
+            ${s.trabajador_nombre?`<p class="text-xs text-slate-500 mt-1">Trabajador: ${s.trabajador_nombre}</p>`:''}
+            ${s.notas_cliente?`<p class="text-xs text-slate-500 mt-1 italic">"${s.notas_cliente}"</p>`:''}
+            ${s.notas_gestor?`<div class="mt-2 bg-indigo-50 border border-indigo-100 rounded-lg p-2"><p class="text-xs font-bold text-indigo-700">Respuesta gestor:</p><p class="text-xs text-indigo-600">${s.notas_gestor}</p></div>`:''}
+          </div>
+          <span class="pill ${SC[s.estado]||'bg-slate-100 text-slate-500'} ml-3 flex-shrink-0">${s.estado.replace('_',' ')}</span>
+        </div>
+      </div>`).join('')
+    : '<div class="text-center py-12 text-slate-300"><i data-lucide="inbox" class="w-10 h-10 mx-auto mb-2"></i><p class="text-sm">Sin solicitudes</p></div>';
+
+  lucide.createIcons();
+}
+
+function tipoSolLabel(tipo) {
+  const M = { general:'Consulta general', alta_ss:'Alta en SS', baja_ss:'Baja en SS', vacaciones:'Vacaciones/Permiso', it_baja:'IT / Baja médica', it_alta:'Alta médica', cambio_datos:'Cambio de datos', nuevo_contrato:'Nuevo contrato', extincion:'Extinción contrato' };
+  return M[tipo] || tipo;
+}
+
+// ─────────────────────────────────────────────────────────
+// DOCUMENTOS
+// ─────────────────────────────────────────────────────────
+let _docTabActual = 'todos';
+function setDocTab(btn, cat) {
+  document.querySelectorAll('#v-documentos .tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  _docTabActual = cat;
+  renderDocumentos();
+}
+
+async function subirDocumentos(input) {
+  const files = Array.from(input.files);
+  for(const file of files) {
+    const path = `${_empresa.id}/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g,'_')}`;
+    const { error: upErr } = await getSB().storage.from('documentos').upload(path, file);
+    if(upErr) { showToast('Error al subir: '+file.name); continue; }
+
+    await getSB().from('documentos').insert({
+      empresa_id:      _empresa.id,
+      gestor_id:       _acceso.gestor_id,
+      origen:          'cliente',
+      portal_acceso_id: _acceso.id,
+      nombre:          file.name,
+      categoria:       'general',
+      storage_path:    path,
+      mime_type:       file.type,
+      tamaño_bytes:    file.size,
+      visible_portal:  true,
+    });
+    showToast('✓ '+file.name+' subido correctamente');
+    await cargarDocumentos();
+    renderDocumentos();
+  }
+  input.value = '';
+}
+
+function renderDocumentos() {
+  const data = _docTabActual === 'todos'
+    ? _documentos
+    : _documentos.filter(d=>d.categoria===_docTabActual);
+
+  const ICON = { impuesto:'receipt', laboral:'briefcase', contable:'book-open', nomina:'file-text', bancario:'landmark', general:'file', legal:'scale' };
+  const COL  = { impuesto:'indigo', laboral:'emerald', contable:'blue', nomina:'violet', general:'slate' };
+
+  document.getElementById('docs-lista').innerHTML = data.length
+    ? data.map(d=>`
+      <div class="flex items-center gap-3 bg-white border border-slate-200 rounded-xl p-4 hover:border-indigo-200 transition">
+        <div class="w-10 h-10 bg-${COL[d.categoria]||'slate'}-100 rounded-xl flex items-center justify-center flex-shrink-0">
+          <i data-lucide="${ICON[d.categoria]||'file'}" class="w-5 h-5 text-${COL[d.categoria]||'slate'}-500"></i>
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="font-bold text-slate-800 text-sm truncate">${d.nombre}</p>
+          <p class="text-xs text-slate-400">${d.categoria} · ${new Date(d.created_at).toLocaleDateString('es')} · ${d.origen==='cliente'?'Subido por ti':'Del gestor'}</p>
+        </div>
+        <button onclick="descargarDocumento('${d.storage_path}','${d.nombre}')" class="btn btn-ghost text-xs">
+          <i data-lucide="download" class="w-3 h-3"></i>Descargar
+        </button>
+      </div>`).join('')
+    : '<div class="text-center py-12 text-slate-300"><i data-lucide="folder-open" class="w-10 h-10 mx-auto mb-2"></i><p class="text-sm">Sin documentos en esta categoría</p></div>';
+  lucide.createIcons();
+}
+
+async function descargarDocumento(path, nombre) {
+  const { data, error } = await getSB().storage.from('documentos').createSignedUrl(path, 300);
+  if(error) { showToast('Error al obtener el archivo.'); return; }
+  const a = document.createElement('a');
+  a.href = data.signedUrl; a.download = nombre; a.click();
+}
+
+// ─────────────────────────────────────────────────────────
+// OBLIGACIONES FISCALES
+// ─────────────────────────────────────────────────────────
+function renderObligaciones() {
+  // Obligaciones demo basadas en el tipo de empresa
+  const oblig = generarObligaciones();
+  const ahora = new Date();
+
+  const pendientes  = oblig.filter(o=>new Date(o.fecha_limite)>=ahora && o.estado==='pendiente').length;
+  const presentadas = oblig.filter(o=>o.estado==='presentado').length;
+  const proximas    = oblig.filter(o=>{ const d=new Date(o.fecha_limite); return d>=ahora && d<new Date(ahora.getTime()+30*86400000) && o.estado==='pendiente'; }).length;
+
+  document.getElementById('oblig-kpis').innerHTML = [
+    { label:'Pendientes',  val:pendientes,  color:'amber' },
+    { label:'Próximas 30d',val:proximas,    color:'red' },
+    { label:'Presentadas', val:presentadas, color:'emerald' },
+  ].map(k=>`<div class="card p-5 border-l-4 border-${k.color}-400">
+    <p class="text-[10px] font-bold text-slate-400 uppercase">${k.label}</p>
+    <p class="text-3xl font-black text-${k.color}-600 mt-1">${k.val}</p>
+  </div>`).join('');
+
+  const SC = { pendiente:'bg-amber-100 text-amber-700', presentado:'bg-emerald-100 text-emerald-700', pagado:'bg-blue-100 text-blue-700', en_proceso:'bg-indigo-100 text-indigo-700' };
+
+  document.getElementById('oblig-lista').innerHTML = oblig.map(o=>{
+    const dias = Math.ceil((new Date(o.fecha_limite)-ahora)/(86400000));
+    const urgente = dias <= 7 && o.estado==='pendiente';
+    return `<div class="px-5 py-4 flex items-center gap-4 hover:bg-slate-50 ${urgente?'bg-red-50':''}">
+      <div class="flex-1">
+        <p class="text-sm font-bold ${urgente?'text-red-700':'text-slate-800'}">Modelo ${o.modelo} — ${o.periodo}</p>
+        <p class="text-xs text-slate-400">Límite: ${new Date(o.fecha_limite).toLocaleDateString('es')} · ${urgente?'⚡ '+dias+' días':dias>0?dias+' días':o.estado==='presentado'?'Presentado':'Vencido'}</p>
+      </div>
+      <span class="pill ${SC[o.estado]||'bg-slate-100 text-slate-500'}">${o.estado}</span>
+    </div>`;
+  }).join('');
+}
+
+function generarObligaciones() {
+  const año = 2026;
+  return [
+    { modelo:'303', periodo:'1T 2026',  fecha_limite:`${año}-04-21`, estado:'presentado' },
+    { modelo:'111', periodo:'1T 2026',  fecha_limite:`${año}-04-21`, estado:'presentado' },
+    { modelo:'115', periodo:'1T 2026',  fecha_limite:`${año}-04-21`, estado:'presentado' },
+    { modelo:'303', periodo:'2T 2026',  fecha_limite:`${año}-07-21`, estado:'pendiente'  },
+    { modelo:'111', periodo:'2T 2026',  fecha_limite:`${año}-07-21`, estado:'pendiente'  },
+    { modelo:'115', periodo:'2T 2026',  fecha_limite:`${año}-07-21`, estado:'pendiente'  },
+    { modelo:'130', periodo:'2T 2026',  fecha_limite:`${año}-07-21`, estado:'pendiente'  },
+    { modelo:'303', periodo:'3T 2026',  fecha_limite:`${año}-10-21`, estado:'pendiente'  },
+    { modelo:'111', periodo:'3T 2026',  fecha_limite:`${año}-10-21`, estado:'pendiente'  },
+    { modelo:'303', periodo:'4T 2026',  fecha_limite:`${año+1}-01-21`, estado:'pendiente'},
+    { modelo:'390', periodo:'Anual 2026',fecha_limite:`${año+1}-01-31`, estado:'pendiente'},
+    { modelo:'190', periodo:'Anual 2026',fecha_limite:`${año+1}-01-31`, estado:'pendiente'},
+  ];
+}
+
+// ─────────────────────────────────────────────────────────
+// MENSAJES / CHAT
+// ─────────────────────────────────────────────────────────
+function actualizarBadgesMensajes() {
+  const sinLeer = _mensajes.filter(m=>m.origen==='gestor'&&!m.leido).length;
+  ['badge-mensajes','conv-badge','nav-badge-msg'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(!el) return;
+    el.innerText = sinLeer;
+    el.classList.toggle('hidden', sinLeer===0);
+  });
+  if(sinLeer>0 && _mensajes.length>0) {
+    const ult = _mensajes.filter(m=>m.origen==='gestor').at(-1);
+    const el = document.getElementById('conv-ultimo-msg');
+    if(el && ult) el.innerText = ult.contenido.substring(0,40)+'...';
+  }
+}
+
+function abrirConversacion() {
+  renderMensajes();
+}
+
+function renderMensajes() {
+  const cont = document.getElementById('chat-mensajes');
+  if(!cont) return;
+
+  cont.innerHTML = _mensajes.map(m=>{
+    const esCliente = m.origen === 'cliente';
+    const hora = new Date(m.created_at).toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'});
+    return `<div style="display:flex;justify-content:${esCliente?'flex-end':'flex-start'}">
+      <div class="${esCliente?'chat-msg-user':'chat-msg-gestor'}">
+        <p>${m.contenido}</p>
+        <p style="font-size:10px;opacity:.6;margin-top:4px;text-align:${esCliente?'right':'left'}">${hora}</p>
+      </div>
+    </div>`;
+  }).join('') || '<p style="text-align:center;color:#cbd5e1;font-size:13px;padding:20px">Inicia la conversación con tu gestor</p>';
+
+  cont.scrollTop = cont.scrollHeight;
+}
+
+async function enviarMensaje() {
+  const inp = document.getElementById('chat-input');
+  const texto = inp?.value.trim();
+  if(!texto || !_empresa) return;
+
+  inp.value = '';
+
+  const { error } = await getSB().from('mensajes').insert({
+    empresa_id:       _empresa.id,
+    gestor_id:        _acceso.gestor_id,
+    portal_acceso_id: _acceso.id,
+    origen:           'cliente',
+    contenido:        texto,
+    leido:            false,
+  });
+
+  if(error) { showToast('Error al enviar.'); inp.value = texto; return; }
+
+  await cargarMensajes();
+  renderMensajes();
+}
+
+async function marcarMensajesLeidos() {
+  if(!_empresa) return;
+  const sinLeer = _mensajes.filter(m=>m.origen==='gestor'&&!m.leido).map(m=>m.id);
+  if(!sinLeer.length) return;
+  await getSB().from('mensajes').update({ leido:true, fecha_lectura: new Date().toISOString() }).in('id', sinLeer);
+  await cargarMensajes();
+}
+
+// ─────────────────────────────────────────────────────────
+// BADGES SOLICITUDES
+// ─────────────────────────────────────────────────────────
+function actualizarBadgesSolicitudes() {
+  const pend = _solicitudes.filter(s=>s.estado==='pendiente').length;
+  ['badge-solicitudes','nav-badge-sol'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(!el) return;
+    el.innerText = pend;
+    el.classList.toggle('hidden', pend===0);
+  });
+}
+
+// ─────────────────────────────────────────────────────────
+// UTILIDADES
+// ─────────────────────────────────────────────────────────
+function openModal(id) {
+  document.querySelectorAll('.modal-bg.open').forEach(m=>{m.classList.remove('open');m.style.display='none';});
+  const el = document.getElementById(id);
+  if(!el) return;
+  el.classList.add('open');
+  el.style.display = 'flex';
+  lucide.createIcons();
+}
+
+function closeModal(id) {
+  const el = document.getElementById(id);
+  if(!el) return;
+  el.classList.remove('open');
+  el.style.display = 'none';
+}
+
+let _toastTimer;
+function showToast(msg, icon='✓') {
+  const el = document.getElementById('toast');
+  if(!el) return;
+  el.innerHTML = `<span>${icon}</span>${msg}`;
+  el.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(()=>el.classList.remove('show'), 3500);
+}
+</script>
+</body>
+</html>

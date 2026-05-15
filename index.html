@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nexus AI</title>
+<script>
+  const SUPABASE_URL      = 'https://tewmywtgkqeaiyqbrgnk.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRld215d3Rna3FlYWl5cWJyZ25rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU2NTA0MjYsImV4cCI6MjA5MTIyNjQyNn0.Qxwvz2P72ImBfydFcoaHQHTW-csk3vXbk5tXNmN0dY0';
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family: system-ui, sans-serif; background:#f1f5f9; display:flex; align-items:center; justify-content:center; min-height:100vh; }
+  .loader { text-align:center; color:#64748b; }
+  .spinner { width:36px; height:36px; border:3px solid #e2e8f0; border-top-color:#4f46e5; border-radius:50%; animation:spin .8s linear infinite; margin:0 auto 16px; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  p { font-size:14px; font-weight:600; }
+</style>
+</head>
+<body>
+<div class="loader">
+  <div class="spinner"></div>
+  <p>Cargando Nexus AI...</p>
+</div>
+<script>
+(async function() {
+  try {
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const { data: { session } } = await sb.auth.getSession();
+
+    if(!session) {
+      // Sin sesión → login del dashboard (gestores entran aquí por defecto)
+      window.location.replace('/dashboard/');
+      return;
+    }
+
+    const userId = session.user.id;
+
+    // 1. Comprobar si es gestor (existe en perfiles)
+    const { data: perfil } = await sb
+      .from('perfiles')
+      .select('rol')
+      .eq('id', userId)
+      .single();
+
+    if(perfil && perfil.rol !== 'portal_cliente') {
+      window.location.replace('/dashboard/');
+      return;
+    }
+
+    // 2. Comprobar si es cliente portal
+    const { data: acceso } = await sb
+      .from('portal_accesos')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('estado', 'activo')
+      .single();
+
+    if(acceso) {
+      window.location.replace('/portalclientes/');
+      return;
+    }
+
+    // No encontrado en ningún sitio → login dashboard
+    window.location.replace('/dashboard/');
+
+  } catch(e) {
+    // En caso de error → dashboard
+    window.location.replace('/dashboard/');
+  }
+})();
+</script>
+</body>
+</html>
