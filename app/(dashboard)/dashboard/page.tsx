@@ -6,7 +6,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 type DashboardPageProps = {
-  searchParams?: Promise<{ view?: string }> | { view?: string };
+  searchParams?: Promise<{ view?: string }>;
 };
 
 const viewCopy: Record<string, { eyebrow: string; title: string; body: string }> = {
