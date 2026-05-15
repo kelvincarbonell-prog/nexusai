@@ -141,15 +141,50 @@ for all using (gestor_id = auth.uid() or public.is_admin())
 with check (public.can_access_empresa(empresa_id));
 
 -- =============================================================================
--- 2. NÓMINAS: índices y unique por (empresa, trabajador, periodo) para upsert.
---    Las columnas de detalle van en metadata jsonb (no se rompe nada existente).
+-- 2. NÓMINAS: garantizamos columnas mínimas y luego creamos índices de upsert.
+--    Auto-defensivo para proyectos con esquemas antiguos.
 -- =============================================================================
-create unique index if not exists nominas_empresa_trabajador_periodo_uidx
-  on public.nominas(empresa_id, trabajador_id, periodo)
-  where trabajador_id is not null;
+create table if not exists public.nominas (
+  id uuid primary key default gen_random_uuid(),
+  empresa_id uuid not null references public.empresas(id) on delete cascade,
+  trabajador_id uuid references public.trabajadores(id) on delete set null,
+  gestor_id uuid references auth.users(id) on delete cascade,
+  periodo text,
+  storage_path text,
+  total numeric(14, 2) not null default 0,
+  metadata jsonb not null default '{}',
+  created_at timestamptz not null default now()
+);
 
-create index if not exists nominas_empresa_periodo_idx
-  on public.nominas(empresa_id, periodo);
+alter table public.nominas add column if not exists empresa_id uuid;
+alter table public.nominas add column if not exists trabajador_id uuid;
+alter table public.nominas add column if not exists gestor_id uuid;
+alter table public.nominas add column if not exists periodo text;
+alter table public.nominas add column if not exists storage_path text;
+alter table public.nominas add column if not exists total numeric(14, 2) default 0;
+alter table public.nominas add column if not exists metadata jsonb default '{}';
+alter table public.nominas add column if not exists created_at timestamptz default now();
+
+do $idx$
+begin
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'nominas' and column_name = 'periodo'
+  ) and exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'nominas' and column_name = 'trabajador_id'
+  ) and exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'nominas' and column_name = 'empresa_id'
+  ) then
+    create unique index if not exists nominas_empresa_trabajador_periodo_uidx
+      on public.nominas(empresa_id, trabajador_id, periodo)
+      where trabajador_id is not null;
+    create index if not exists nominas_empresa_periodo_idx
+      on public.nominas(empresa_id, periodo);
+  end if;
+end;
+$idx$;
 
 -- =============================================================================
 -- 3. STORAGE: bucket privado para ficheros AEAT y recibos de nómina.
