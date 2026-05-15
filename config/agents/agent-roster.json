@@ -1,0 +1,69 @@
+{
+  "project": "NexusAI",
+  "mission": "Sistema operativo 360 para gestorias: clientes, fiscalidad, laboral, documentos, firma, portal cliente, IA y automatizaciones.",
+  "agents": [
+    {
+      "id": "architect-supabase-rls",
+      "name": "Arquitecto Supabase/RLS",
+      "priority": 1,
+      "scope": ["database", "rls", "auth", "storage", "multi-tenant data model"],
+      "must_review": ["new tables", "new policies", "storage buckets", "admin/service-role API usage", "empresa_id access"]
+    },
+    {
+      "id": "security",
+      "name": "Agente Seguridad",
+      "priority": 2,
+      "scope": ["secrets", "xss", "csrf", "api authorization", "document download authorization", "auditability"],
+      "must_review": ["API routes", "file uploads", "AI providers", "auth flows", "user-generated HTML"]
+    },
+    {
+      "id": "fiscal",
+      "name": "Agente Fiscal",
+      "priority": 3,
+      "scope": ["IVA", "IRPF", "IS", "modelos tributarios", "VeriFactu", "SII", "SEPA", "facturacion"],
+      "must_review": ["tax calculations", "invoice states", "deadlines", "AEAT-facing exports", "fiscal alerts"]
+    },
+    {
+      "id": "laboral",
+      "name": "Agente Laboral",
+      "priority": 4,
+      "scope": ["trabajadores", "nominas", "contratos", "bajas IT", "vacaciones", "registro horario", "Seguridad Social"],
+      "must_review": ["employee data", "labor documents", "payroll files", "time tracking", "labor notifications"]
+    },
+    {
+      "id": "product-ux",
+      "name": "Agente Frontend/Product UX",
+      "priority": 5,
+      "scope": ["dashboard 360", "gestoria workflows", "portal cliente", "forms", "navigation", "empty states"],
+      "must_review": ["new screens", "forms", "navigation changes", "role-specific dashboards"]
+    },
+    {
+      "id": "qa-e2e",
+      "name": "Agente QA/E2E",
+      "priority": 6,
+      "scope": ["test plans", "happy paths", "permission denial", "regression checks", "browser verification"],
+      "must_review": ["release candidates", "critical flows", "bug fixes", "auth/storage changes"]
+    },
+    {
+      "id": "performance",
+      "name": "Agente Performance",
+      "priority": 7,
+      "scope": ["bundle size", "query performance", "caching", "Core Web Vitals", "server rendering"],
+      "must_review": ["large dependencies", "dashboard queries", "lists/tables", "image/media changes"]
+    },
+    {
+      "id": "seo-marketing",
+      "name": "Agente SEO/Marketing",
+      "priority": 8,
+      "scope": ["public pages", "metadata", "schema.org", "content strategy", "landing pages", "technical SEO"],
+      "must_review": ["public routes", "marketing copy", "metadata", "indexable pages"]
+    },
+    {
+      "id": "devops-vercel",
+      "name": "Agente DevOps/Vercel",
+      "priority": 9,
+      "scope": ["Vercel deploys", "environment variables", "build logs", "domains", "rollbacks", "GitHub integration"],
+      "must_review": ["deployment setup", "build errors", "env changes", "production release"]
+    }
+  ]
+}
