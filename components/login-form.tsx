@@ -15,16 +15,27 @@ export function LoginForm({ redirectTo = "/dashboard" }: { redirectTo?: string; 
     try {
       const email = String(formData.get("email") ?? "");
       const password = String(formData.get("password") ?? "");
+
+      const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+      if (!url || !anon) {
+        setError(
+          "Faltan NEXT_PUBLIC_SUPABASE_URL o NEXT_PUBLIC_SUPABASE_ANON_KEY en este deploy. Añádelas en Vercel y vuelve a desplegar (son variables de build, no de runtime).",
+        );
+        return;
+      }
+
       const supabase = createBrowserSupabase();
       const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
       if (authError) {
-        setError("Email o contraseña incorrectos.");
+        setError(`Login rechazado: ${authError.message}`);
         return;
       }
       router.replace(redirectTo);
       router.refresh();
-    } catch {
-      setError("No se pudo conectar con Supabase. Inténtalo de nuevo.");
+    } catch (e: unknown) {
+      const detail = e instanceof Error ? e.message : "error desconocido";
+      setError(`No se pudo conectar con Supabase: ${detail}`);
     } finally {
       setIsSubmitting(false);
     }
