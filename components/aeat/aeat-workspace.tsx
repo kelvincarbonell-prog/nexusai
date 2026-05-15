@@ -6,7 +6,7 @@ import { CasillasSimple } from "@/components/aeat/casillas-simple";
 
 type Empresa = { id: string; nombre: string; nif?: string };
 
-type ModeloKey = "303" | "111" | "115" | "130" | "390" | "347" | "349" | "180" | "190";
+type ModeloKey = "303" | "111" | "115" | "130" | "390" | "347" | "349" | "180" | "190" | "232";
 
 const TABS: { key: ModeloKey; label: string; hint: string; group: "trimestral" | "anual" }[] = [
   { key: "303", label: "303 · IVA", hint: "Autoliquidación trimestral de IVA", group: "trimestral" },
@@ -18,6 +18,7 @@ const TABS: { key: ModeloKey; label: string; hint: string; group: "trimestral" |
   { key: "190", label: "190 · Resumen IRPF", hint: "Resumen anual de retenciones IRPF", group: "anual" },
   { key: "180", label: "180 · Resumen alquileres", hint: "Resumen anual retenciones alquileres", group: "anual" },
   { key: "347", label: "347 · Terceros", hint: "Operaciones con terceros >3.005 € anuales", group: "anual" },
+  { key: "232", label: "232 · Vinculadas", hint: "Operaciones vinculadas y paraísos fiscales", group: "anual" },
 ];
 
 export function AeatWorkspace({ empresas, initialModelo = "303" }: { empresas: Empresa[]; initialModelo?: ModeloKey }) {

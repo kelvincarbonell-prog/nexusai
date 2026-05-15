@@ -13,11 +13,12 @@ import { calcular347 } from "@/lib/aeat/calc/m347";
 import { calcular349 } from "@/lib/aeat/calc/m349";
 import { calcular180 } from "@/lib/aeat/calc/m180";
 import { calcular190 } from "@/lib/aeat/calc/m190";
+import { calcular232 } from "@/lib/aeat/calc/m232";
 import type { Casillas303 } from "@/lib/aeat/calc/m303";
 import { fetchDatos111, fetchDatos115, fetchDatos130 } from "@/lib/aeat/queries-extra";
 import { validateNif } from "@/lib/aeat/validators";
 
-const SUPPORTED = ["111", "115", "130", "180", "190", "347", "349", "390"] as const;
+const SUPPORTED = ["111", "115", "130", "180", "190", "232", "347", "349", "390"] as const;
 type Modelo = (typeof SUPPORTED)[number];
 
 const QuerySchema = z.object({
@@ -97,6 +98,30 @@ async function compute(
         : calcular190({ declaraciones111: decls as Array<{ modelo: string; ejercicio: number; periodo: string; status: string; casillas: Casillas111 }> });
     return { casillas: r.casillas as unknown as Record<string, number>, warnings: r.warnings, resumen: r.resumen };
   }
+  if (modelo === "232") {
+    const from = `${ejercicio}-01-01`;
+    const to = `${ejercicio}-12-31`;
+    const { data } = await admin
+      .from("facturas")
+      .select("id,tipo,contacto_nombre,base,fecha_emision,metadata")
+      .eq("empresa_id", empresaId)
+      .gte("fecha_emision", from)
+      .lte("fecha_emision", to);
+    const facturas = (data ?? []).map((f) => ({
+      id: f.id,
+      tipo: f.tipo as "emitida" | "recibida" | "simplificada",
+      contacto_nombre: f.contacto_nombre,
+      base: Number(f.base ?? 0),
+      fecha_emision: f.fecha_emision ?? null,
+      metadata: f.metadata as Record<string, unknown> | null,
+    }));
+    const r = calcular232({ facturas });
+    return {
+      casillas: r.casillas as unknown as Record<string, number>,
+      warnings: r.warnings,
+      resumen: { operadores: r.operadores.length, paraisos: r.operadores.filter((o) => o.es_paraiso).length },
+    };
+  }
   if (modelo === "347") {
     const from = `${ejercicio}-01-01`;
     const to = `${ejercicio}-12-31`;
@@ -166,8 +191,8 @@ export async function GET(request: NextRequest, ctx: { params: Promise<{ modelo:
 
   const { year, trimestre } = currentTrimestre();
   const ejercicio = parsed.data.ejercicio ?? year;
-  const anualModels = ["390", "347", "180", "190"] as const;
-  const periodo = (anualModels.includes(modelo as "390" | "347" | "180" | "190")
+  const anualModels = ["390", "347", "180", "190", "232"] as const;
+  const periodo = (anualModels.includes(modelo as "390" | "347" | "180" | "190" | "232")
     ? "ANUAL"
     : (parsed.data.periodo ?? trimestre)) as Trimestre | "ANUAL";
 

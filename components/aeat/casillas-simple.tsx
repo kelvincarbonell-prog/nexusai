@@ -161,6 +161,23 @@ const SECTIONS_190: Section[] = [
   },
 ];
 
+const SECTIONS_232: Section[] = [
+  {
+    eyebrow: "Operaciones vinculadas anuales",
+    rows: [
+      { code: "total_vinculados", label: "Operadores vinculados declarables" },
+      { code: "importe_vinculados", label: "Importe total vinculadas", accent: true },
+    ],
+  },
+  {
+    eyebrow: "Paraísos fiscales",
+    rows: [
+      { code: "total_paraisos", label: "Operadores en paraísos fiscales" },
+      { code: "importe_paraisos", label: "Importe total con paraísos", accent: true },
+    ],
+  },
+];
+
 const SECTIONS: Record<string, Section[]> = {
   "111": SECTIONS_111,
   "115": SECTIONS_115,
@@ -170,6 +187,7 @@ const SECTIONS: Record<string, Section[]> = {
   "349": SECTIONS_349,
   "180": SECTIONS_180,
   "190": SECTIONS_190,
+  "232": SECTIONS_232,
 };
 
 const TITLES: Record<string, string> = {
@@ -181,6 +199,7 @@ const TITLES: Record<string, string> = {
   "349": "Modelo 349 · Operaciones intracomunitarias",
   "180": "Modelo 180 · Resumen anual alquileres",
   "190": "Modelo 190 · Resumen anual IRPF",
+  "232": "Modelo 232 · Operaciones vinculadas",
 };
 
 const HINTS: Record<string, string> = {
@@ -192,15 +211,16 @@ const HINTS: Record<string, string> = {
   "349": "Operaciones con operadores intracomunitarios. Presentación trimestral o mensual según volumen.",
   "180": "Resumen anual de retenciones de alquileres. Agrega los 4 trimestres del 115.",
   "190": "Resumen anual de retenciones IRPF (trabajadores + profesionales). Agrega los 4 trimestres del 111.",
+  "232": "Operaciones vinculadas (>250.000 € general o >100.000 € específico) y operaciones con paraísos fiscales. Presentación: noviembre del año siguiente.",
 };
 
 const EUR = (n: number) => new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR" }).format(n);
 
-export function CasillasSimple({ modelo, empresas }: { modelo: "111" | "115" | "130" | "390" | "347" | "349" | "180" | "190"; empresas: Empresa[] }) {
+export function CasillasSimple({ modelo, empresas }: { modelo: "111" | "115" | "130" | "390" | "347" | "349" | "180" | "190" | "232"; empresas: Empresa[] }) {
   const supabase = useMemo(() => createBrowserSupabase(), []);
   const now = new Date();
   const defaultYear = now.getUTCFullYear();
-  const isAnual = ["390", "347", "180", "190"].includes(modelo);
+  const isAnual = ["390", "347", "180", "190", "232"].includes(modelo);
   const defaultPeriodo = (isAnual ? "ANUAL" : `${Math.ceil((now.getUTCMonth() + 1) / 3)}T`) as "1T" | "2T" | "3T" | "4T" | "ANUAL";
 
   const [empresaId, setEmpresaId] = useState(empresas[0]?.id ?? "");
@@ -293,8 +313,10 @@ export function CasillasSimple({ modelo, empresas }: { modelo: "111" | "115" | "
               ? casillas.c03
               : modelo === "190"
                 ? casillas.total_retenciones
-                : casillas.c28) ?? 0;
-  const isCount = modelo === "347"; // muestra como número entero, no €
+                : modelo === "232"
+                  ? casillas.total_vinculados
+                  : casillas.c28) ?? 0;
+  const isCount = modelo === "347" || modelo === "232"; // muestra como número entero, no €
 
   return (
     <section className="grid">
