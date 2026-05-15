@@ -4,20 +4,23 @@ import { jsonError } from "@/lib/http";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { confidenceScore, extractInvoiceFromImage, extractInvoiceFromText } from "@/lib/agents/invoice-extractor";
 
+const MAX_ATTACHMENT_BASE64 = 8_000_000; // ~6 MB binario por adjunto
+const MAX_ATTACHMENTS = 10;
+
 const AttachmentSchema = z.object({
-  name: z.string(),
-  content_type: z.string().optional(),
-  content_base64: z.string(),
+  name: z.string().max(240),
+  content_type: z.string().max(120).optional(),
+  content_base64: z.string().max(MAX_ATTACHMENT_BASE64),
 });
 
 const PayloadSchema = z.object({
-  to: z.string(),
-  from: z.string().optional(),
-  message_id: z.string().optional(),
-  subject: z.string().optional(),
-  body_text: z.string().optional(),
-  body_html: z.string().optional(),
-  attachments: z.array(AttachmentSchema).default([]),
+  to: z.string().max(240),
+  from: z.string().max(240).optional(),
+  message_id: z.string().max(240).optional(),
+  subject: z.string().max(500).optional(),
+  body_text: z.string().max(40_000).optional(),
+  body_html: z.string().max(200_000).optional(),
+  attachments: z.array(AttachmentSchema).max(MAX_ATTACHMENTS).default([]),
 });
 
 function shouldProcessAttachment(att: z.infer<typeof AttachmentSchema>) {
@@ -41,7 +44,12 @@ function aliasFromAddress(addr: string) {
 
 export async function POST(request: NextRequest) {
   const sharedSecret = process.env.INBOUND_EMAIL_SECRET;
-  if (sharedSecret) {
+  if (!sharedSecret) {
+    if (process.env.NODE_ENV === "production") {
+      return jsonError("Webhook deshabilitado: falta INBOUND_EMAIL_SECRET.", 503);
+    }
+    // En desarrollo aceptamos sin secret para facilitar pruebas locales.
+  } else {
     const header = request.headers.get("x-nexusai-token") ?? request.headers.get("authorization") ?? "";
     const provided = header.startsWith("Bearer ") ? header.slice(7) : header;
     if (provided !== sharedSecret) return jsonError("Token inválido", 401);

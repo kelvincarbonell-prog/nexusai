@@ -5,6 +5,7 @@ import { getUserFromRequest } from "@/lib/supabase/auth";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { canAccessLaborCompany } from "@/lib/laboral/access";
 import { categorizeExpense } from "@/lib/agents/expense-categorizer";
+import { checkAgentRateLimit } from "@/lib/agents/rate-limit";
 
 const Schema = z.object({
   empresa_id: z.string().uuid(),
@@ -25,6 +26,14 @@ export async function POST(request: NextRequest) {
 
   const admin = createSupabaseAdmin();
   if (!(await canAccessLaborCompany(admin, user.id, parsed.data.empresa_id))) return jsonError("Sin acceso", 403);
+
+  const rl = await checkAgentRateLimit({ userId: user.id, agentId: "expense-categorizer", perMinute: 60, perHour: 1000 });
+  if (!rl.ok) {
+    return NextResponse.json(
+      { ok: false, error: rl.reason },
+      { status: 429, headers: rl.retryAfter ? { "Retry-After": String(rl.retryAfter) } : undefined },
+    );
+  }
 
   const start = Date.now();
   const result = await categorizeExpense({

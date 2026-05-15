@@ -5,13 +5,16 @@ import { getUserFromRequest } from "@/lib/supabase/auth";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { canAccessLaborCompany } from "@/lib/laboral/access";
 import { confidenceScore, extractInvoiceFromImage, extractInvoiceFromText } from "@/lib/agents/invoice-extractor";
+import { checkAgentRateLimit } from "@/lib/agents/rate-limit";
+
+const MAX_BASE64 = 8_000_000; // ~6 MB binario
 
 const Schema = z.object({
   empresa_id: z.string().uuid(),
   source: z.enum(["upload", "email", "manual", "mobile"]).default("upload"),
   filename: z.string().max(240).optional(),
   mime_type: z.string().max(120).optional(),
-  base64: z.string().optional(),
+  base64: z.string().max(MAX_BASE64).optional(),
   text: z.string().max(40000).optional(),
   inbound_email_id: z.string().uuid().optional(),
   storage_path: z.string().max(500).optional(),
@@ -26,6 +29,14 @@ export async function POST(request: NextRequest) {
 
   const admin = createSupabaseAdmin();
   if (!(await canAccessLaborCompany(admin, user.id, parsed.data.empresa_id))) return jsonError("Sin acceso", 403);
+
+  const rl = await checkAgentRateLimit({ userId: user.id, agentId: "invoice-extractor", perMinute: 20, perHour: 300 });
+  if (!rl.ok) {
+    return NextResponse.json(
+      { ok: false, error: rl.reason },
+      { status: 429, headers: rl.retryAfter ? { "Retry-After": String(rl.retryAfter) } : undefined },
+    );
+  }
 
   const start = Date.now();
   const extraction = parsed.data.base64

@@ -5,6 +5,7 @@ import { getUserFromRequest } from "@/lib/supabase/auth";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { canAccessLaborCompany } from "@/lib/laboral/access";
 import { bestAvailableJSON, safeJSON } from "@/lib/agents/llm";
+import { checkAgentRateLimit } from "@/lib/agents/rate-limit";
 
 const Schema = z.object({
   empresa_id: z.string().uuid(),
@@ -51,6 +52,14 @@ export async function POST(request: NextRequest) {
 
   const admin = createSupabaseAdmin();
   if (!(await canAccessLaborCompany(admin, user.id, parsed.data.empresa_id))) return jsonError("Sin acceso", 403);
+
+  const rl = await checkAgentRateLimit({ userId: user.id, agentId: "voice-assistant", perMinute: 30, perHour: 500 });
+  if (!rl.ok) {
+    return NextResponse.json(
+      { ok: false, error: rl.reason },
+      { status: 429, headers: rl.retryAfter ? { "Retry-After": String(rl.retryAfter) } : undefined },
+    );
+  }
 
   const intentPrompt = `Eres el clasificador de intención del asistente de voz de NexusAI para asesorías españolas.
 Devuelve SOLO JSON: { "intent": uno de [${INTENTS.join(", ")}], "periodo": "Tn" o "YYYY-MM" o null, "trabajador": string o null, "categoria": string o null }
