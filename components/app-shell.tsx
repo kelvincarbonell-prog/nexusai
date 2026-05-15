@@ -48,8 +48,8 @@ export function AppShell({
     <div className={rightRail ? "shell with-copilot" : "shell"}>
       <aside className="sidebar" aria-label="Navegación principal">
         <Link href="/dashboard" className="sb-brand" aria-label="Inicio">
-          <span className="sb-brand-mark">N</span>
-          <span>Nexus</span>
+          <span className="sb-brand-mark m26-mark">M26</span>
+          <span>Modelo 26</span>
         </Link>
 
         {espacio ? (
@@ -96,7 +96,7 @@ export function AppShell({
             <div className="topbar">
               <label className="topbar-search" aria-label="Buscador">
                 <span className="kbd">⌘K</span>
-                <input placeholder="Pide a Nexus algo… ej. «presenta el IVA 2T de Innova»" />
+                <input placeholder="Pide a M26 algo… ej. «presenta el IVA 2T de Innova»" />
                 <span style={{ display: "inline-flex", alignItems: "center", gap: 4, color: "var(--muted)" }}>
                   <span className="pulse-dot" aria-hidden="true" />
                   <Mic size={13} aria-hidden="true" /> voz
@@ -111,7 +111,7 @@ export function AppShell({
                   <span className="dot">5</span>
                 </span>
                 <ThemeToggle compact />
-                <span className="avatar" aria-hidden="true">N</span>
+                <span className="avatar m26-avatar" aria-hidden="true">M</span>
               </div>
             </div>
           )

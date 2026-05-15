@@ -39,7 +39,7 @@ export function LiveDemoModelo() {
           <span className="dot red" />
           <span className="dot amber" />
           <span className="dot green" />
-          <span className="demo-url">nexus.app/aeat/303</span>
+          <span className="demo-url">m26.app/aeat/303</span>
           <span className="demo-live"><span className="pulse-dot" /> calculando</span>
         </div>
         <div className="modelo-head">

@@ -7,9 +7,9 @@ export default function SelfServeRegisterPage() {
       <section className="login-hero">
         <div className="brand">
           <span className="brand-mark">NX</span>
-          <span>NexusAI</span>
+          <span>Modelo 26</span>
         </div>
-        <h1 className="title">Crea tu cuenta NexusAI</h1>
+        <h1 className="title">Crea tu cuenta Modelo 26</h1>
         <p className="subtitle" style={{ color: "rgba(255,255,255,.78)" }}>
           Registro directo para autónomos y empresas que quieren usar la plataforma sin una gestoría intermediaria.
         </p>

@@ -2,7 +2,7 @@
 
 ## Mission
 
-Keep NexusAI fast on Vercel as the dashboard grows into a full operating system.
+Keep Modelo 26 fast on Vercel as the dashboard grows into a full operating system.
 
 ## Responsibilities
 

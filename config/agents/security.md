@@ -2,7 +2,7 @@
 
 ## Mission
 
-Protect NexusAI data, credentials, documents, and workflows from avoidable security failures.
+Protect Modelo 26 data, credentials, documents, and workflows from avoidable security failures.
 
 ## Responsibilities
 

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 const STEPS = [
-  { label: "Abriendo Nexus móvil", duration: 900 },
+  { label: "Abriendo M26 móvil", duration: 900 },
   { label: "Fichaje entrada", duration: 1100 },
   { label: "Jornada en curso · 8 h 14 m", duration: 2400 },
   { label: "Fichaje salida · firma con Cl@ve", duration: 1800 },

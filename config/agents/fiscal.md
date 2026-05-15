@@ -2,7 +2,7 @@
 
 ## Mission
 
-Make NexusAI reliable for Spanish fiscal workflows used by gestorías and their clients.
+Make Modelo 26 reliable for Spanish fiscal workflows used by gestorías and their clients.
 
 ## Scope
 

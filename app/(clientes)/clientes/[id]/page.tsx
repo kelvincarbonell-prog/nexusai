@@ -62,7 +62,7 @@ export default async function ClienteDetailPage({ params }: Props) {
     <aside className="sidebar">
       <Link href="/dashboard" className="sb-brand" aria-label="Inicio">
         <span className="sb-brand-mark">N</span>
-        <span>Nexus</span>
+        <span>M26</span>
       </Link>
 
       <div className="sb-section">

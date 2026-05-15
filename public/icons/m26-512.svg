@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="m26-lg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#b794f4"/>
+      <stop offset="55%" stop-color="#8b9bf0"/>
+      <stop offset="100%" stop-color="#67e8f9"/>
+    </linearGradient>
+    <filter id="glow-lg" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect width="512" height="512" rx="96" fill="#06040d"/>
+  <text x="256" y="330" font-family="Inter, Arial, sans-serif" font-weight="900" font-size="210" text-anchor="middle" fill="url(#m26-lg)" filter="url(#glow-lg)" letter-spacing="-8">M26</text>
+</svg>

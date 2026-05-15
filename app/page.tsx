@@ -9,13 +9,13 @@ import { LiveDemoModelo } from "@/components/effects/live-demo-modelo";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 
 export const metadata = {
-  title: "Nexus · El copiloto fiscal y laboral en directo",
+  title: "Modelo 26 · Tecnología fiscal y laboral del futuro",
   description:
-    "Plataforma con IA real para autónomos, pymes y gestorías. Cierra IVA, nóminas y bancos en minutos. Auditoría AEAT nativa, VeriFactu opcional, firma electrónica integrada.",
+    "M26 es la plataforma con IA real para autónomos, pymes y gestorías. Cierra IVA, nóminas y bancos en minutos. Auditoría AEAT nativa, VeriFactu opcional, firma electrónica integrada.",
 };
 
 const LOGOS = [
-  "Gabinete Nexus",
+  "Gabinete Sánchez",
   "Asesoría Pons",
   "Onklub Talent",
   "Reditorial Iberia",
@@ -32,8 +32,8 @@ export default function LandingPage() {
     <div className="landing">
       <header className="landing-nav">
         <Link href="/" className="sb-brand" aria-label="Inicio">
-          <span className="sb-brand-mark">N</span>
-          <span>Nexus</span>
+          <span className="sb-brand-mark m26-mark">M26</span>
+          <span>Modelo 26</span>
         </Link>
         <nav aria-label="Secciones">
           <a href="#producto">Producto</a>
@@ -58,20 +58,22 @@ export default function LandingPage() {
         <Reveal>
           <span className="ticker">
             <span className="pulse-dot" aria-hidden="true" />
-            <span>Sistema fiscal certificado · Q2 2026 · AEAT directa</span>
+            <span>Modelo 26 · tecnología fiscal y laboral del futuro</span>
           </span>
         </Reveal>
         <Reveal delay={80}>
           <h1 className="display" style={{ fontSize: "clamp(48px, 7.4vw, 104px)", marginTop: 14 }}>
-            El copiloto fiscal <em className="gradient-text">que cierra</em> el trimestre
+            <span className="brand-text">Modelo 26.</span>
             <br />
-            <em>en lo que tardas</em> en hacerte un café.
+            <em>El futuro</em> de la fiscalidad y la nómina,
+            <br />
+            ya está aquí.
           </h1>
         </Reveal>
         <Reveal delay={160}>
           <p className="subtitle" style={{ fontSize: 18, maxWidth: 720 }}>
-            Nexus conecta tu correo, tu banco y tu AEAT, presenta tus modelos y firma tus nóminas — sin que muevas un dedo.
-            Autónomos, pymes y gestorías cierran IVA en <strong>12 segundos de media</strong> con auditoría completa.
+            M26 conecta tu correo, tu banco y tu AEAT, presenta tus modelos y firma tus nóminas — sin que muevas un dedo.
+            Autónomos, pymes y gestorías cierran el trimestre en <strong>12 segundos de media</strong> con auditoría AEAT nativa.
           </p>
         </Reveal>
         <Reveal delay={220}>
@@ -121,7 +123,7 @@ export default function LandingPage() {
       </section>
 
       <section className="landing-logos" aria-label="Asesorías y empresas">
-        <span className="eyebrow">Confían en Nexus 1.842 asesorías y +12.400 empresas</span>
+        <span className="eyebrow">Confían en M26 1.842 asesorías y +12.400 empresas</span>
         <div className="marquee" style={{ marginTop: 20 }}>
           <div className="marquee-track">
             {[...LOGOS, ...LOGOS].map((name, i) => (
@@ -145,12 +147,12 @@ export default function LandingPage() {
             {
               tag: "Agente extractor",
               title: "Tus facturas se procesan solas.",
-              body: "Cada empresa recibe un buzón único facturas-xxx@inbox.nexusai.app. Reenvías un PDF y aparece en contabilidad con proveedor, base, IVA y cuenta PGC — categorizado.",
+              body: "Cada empresa recibe un buzón único facturas-xxx@inbox.m26.app. Reenvías un PDF y aparece en contabilidad con proveedor, base, IVA y cuenta PGC — categorizado.",
             },
             {
               tag: "Agente fiscal",
               title: "Modelos AEAT generados solos.",
-              body: "303, 111, 115, 130, 390, 347, 349, 200. Nexus monta el borrador, detecta IVA inusual y deducciones perdidas. Firmas con certificado y se presenta.",
+              body: "303, 111, 115, 130, 390, 347, 349, 200. M26 monta el borrador, detecta IVA inusual y deducciones perdidas. Firmas con certificado y se presenta.",
             },
             {
               tag: "Agente laboral",
@@ -160,7 +162,7 @@ export default function LandingPage() {
             {
               tag: "Asistente de voz",
               title: "«¿Cuánto IVA llevo este trimestre?»",
-              body: "Pregunta a Nexus desde el móvil. Responde sobre IVA, gastos por categoría, vacaciones, fichajes y facturas pendientes — al instante.",
+              body: "Pregunta a M26 desde el móvil. Responde sobre IVA, gastos por categoría, vacaciones, fichajes y facturas pendientes — al instante.",
             },
             {
               tag: "Conciliación SEPA",
@@ -195,12 +197,12 @@ export default function LandingPage() {
         </Reveal>
         <Reveal delay={120}>
           <p className="subtitle" style={{ fontSize: 18 }}>
-            Un asesor medio de Nexus cierra 16 carteras en lugar de 5. La IA hace el trabajo repetitivo. Tú firmas, asesoras y vendes más.
+            Un asesor medio de M26 cierra 16 carteras en lugar de 5. La IA hace el trabajo repetitivo. Tú firmas, asesoras y vendes más.
           </p>
         </Reveal>
         <div className="features-grid">
           {[
-            { big: "−31 h", body: "Tiempo medio que Nexus le ahorra a un asesor cada mes. Datos reales de 1.842 gestorías." },
+            { big: "−31 h", body: "Tiempo medio que M26 le ahorra a un asesor cada mes. Datos reales de 1.842 gestorías." },
             { big: "+€840", body: "Ingreso adicional por gestor al mes. Nuevos clientes onboardeados con Cl@ve sin trabajo manual." },
             { big: "0 plazos", body: "Calendario fiscal unificado por cliente. La IA te avisa el día que toca y prepara el borrador." },
             { big: "100 %", body: "De tus clientes ven sus facturas, suben gastos por WhatsApp y firman con Cl@ve. Tú no pierdes el control." },
@@ -216,10 +218,10 @@ export default function LandingPage() {
         <Reveal>
           <div className="testimonial">
             <p style={{ fontStyle: "italic", fontSize: 24, lineHeight: 1.4, color: "var(--ink)" }}>
-              «Atendíamos 8 clientes por gestor. Con Nexus llevamos 18 sin contratar a nadie y mis asesores salen a su hora.»
+              «Atendíamos 8 clientes por gestor. Con M26 llevamos 18 sin contratar a nadie y mis asesores salen a su hora.»
             </p>
             <p style={{ fontFamily: "var(--mono)", fontSize: 13, color: "var(--muted)", marginTop: 12 }}>
-              — María González · socia · Gabinete Nexus · Valencia
+              — María González · socia · Gabinete Sánchez · Valencia
             </p>
           </div>
         </Reveal>
@@ -246,11 +248,11 @@ export default function LandingPage() {
         </Reveal>
         <div className="features-grid three">
           {[
-            { icon: "📸", title: "Foto = gasto", body: "Foto al ticket y Nexus monta el gasto, lo categoriza y lo guarda para tu IRPF." },
+            { icon: "📸", title: "Foto = gasto", body: "Foto al ticket y M26 monta el gasto, lo categoriza y lo guarda para tu IRPF." },
             { icon: "📬", title: "Buzón único", body: "Reenvías la factura del SaaS o del coworking y aparece en tu contabilidad. Sin abrir el ordenador." },
-            { icon: "📊", title: "Estimación IRPF", body: "Nexus calcula cuánto te toca pagar cada mes para que no llegues a abril con sorpresas." },
+            { icon: "📊", title: "Estimación IRPF", body: "M26 calcula cuánto te toca pagar cada mes para que no llegues a abril con sorpresas." },
             { icon: "🧾", title: "Modelo 130/131", body: "Pago fraccionado trimestral generado solo. Firmas y se presenta. 4 € al mes." },
-            { icon: "🎙️", title: "Voz", body: "«Nexus, ¿cuánto puedo gastarme este mes sin descuadrar mis impuestos?» — y te responde." },
+            { icon: "🎙️", title: "Voz", body: "«M26, ¿cuánto puedo gastarme este mes sin descuadrar mis impuestos?» — y te responde." },
             { icon: "💳", title: "Banco conectado", body: "Tus ingresos y gastos entran solos vía PSD2. Nada de subir extractos a mano." },
           ].map((f, i) => (
             <Reveal key={f.title} delay={i * 60}>
@@ -264,12 +266,12 @@ export default function LandingPage() {
         <div className="grid" style={{ marginTop: 32, gap: 32, alignItems: "center" }}>
           <Reveal className="span-7">
             <div>
-              <span className="card-eyebrow">Asistente de voz · habla con Nexus</span>
+              <span className="card-eyebrow">Asistente de voz · habla con M26</span>
               <h3 className="title" style={{ fontSize: 32, marginTop: 8 }}>
                 «¿Cuánto IVA llevo este trimestre?»
               </h3>
               <p className="subtitle" style={{ marginTop: 12 }}>
-                Pregunta en voz alta desde el móvil. Nexus consulta tus libros en tiempo real y te responde con
+                Pregunta en voz alta desde el móvil. M26 consulta tus libros en tiempo real y te responde con
                 la cifra exacta, la cuenta pendiente y el plazo. Sin abrir ningún menú.
               </p>
               <ul className="landing-bullets" style={{ marginTop: 16 }}>
@@ -453,11 +455,11 @@ export default function LandingPage() {
         <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 24, alignItems: "flex-start" }}>
           <div style={{ display: "grid", gap: 8 }}>
             <Link href="/" className="sb-brand">
-              <span className="sb-brand-mark">N</span>
-              <span>Nexus</span>
+              <span className="sb-brand-mark m26-mark">M26</span>
+              <span>Modelo 26</span>
             </Link>
             <p className="muted" style={{ fontFamily: "var(--mono)", fontSize: 12, maxWidth: 280, lineHeight: 1.5 }}>
-              Sistema operativo fiscal y laboral para autónomos, pymes y gestorías. Hecho en Valencia.
+              Tecnología fiscal y laboral del futuro. Hecho en Valencia.
             </p>
             <div className="ticker" style={{ marginTop: 8 }}>
               <span className="pulse-dot" />
@@ -476,7 +478,7 @@ export default function LandingPage() {
               <span className="card-eyebrow">Empresa</span>
               <Link href="/login">Acceder</Link>
               <Link href="/autonomos-empresas/registro">Registro</Link>
-              <a href="mailto:hola@nexusai.app">Contacto</a>
+              <a href="mailto:hola@m26.app">Contacto</a>
             </div>
             <div>
               <span className="card-eyebrow">Legal</span>
@@ -491,7 +493,7 @@ export default function LandingPage() {
           <span>ISO 27001</span>
           <span>SOC 2 · TYPE II</span>
           <span>ENS · MEDIO</span>
-          <span style={{ marginLeft: "auto" }}>© 2026 Nexus — todos los derechos reservados</span>
+          <span style={{ marginLeft: "auto" }}>© 2026 Modelo 26 — todos los derechos reservados</span>
         </div>
       </footer>
 

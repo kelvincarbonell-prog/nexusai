@@ -6,14 +6,16 @@ export default function LoginPage() {
     <main className="login-page">
       <section className="login-left">
         <header style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <span className="sb-brand-mark" aria-hidden="true">N</span>
-          <strong style={{ fontFamily: "var(--mono)", fontSize: 14 }}>Nexus</strong>
+          <span className="sb-brand-mark m26-mark" aria-hidden="true">M26</span>
+          <strong style={{ fontFamily: "var(--mono)", fontSize: 14 }}>Modelo 26</strong>
         </header>
 
         <div>
-          <span className="eyebrow">Sistema fiscal certificado · Q2 2026</span>
+          <span className="eyebrow">Modelo 26 · tecnología fiscal y laboral del futuro</span>
           <h1 className="display" style={{ marginTop: 14 }}>
-            Tu copiloto <em>fiscal</em>, en directo.
+            <span className="brand-text">Modelo 26.</span>
+            <br />
+            Tu copiloto <em>en directo.</em>
           </h1>
           <p className="subtitle" style={{ marginTop: 18 }}>
             La plataforma donde autónomos, empresas y gestorías cierran impuestos, nóminas y bancos en
@@ -33,7 +35,7 @@ export default function LoginPage() {
             <span>ISO 27001</span>
             <span>SOC 2 · TYPE II</span>
             <span>ENS · MEDIO</span>
-            <span style={{ marginLeft: "auto" }}>BUILD · v3.2.046 — Valencia</span>
+            <span style={{ marginLeft: "auto" }}>M26 · v3.2.046 — Valencia</span>
           </div>
         </div>
       </section>

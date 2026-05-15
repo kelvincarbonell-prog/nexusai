@@ -2,7 +2,7 @@
 
 ## Mission
 
-Design and review the Supabase backend so NexusAI works as a secure multi-tenant operating system for gestorías.
+Design and review the Supabase backend so Modelo 26 works as a secure multi-tenant operating system for gestorías.
 
 ## Responsibilities
 

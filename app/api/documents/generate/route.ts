@@ -11,7 +11,7 @@ const DocumentRequest = z.object({
   nif: z.string().max(30).default("-"),
   gestoria: z.string().max(180).default("Mi gestoría"),
   gestor: z.string().max(180).default("-"),
-  descripcion: z.string().max(3000).default("Documento generado por NexusAI para firma electrónica."),
+  descripcion: z.string().max(3000).default("Documento generado por Modelo 26 para firma electrónica."),
 });
 
 export async function POST(request: NextRequest) {

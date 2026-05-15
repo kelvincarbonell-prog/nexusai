@@ -48,7 +48,7 @@ export default async function SelfServeHomePage() {
           <div className="eyebrow">Autónomos y empresas</div>
           <h1 className="title">Tu panel independiente</h1>
           <p className="subtitle">
-            Vista inicial para usuarios que usan NexusAI directamente, sin depender de una gestoría.
+            Vista inicial para usuarios que usan Modelo 26 directamente, sin depender de una gestoría.
           </p>
         </div>
         <Link href="/portal" className="button secondary">Ir al portal</Link>

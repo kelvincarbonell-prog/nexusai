@@ -62,7 +62,7 @@ export function LiveDemoHero() {
           <span className="dot red" />
           <span className="dot amber" />
           <span className="dot green" />
-          <span className="demo-url">nexus.app/innova-apps</span>
+          <span className="demo-url">m26.app/innova-apps</span>
           <span className="demo-live"><span className="pulse-dot" /> en vivo</span>
         </div>
 
@@ -92,7 +92,7 @@ export function LiveDemoHero() {
             <div className={`demo-card email ${after("email") ? "show" : ""}`}>
               <div className="demo-row">
                 <span className="demo-pill">📧 Email</span>
-                <span className="demo-muted">facturas-9k2x@inbox.nexusai.app</span>
+                <span className="demo-muted">facturas-9k2x@inbox.m26.app</span>
               </div>
               <strong>Telefónica España S.A.U. — Factura marzo</strong>
               <span className="demo-muted">Adjunto · TF-2603419.pdf · 84 KB</span>
@@ -143,7 +143,7 @@ export function LiveDemoHero() {
       </div>
 
       <div className="demo-caption">
-        <span className="pulse-dot" /> Demo en vivo · proceso real de Nexus
+        <span className="pulse-dot" /> Demo en vivo · proceso real de M26
       </div>
     </div>
   );

@@ -60,13 +60,13 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     <AppShell
       active="/dashboard"
       showSuperAdmin={isAdmin}
-      espacio={{ nombre: "Gabinete Nexus", tipo: "despacho", personas: 4 }}
+      espacio={{ nombre: "Gabinete M26", tipo: "despacho", personas: 4 }}
     >
       <header style={{ display: "flex", justifyContent: "space-between", gap: 24, flexWrap: "wrap" }}>
         <div style={{ maxWidth: 760 }}>
           <span className="eyebrow">Buenas noches{profile?.nombre ? `, ${profile.nombre}` : ""} · 0 cosas urgentes</span>
           <h1 className="display">
-            Esta semana Nexus te ha ahorrado <em>31 h 12 m</em>.
+            Esta semana M26 te ha ahorrado <em>31 h 12 m</em>.
           </h1>
           <p className="subtitle">
             Tienes 5 cosas listas para firmar. Todo lo demás corre solo. Pulsa <span className="kbd">?</span> en cualquier

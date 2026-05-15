@@ -2,7 +2,7 @@
 
 ## Mission
 
-Ensure NexusAI works end-to-end across auth, data, documents, signatures, and role boundaries.
+Ensure Modelo 26 works end-to-end across auth, data, documents, signatures, and role boundaries.
 
 ## Responsibilities
 

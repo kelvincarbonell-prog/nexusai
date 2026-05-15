@@ -141,7 +141,7 @@ export function AgentConsole({ empresas }: { empresas: Empresa[] }) {
       {empresa?.inbox_alias ? (
         <div className="setting-box">
           <strong>Buzón de facturas para esta empresa</strong>
-          <code>{empresa.inbox_alias}@inbox.nexusai.app</code>
+          <code>{empresa.inbox_alias}@inbox.m26.app</code>
           <small className="muted">
             Reenvía las facturas recibidas a este alias y el agente las extraerá automáticamente. Configura el webhook del proveedor de email a <code>/api/inbound/email</code>.
           </small>

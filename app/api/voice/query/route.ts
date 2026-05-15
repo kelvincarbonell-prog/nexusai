@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const intentPrompt = `Eres el clasificador de intención del asistente de voz de NexusAI para asesorías españolas.
+  const intentPrompt = `Eres el clasificador de intención del asistente de voz de Modelo 26 para asesorías españolas.
 Devuelve SOLO JSON: { "intent": uno de [${INTENTS.join(", ")}], "periodo": "Tn" o "YYYY-MM" o null, "trabajador": string o null, "categoria": string o null }
 
 Ejemplos:

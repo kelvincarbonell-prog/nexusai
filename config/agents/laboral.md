@@ -2,7 +2,7 @@
 
 ## Mission
 
-Make NexusAI reliable for labor workflows handled by Spanish gestorías.
+Make Modelo 26 reliable for labor workflows handled by Spanish gestorías.
 
 ## Scope
 

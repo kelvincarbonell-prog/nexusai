@@ -4,27 +4,37 @@ import { PWARegister } from "@/components/mobile/pwa-register";
 
 const themeScript = `(() => {
   try {
-    const stored = window.localStorage.getItem('nexus-theme');
-    const theme = stored === 'light' || stored === 'dark' ? stored : 'dark';
+    var key = 'm26-theme';
+    var legacy = 'nexus-theme';
+    var stored = window.localStorage.getItem(key) || window.localStorage.getItem(legacy);
+    var theme = stored === 'light' || stored === 'dark' ? stored : 'dark';
     document.documentElement.setAttribute('data-theme', theme);
+    if (stored && !window.localStorage.getItem(key)) window.localStorage.setItem(key, theme);
   } catch (_) {
     document.documentElement.setAttribute('data-theme', 'dark');
   }
 })();`;
 
 export const metadata: Metadata = {
-  title: "Nexus · El copiloto fiscal y laboral en directo",
+  title: "Modelo 26 · Tecnología fiscal y laboral del futuro",
   description:
-    "Sistema operativo fiscal, contable y laboral para autónomos, pymes y gestorías. Agentes IA que cierran IVA, nóminas y bancos en minutos. AEAT directa, VeriFactu opcional, firma integrada.",
+    "M26 es la plataforma con IA real para autónomos, pymes y gestorías. Cierra IVA, nóminas y bancos en minutos. AEAT directa, VeriFactu opcional, firma integrada.",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Nexus",
+    title: "M26",
   },
   icons: {
-    icon: "/icons/nexusai-192.svg",
-    apple: "/icons/nexusai-192.svg",
+    icon: "/icons/m26-192.svg",
+    apple: "/icons/m26-192.svg",
+  },
+  openGraph: {
+    title: "Modelo 26 · Tecnología fiscal y laboral del futuro",
+    description:
+      "Plataforma con IA real para autónomos, pymes y gestorías. Cierra el trimestre en 12 segundos con auditoría AEAT nativa.",
+    type: "website",
+    locale: "es_ES",
   },
 };
 

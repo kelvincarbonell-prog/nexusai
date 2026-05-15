@@ -2,7 +2,7 @@
 
 ## Mission
 
-Turn NexusAI into a fast, professional operating system for day-to-day gestoría work.
+Turn Modelo 26 into a fast, professional operating system for day-to-day gestoría work.
 
 ## Responsibilities
 

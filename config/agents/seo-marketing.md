@@ -2,7 +2,7 @@
 
 ## Mission
 
-Position NexusAI publicly as a premium operating system for gestorías without exposing private app routes.
+Position Modelo 26 publicly as a premium operating system for gestorías without exposing private app routes.
 
 ## Responsibilities
 

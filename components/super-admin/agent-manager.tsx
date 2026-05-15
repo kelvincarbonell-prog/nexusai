@@ -82,7 +82,7 @@ export function AgentManager({ initialAgents }: { initialAgents: AgentConfig[] }
       mission: "Define la misión del agente.",
       rules_do: ["Revisar los cambios asignados."],
       rules_dont: ["No aprobar cambios sin criterios claros."],
-      order_prompt: "Actua como agente especialista de NexusAI y revisa la tarea asignada.",
+      order_prompt: "Actua como agente especialista de Modelo 26 y revisa la tarea asignada.",
     };
     setAgents((current) => [...current, next]);
     setSelectedId(id);

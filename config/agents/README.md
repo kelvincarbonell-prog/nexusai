@@ -1,6 +1,6 @@
-# NexusAI Agent Roster
+# Modelo 26 Agent Roster
 
-This folder defines the specialist agents we use to evolve NexusAI as a 360-degree operating system for gestorías.
+This folder defines the specialist agents we use to evolve Modelo 26 as a 360-degree operating system for gestorías.
 
 ## How To Use
 

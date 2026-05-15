@@ -1,7 +1,7 @@
 import type { User } from "@supabase/supabase-js";
 import { createServerSupabase } from "@/lib/supabase/server";
 
-export type NexusRole = "admin" | "gestor" | "asesor" | "portal_cliente";
+export type M26Role = "admin" | "gestor" | "asesor" | "portal_cliente";
 
 export async function getCurrentProfile() {
   const supabase = await createServerSupabase();

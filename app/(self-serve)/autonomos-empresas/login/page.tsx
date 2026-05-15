@@ -7,7 +7,7 @@ export default function SelfServeLoginPage() {
       <section className="login-hero">
         <div className="brand">
           <span className="brand-mark">NX</span>
-          <span>NexusAI</span>
+          <span>Modelo 26</span>
         </div>
         <h1 className="title">Acceso para autónomos y empresas</h1>
         <p className="subtitle" style={{ color: "rgba(255,255,255,.78)" }}>

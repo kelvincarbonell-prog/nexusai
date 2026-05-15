@@ -108,7 +108,7 @@ export function MobileHome({ empresas }: { empresas: Empresa[] }) {
   if (empresas.length === 0) {
     return (
       <div className="mobile-shell">
-        <h1>NexusAI</h1>
+        <h1>Modelo 26</h1>
         <p>No tienes empresas. Entra desde escritorio para configurar tu gestoría.</p>
       </div>
     );
@@ -149,7 +149,7 @@ export function MobileHome({ empresas }: { empresas: Empresa[] }) {
             <div className="mobile-tile" style={{ background: "#eef7d0", color: "#101820", cursor: "default" }}>
               <span className="mobile-tile-icon" aria-hidden="true">📬</span>
               <strong>Buzón email</strong>
-              <small>{empresa.inbox_alias}@inbox.nexusai.app</small>
+              <small>{empresa.inbox_alias}@inbox.m26.app</small>
             </div>
           ) : null}
         </main>

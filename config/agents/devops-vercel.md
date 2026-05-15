@@ -2,7 +2,7 @@
 
 ## Mission
 
-Keep NexusAI deployable, observable, and recoverable on Vercel.
+Keep Modelo 26 deployable, observable, and recoverable on Vercel.
 
 ## Responsibilities
 

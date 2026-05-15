@@ -46,7 +46,7 @@ export function VoiceAssistant({ empresaId }: { empresaId: string }) {
     r.onresult = (event) => {
       const text = event.results[0]?.[0]?.transcript ?? "";
       setTranscript(text);
-      askNexus(text);
+      askM26(text);
     };
     r.onerror = (event) => {
       setError(event.error);
@@ -57,7 +57,7 @@ export function VoiceAssistant({ empresaId }: { empresaId: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [empresaId]);
 
-  async function askNexus(query: string) {
+  async function askM26(query: string) {
     if (!empresaId) {
       setError("Selecciona una empresa antes de preguntar.");
       return;
@@ -113,7 +113,7 @@ export function VoiceAssistant({ empresaId }: { empresaId: string }) {
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
         <div>
           <span className="eyebrow">Asistente de voz</span>
-          <h3 style={{ margin: "4px 0 0" }}>Pregúntale a Nexus</h3>
+          <h3 style={{ margin: "4px 0 0" }}>Pregúntale a M26</h3>
         </div>
         <button className="button" onClick={toggle} disabled={!supported || thinking} aria-pressed={listening}>
           {listening ? "Escuchando…" : thinking ? "Pensando…" : "🎤 Hablar"}
@@ -121,7 +121,7 @@ export function VoiceAssistant({ empresaId }: { empresaId: string }) {
       </div>
       {!supported ? <p className="muted">Tu navegador no soporta reconocimiento de voz. Prueba con Chrome o Safari en móvil.</p> : null}
       {transcript ? <p><strong>Tú:</strong> {transcript}</p> : null}
-      {response ? <p><strong>Nexus:</strong> {response}</p> : null}
+      {response ? <p><strong>M26:</strong> {response}</p> : null}
       {error ? <p role="alert" style={{ color: "var(--danger)" }}>{error}</p> : null}
       <details>
         <summary className="muted">Ejemplos</summary>

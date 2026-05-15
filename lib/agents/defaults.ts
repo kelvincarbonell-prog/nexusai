@@ -27,12 +27,12 @@ export function defaultAgentConfigs(): AgentConfig[] {
     category: agent.scope[0] ?? "general",
     enabled: true,
     priority: agent.priority,
-    mission: `Revisar ${agent.scope.join(", ")} para NexusAI.`,
+    mission: `Revisar ${agent.scope.join(", ")} para Modelo 26.`,
     rules_do: agent.must_review.map((item) => `Revisar ${item}`),
     rules_dont: [
       "No aprobar cambios sin revisar permisos, datos sensibles y experiencia del usuario afectada.",
       "No sustituir criterio profesional humano en decisiones fiscales, laborales o legales.",
     ],
-    order_prompt: `Actua como ${agent.name} de NexusAI. Revisa el cambio solicitado y devuelve riesgos, acciones necesarias y aprobacion.`,
+    order_prompt: `Actua como ${agent.name} de Modelo 26. Revisa el cambio solicitado y devuelve riesgos, acciones necesarias y aprobacion.`,
   }));
 }

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 const SCRIPT = [
-  { who: "user", text: "Nexus, ¿cuánto IVA llevo este trimestre?", duration: 1800 },
+  { who: "user", text: "M26, ¿cuánto IVA llevo este trimestre?", duration: 1800 },
   { who: "thinking", text: "Consultando facturas y libros IVA…", duration: 1400 },
   { who: "nexus", text: "Repercutido 4.230 €. Soportado 1.890 €. A pagar 2.340 € · vence 20 julio.", duration: 3600 },
   { who: "user", text: "Recuérdame avisar 3 días antes.", duration: 1800 },
@@ -46,7 +46,7 @@ export function LiveDemoVoice() {
         </div>
         <div className="demo-voice-wrap">
           <span className="demo-eyebrow">Asistente de voz</span>
-          <strong className="demo-title">«Hablar con Nexus»</strong>
+          <strong className="demo-title">«Hablar con M26»</strong>
 
           <div className={`mic ${step >= 0 && step <= 1 ? "listening" : step === 2 || step === 4 ? "speaking" : ""}`}>
             <svg viewBox="0 0 60 60" width="60" height="60">

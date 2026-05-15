@@ -25,7 +25,7 @@ export default async function SuperAdminPage() {
       <header className="topbar">
         <div>
           <div className="eyebrow">Super Admin</div>
-          <h1 className="title">Centro de control NexusAI</h1>
+          <h1 className="title">Centro de control Modelo 26</h1>
           <p className="subtitle">
             Control global de gestores, clientes, autónomos, empresas independientes, agentes, configuración y métricas.
           </p>

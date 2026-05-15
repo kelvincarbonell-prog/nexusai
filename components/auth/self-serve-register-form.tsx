@@ -82,7 +82,7 @@ export function SelfServeRegisterForm() {
       <Building2 size={28} color="#145c4a" aria-hidden="true" />
       <div>
         <h2>Registro independiente</h2>
-        <p className="muted">Para autónomos y empresas que usarán NexusAI sin depender de una gestoría.</p>
+        <p className="muted">Para autónomos y empresas que usarán Modelo 26 sin depender de una gestoría.</p>
       </div>
       <label>
         Nombre de contacto

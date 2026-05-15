@@ -80,7 +80,7 @@ async function aiSuggest(admin: SupabaseAdmin, input: CategorizationInput) {
     .map((a: { code: string; name: string }) => `${a.code} ${a.name}`)
     .join("\n");
 
-  const prompt = `Eres el agente categorizador de gastos de NexusAI para asesorías españolas (PGC PYMES).
+  const prompt = `Eres el agente categorizador de gastos de Modelo 26 para asesorías españolas (PGC PYMES).
 Devuelve SOLO un JSON con: { "code": "XXX", "confidence": 0-100, "explanation": "..." }
 - code: código de cuenta PGC más adecuado (3-4 dígitos, grupo 6).
 - Usa los códigos válidos del catálogo proporcionado.

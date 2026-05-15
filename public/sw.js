@@ -1,6 +1,6 @@
-// NexusAI minimal service worker. Network-first for HTML, cache-first for static.
-const CACHE = "nexusai-v1";
-const STATIC_ASSETS = ["/manifest.webmanifest", "/icons/nexusai-192.svg", "/icons/nexusai-512.svg"];
+// Modelo 26 minimal service worker. Network-first for HTML, cache-first for static.
+const CACHE = "m26-v1";
+const STATIC_ASSETS = ["/manifest.webmanifest", "/icons/m26-192.svg", "/icons/m26-512.svg"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(STATIC_ASSETS)));

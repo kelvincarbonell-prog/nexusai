@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Moon, Sun } from "lucide-react";
 
-const STORAGE_KEY = "nexus-theme";
+const STORAGE_KEY = "m26-theme";
 
 export function ThemeToggle({ compact = false }: { compact?: boolean }) {
   const [theme, setTheme] = useState<"dark" | "light">("dark");

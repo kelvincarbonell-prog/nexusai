@@ -1,4 +1,4 @@
-# NexusAI Migration Plan
+# Modelo 26 Migration Plan
 
 ## Target Architecture
 
