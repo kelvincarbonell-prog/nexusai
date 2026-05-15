@@ -184,6 +184,10 @@ textarea {
   color: var(--text);
 }
 
+.button.danger {
+  background: var(--danger);
+}
+
 .input {
   width: 100%;
   border: 1px solid var(--line);
@@ -195,6 +199,99 @@ textarea {
 .form {
   display: grid;
   gap: 14px;
+}
+
+.two-cols {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.span-form {
+  grid-column: 1 / -1;
+}
+
+.textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.span-6 {
+  grid-column: span 6;
+}
+
+.admin-workbench {
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr);
+  gap: 18px;
+}
+
+.agent-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.agent-row {
+  border: 1px solid var(--line);
+  background: #f8faf7;
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  text-align: left;
+}
+
+.agent-row.active {
+  border-color: var(--brand);
+  background: #eef7d0;
+}
+
+.agent-row span {
+  font-weight: 850;
+}
+
+.agent-row small {
+  color: var(--muted);
+}
+
+.switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 800;
+}
+
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.compact {
+  padding: 7px 9px;
+  min-width: 120px;
+}
+
+.settings-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.setting-box {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px;
+  display: grid;
+  gap: 10px;
+  background: #fbfcfa;
+}
+
+.setting-box small {
+  color: var(--muted);
 }
 
 .table {
@@ -267,7 +364,14 @@ textarea {
 
   .span-3,
   .span-4,
+  .span-6,
   .span-8 {
     grid-column: span 12;
+  }
+
+  .admin-workbench,
+  .two-cols,
+  .settings-grid {
+    grid-template-columns: 1fr;
   }
 }

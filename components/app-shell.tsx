@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BarChart3, Building2, FileSignature, Files, Inbox, LayoutDashboard, Users } from "lucide-react";
+import { BarChart3, Bot, Building2, FileSignature, Files, Inbox, LayoutDashboard, Shield, Users } from "lucide-react";
 
 const nav = [
   { href: "/dashboard", label: "Panel", icon: LayoutDashboard },
@@ -7,10 +7,24 @@ const nav = [
   { href: "/dashboard?view=facturas", label: "Facturas", icon: Files },
   { href: "/dashboard?view=firma", label: "Firmas", icon: FileSignature },
   { href: "/dashboard?view=equipo", label: "Equipo", icon: Users },
+  { href: "/autonomos-empresas", label: "Independientes", icon: Building2 },
   { href: "/portal", label: "Portal cliente", icon: Inbox },
 ];
 
-export function AppShell({ children, active = "/dashboard" }: { children: React.ReactNode; active?: string }) {
+const adminNav = [
+  { href: "/super-admin", label: "Super Admin", icon: Shield },
+  { href: "/super-admin#agents", label: "Agentes", icon: Bot },
+];
+
+export function AppShell({
+  children,
+  active = "/dashboard",
+  showSuperAdmin = false,
+}: {
+  children: React.ReactNode;
+  active?: string;
+  showSuperAdmin?: boolean;
+}) {
   return (
     <div className="shell">
       <aside className="sidebar">
@@ -19,7 +33,7 @@ export function AppShell({ children, active = "/dashboard" }: { children: React.
           <span>NexusAI</span>
         </div>
         <nav className="nav">
-          {nav.map((item) => {
+          {[...nav, ...(showSuperAdmin ? adminNav : [])].map((item) => {
             const Icon = item.icon;
             return (
               <Link key={item.href} href={item.href} className={item.href === active ? "active" : undefined}>

@@ -26,6 +26,10 @@ The previous MVP has been preserved under `legacy/` while modules are migrated i
 
 Run the SQL in `supabase/migrations/20260515180000_initial_nexusai.sql` from the Supabase SQL editor. It creates the main tables, RLS policies, helper functions, and private storage buckets.
 
+Run additional SQL files in chronological order. Each new database change is kept in a separate file so it can be copied manually into Supabase SQL Editor.
+
+- `supabase/migrations/20260515193000_super_admin_agents_self_serve.sql`: Super Admin, configurable agents, audit settings, and independent autónomo/empresa onboarding.
+
 ## Specialist Agents
 
 The operating model for NexusAI lives in `config/agents/`. It defines specialist review agents for Supabase/RLS architecture, security, fiscal, labor, product UX, QA/E2E, performance, SEO/marketing, and Vercel DevOps.

@@ -32,3 +32,7 @@
 - Laboral reviews workers, payroll, contracts, sick leave, vacations, time tracking, and labor documents.
 - QA/E2E reviews every critical flow before production release.
 - DevOps/Vercel reviews environment variables, deploy logs, domains, and rollback readiness.
+
+## SQL Rule
+
+Every future SQL change must be created as a new file under `supabase/migrations/` so it can be copied manually into Supabase SQL Editor. Never append new production SQL to an old migration once the user has already applied it.

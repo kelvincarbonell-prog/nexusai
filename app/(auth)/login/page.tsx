@@ -1,4 +1,5 @@
 import { LoginForm } from "@/components/login-form";
+import Link from "next/link";
 
 export default function LoginPage() {
   return (
@@ -14,7 +15,12 @@ export default function LoginPage() {
         </p>
       </section>
       <section className="login-panel">
-        <LoginForm />
+        <div className="form" style={{ width: "min(100%, 420px)" }}>
+          <LoginForm />
+          <Link className="button secondary" href="/autonomos-empresas/registro">
+            Registro autónomos y empresas
+          </Link>
+        </div>
       </section>
     </main>
   );

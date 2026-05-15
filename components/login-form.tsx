@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { LogIn } from "lucide-react";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 
-export function LoginForm() {
+export function LoginForm({ redirectTo = "/dashboard", caption = "Usa el usuario de Supabase Auth." }: { redirectTo?: string; caption?: string }) {
   const router = useRouter();
   const [error, setError] = useState("");
   const [isPending, startTransition] = useTransition();
@@ -23,7 +23,7 @@ export function LoginForm() {
         return;
       }
 
-      router.replace("/dashboard");
+      router.replace(redirectTo);
       router.refresh();
     });
   }
@@ -32,7 +32,7 @@ export function LoginForm() {
     <form action={submit} className="login-card form">
       <div>
         <h2>Acceder</h2>
-        <p className="muted">Usa el usuario de Supabase Auth.</p>
+        <p className="muted">{caption}</p>
       </div>
       <input className="input" name="email" type="email" placeholder="tu@email.com" autoComplete="email" required />
       <input className="input" name="password" type="password" placeholder="Contraseña" autoComplete="current-password" required />
