@@ -1,10 +1,11 @@
 import Link from "next/link";
-import { BarChart3, Bot, Building2, FileSignature, Files, Inbox, LayoutDashboard, Shield, Users } from "lucide-react";
+import { BarChart3, Bot, Building2, FileSignature, Files, Inbox, LayoutDashboard, NotebookTabs, Shield, Users } from "lucide-react";
 
 const nav = [
   { href: "/dashboard", label: "Panel", icon: LayoutDashboard },
   { href: "/dashboard?view=clientes", label: "Clientes", icon: Building2 },
   { href: "/dashboard?view=facturas", label: "Facturas", icon: Files },
+  { href: "/contabilidad", label: "Contabilidad", icon: NotebookTabs },
   { href: "/dashboard?view=firma", label: "Firmas", icon: FileSignature },
   { href: "/dashboard?view=equipo", label: "Equipo", icon: Users },
   { href: "/autonomos-empresas", label: "Independientes", icon: Building2 },

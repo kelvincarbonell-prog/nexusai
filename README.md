@@ -30,6 +30,15 @@ Run additional SQL files in chronological order. Each new database change is kep
 
 - `supabase/migrations/20260515193000_super_admin_agents_self_serve.sql`: Super Admin, configurable agents, audit settings, and independent autónomo/empresa onboarding.
 - `supabase/migrations/20260515194500_numeric_public_slugs.sql`: numeric public slugs for clients and gestorías, without exposing names in public identifiers.
+- `supabase/migrations/20260515201000_accounting_pgc.sql`: accounting base for PGC accounts, journal, ledger data, trial balance, periods, bank reconciliation, fixed assets, amortization and VAT ledger.
+
+## Accounting Module
+
+- `/contabilidad`: operational accounting workspace for PGC accounts, journal entries, trial balance, VAT books, bank reconciliation and fixed assets.
+- `/api/accounting/journal`: creates balanced journal entries, blocks locked/closed periods and assigns entry numbers per company.
+- `/api/accounting/accounts`: lists global + company-specific PGC accounts and creates custom company accounts.
+- `/api/accounting/periods`: creates and updates fiscal periods with open, locked and closed states.
+- `/api/accounting/reports`: returns trial balance, profit and loss, balance sheet, VAT totals, fixed asset totals and accounting periods.
 
 ## Specialist Agents
 

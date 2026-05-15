@@ -17,6 +17,7 @@
 4. Documents, signed documents, and private storage.
 5. AI routes and OCR.
 6. Fiscal models, VeriFactu, SEPA, and advanced automations.
+7. Accounting: PGC accounts, journal entries, ledger, trial balance, closing periods, bank reconciliation, fixed assets, amortization, and VAT books.
 
 ## Rules
 
