@@ -34,6 +34,7 @@ Run additional SQL files in chronological order. Each new database change is kep
 - `supabase/migrations/20260515194500_numeric_public_slugs.sql`: numeric public slugs for clients and gestorías, without exposing names in public identifiers.
 - `supabase/migrations/20260515201000_accounting_pgc.sql`: accounting base for PGC accounts, journal, ledger data, trial balance, periods, bank reconciliation, fixed assets, amortization and VAT ledger.
 - `supabase/migrations/20260515210000_labor_agents_inbox.sql`: labor module (contratos, ausencias, registro horario), forwarding inbox alias per empresa, invoice extractions, expense categorization history and agent runs.
+- `supabase/migrations/20260520140000_aeat_nominas_calendar.sql`: tabla `aeat_declaraciones` para modelos 303/111/115/130/390/200, índice único de upsert en `nominas` por empresa+trabajador+periodo, y buckets de storage `aeat-files` y `payroll-receipts`. Auto-suficiente: crea los helpers `can_access_empresa`, `is_admin`, `set_updated_at` si faltan en tu Supabase.
 
 ## Labor Module
 
