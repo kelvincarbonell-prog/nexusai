@@ -10,13 +10,13 @@ type NavItem = {
 };
 
 const gestorNav: NavItem[] = [
-  { href: "/dashboard", label: "Hoy", count: 5, kbd: "⌘1" },
-  { href: "/dashboard?view=clientes", label: "Clientes", count: 16, kbd: "⌘2" },
-  { href: "/aeat", label: "Modelos AEAT", kbd: "⌘3" },
-  { href: "/contabilidad", label: "Contabilidad", kbd: "⌘4" },
-  { href: "/laboral", label: "Laboral", kbd: "⌘5" },
-  { href: "/agentes", label: "Agentes IA", kbd: "⌘6" },
-  { href: "/dashboard?view=alertas", label: "BOE & alertas", count: 2, kbd: "⌘7" },
+  { href: "/dashboard", label: "Hoy", kbd: "⌘1" },
+  { href: "/dashboard?view=clientes", label: "Clientes", kbd: "⌘2" },
+  { href: "/facturacion", label: "Facturación", kbd: "⌘3" },
+  { href: "/aeat", label: "Modelos AEAT", kbd: "⌘4" },
+  { href: "/contabilidad", label: "Contabilidad", kbd: "⌘5" },
+  { href: "/laboral", label: "Laboral", kbd: "⌘6" },
+  { href: "/agentes", label: "Agentes IA", kbd: "⌘7" },
   { href: "/movil", label: "Móvil", kbd: "⌘8" },
 ];
 
