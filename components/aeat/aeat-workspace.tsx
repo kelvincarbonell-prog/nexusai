@@ -6,15 +6,21 @@ import { CasillasSimple } from "@/components/aeat/casillas-simple";
 
 type Empresa = { id: string; nombre: string; nif?: string };
 
-const TABS: { key: "303" | "111" | "115" | "130" | "390"; label: string; hint: string }[] = [
-  { key: "303", label: "303 · IVA", hint: "Autoliquidación trimestral de IVA" },
-  { key: "111", label: "111 · IRPF retenciones", hint: "Trabajadores y profesionales" },
-  { key: "115", label: "115 · Alquileres", hint: "Retenciones de arrendamientos" },
-  { key: "130", label: "130 · Autónomos", hint: "Pago fraccionado IRPF" },
-  { key: "390", label: "390 · Resumen IVA", hint: "Resumen anual de IVA (agrega los 4 trimestres del 303)" },
+type ModeloKey = "303" | "111" | "115" | "130" | "390" | "347" | "349" | "180" | "190";
+
+const TABS: { key: ModeloKey; label: string; hint: string; group: "trimestral" | "anual" }[] = [
+  { key: "303", label: "303 · IVA", hint: "Autoliquidación trimestral de IVA", group: "trimestral" },
+  { key: "111", label: "111 · IRPF retenciones", hint: "Trabajadores y profesionales", group: "trimestral" },
+  { key: "115", label: "115 · Alquileres", hint: "Retenciones de arrendamientos", group: "trimestral" },
+  { key: "130", label: "130 · Autónomos", hint: "Pago fraccionado IRPF", group: "trimestral" },
+  { key: "349", label: "349 · Intracom.", hint: "Operaciones intracomunitarias", group: "trimestral" },
+  { key: "390", label: "390 · Resumen IVA", hint: "Resumen anual de IVA (agrega los 4 trimestres del 303)", group: "anual" },
+  { key: "190", label: "190 · Resumen IRPF", hint: "Resumen anual de retenciones IRPF", group: "anual" },
+  { key: "180", label: "180 · Resumen alquileres", hint: "Resumen anual retenciones alquileres", group: "anual" },
+  { key: "347", label: "347 · Terceros", hint: "Operaciones con terceros >3.005 € anuales", group: "anual" },
 ];
 
-export function AeatWorkspace({ empresas, initialModelo = "303" }: { empresas: Empresa[]; initialModelo?: "303" | "111" | "115" | "130" | "390" }) {
+export function AeatWorkspace({ empresas, initialModelo = "303" }: { empresas: Empresa[]; initialModelo?: ModeloKey }) {
   const [active, setActive] = useState(initialModelo);
 
   return (

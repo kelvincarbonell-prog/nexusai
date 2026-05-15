@@ -1,6 +1,8 @@
 import { AppShell } from "@/components/app-shell";
 import { UpcomingObligations } from "@/components/dashboard/upcoming-obligations";
 import { OnboardingWizard } from "@/components/dashboard/onboarding-wizard";
+import { SetupRequired } from "@/components/setup-required";
+import { hasSupabaseConfig } from "@/lib/env";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 
@@ -47,6 +49,13 @@ function Sparkline({ values, color = "var(--ink)" }: { values: number[]; color?:
 }
 
 export default async function DashboardPage({ searchParams }: DashboardPageProps) {
+  if (!hasSupabaseConfig()) {
+    const missing: string[] = [];
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL) missing.push("NEXT_PUBLIC_SUPABASE_URL");
+    if (!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) missing.push("NEXT_PUBLIC_SUPABASE_ANON_KEY");
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) missing.push("SUPABASE_SERVICE_ROLE_KEY");
+    return <SetupRequired missing={missing} />;
+  }
   const supabase = await createServerSupabase();
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) redirect("/login");

@@ -104,13 +104,83 @@ const SECTIONS_390: Section[] = [
   },
 ];
 
-const SECTIONS: Record<string, Section[]> = { "111": SECTIONS_111, "115": SECTIONS_115, "130": SECTIONS_130, "390": SECTIONS_390 };
+const SECTIONS_347: Section[] = [
+  {
+    eyebrow: "Operadores declarables (>3.005,06 € anual)",
+    rows: [
+      { code: "c01", label: "Clientes (operaciones emitidas)" },
+      { code: "c02", label: "Proveedores (operaciones recibidas)" },
+      { code: "c05", label: "Total terceros declarados", accent: true },
+    ],
+  },
+  {
+    eyebrow: "Importes anuales",
+    rows: [
+      { code: "c03", label: "Importe total a clientes" },
+      { code: "c04", label: "Importe total de proveedores" },
+    ],
+  },
+];
+
+const SECTIONS_349: Section[] = [
+  {
+    eyebrow: "Operaciones intracomunitarias del trimestre",
+    rows: [
+      { code: "num_operadores", label: "Nº operadores únicos" },
+      { code: "total_entregas", label: "Entregas (E) + triangulares (T)" },
+      { code: "total_adquisiciones", label: "Adquisiciones (A)" },
+      { code: "total_servicios_prestados", label: "Servicios prestados (S)" },
+      { code: "total_servicios_recibidos", label: "Servicios recibidos (I)" },
+      { code: "total", label: "Total base imponible", accent: true },
+    ],
+  },
+];
+
+const SECTIONS_180: Section[] = [
+  {
+    eyebrow: "Resumen anual de alquileres (agrega 4 trimestres del 115)",
+    rows: [
+      { code: "c01", label: "Nº arrendadores únicos" },
+      { code: "c02", label: "Base anual total" },
+      { code: "c03", label: "Retenciones anuales (19 %)", accent: true },
+    ],
+  },
+];
+
+const SECTIONS_190: Section[] = [
+  {
+    eyebrow: "Resumen anual IRPF (agrega 4 trimestres del 111)",
+    rows: [
+      { code: "c01", label: "Trabajadores (clave A)" },
+      { code: "c03", label: "Retenciones trabajadores" },
+      { code: "c04", label: "Profesionales (clave G)" },
+      { code: "c06", label: "Retenciones profesionales" },
+      { code: "total_perceptores", label: "Total perceptores", accent: true },
+      { code: "total_retenciones", label: "Total retenciones", accent: true },
+    ],
+  },
+];
+
+const SECTIONS: Record<string, Section[]> = {
+  "111": SECTIONS_111,
+  "115": SECTIONS_115,
+  "130": SECTIONS_130,
+  "390": SECTIONS_390,
+  "347": SECTIONS_347,
+  "349": SECTIONS_349,
+  "180": SECTIONS_180,
+  "190": SECTIONS_190,
+};
 
 const TITLES: Record<string, string> = {
   "111": "Modelo 111 · Retenciones IRPF",
   "115": "Modelo 115 · Retenciones alquileres",
   "130": "Modelo 130 · Pago fraccionado autónomos",
   "390": "Modelo 390 · Resumen anual IVA",
+  "347": "Modelo 347 · Operaciones con terceros",
+  "349": "Modelo 349 · Operaciones intracomunitarias",
+  "180": "Modelo 180 · Resumen anual alquileres",
+  "190": "Modelo 190 · Resumen anual IRPF",
 };
 
 const HINTS: Record<string, string> = {
@@ -118,15 +188,19 @@ const HINTS: Record<string, string> = {
   "115": "Retenciones por arrendamientos de inmuebles urbanos pagados en el trimestre (tipo 19 %).",
   "130": "Pago fraccionado de IRPF de autónomos en estimación directa. Cálculo acumulado del ejercicio.",
   "390": "Resumen anual informativo de IVA. Agrega automáticamente los 4 trimestres del 303 ya guardados.",
+  "347": "Declaración informativa anual. Terceros con quien operas >3.005,06 € en el año (excluyendo intracomunitarias y alquileres con retención). Presentación: febrero.",
+  "349": "Operaciones con operadores intracomunitarios. Presentación trimestral o mensual según volumen.",
+  "180": "Resumen anual de retenciones de alquileres. Agrega los 4 trimestres del 115.",
+  "190": "Resumen anual de retenciones IRPF (trabajadores + profesionales). Agrega los 4 trimestres del 111.",
 };
 
 const EUR = (n: number) => new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR" }).format(n);
 
-export function CasillasSimple({ modelo, empresas }: { modelo: "111" | "115" | "130" | "390"; empresas: Empresa[] }) {
+export function CasillasSimple({ modelo, empresas }: { modelo: "111" | "115" | "130" | "390" | "347" | "349" | "180" | "190"; empresas: Empresa[] }) {
   const supabase = useMemo(() => createBrowserSupabase(), []);
   const now = new Date();
   const defaultYear = now.getUTCFullYear();
-  const isAnual = modelo === "390";
+  const isAnual = ["390", "347", "180", "190"].includes(modelo);
   const defaultPeriodo = (isAnual ? "ANUAL" : `${Math.ceil((now.getUTCMonth() + 1) / 3)}T`) as "1T" | "2T" | "3T" | "4T" | "ANUAL";
 
   const [empresaId, setEmpresaId] = useState(empresas[0]?.id ?? "");
@@ -211,7 +285,16 @@ export function CasillasSimple({ modelo, empresas }: { modelo: "111" | "115" | "
       ? casillas.c19
       : modelo === "390"
         ? casillas.c664
-        : casillas.c28) ?? 0;
+        : modelo === "347"
+          ? casillas.c05 // num operadores
+          : modelo === "349"
+            ? casillas.total
+            : modelo === "180"
+              ? casillas.c03
+              : modelo === "190"
+                ? casillas.total_retenciones
+                : casillas.c28) ?? 0;
+  const isCount = modelo === "347"; // muestra como número entero, no €
 
   return (
     <section className="grid">
@@ -280,7 +363,7 @@ export function CasillasSimple({ modelo, empresas }: { modelo: "111" | "115" | "
 
       <article className="card span-12" style={{ borderColor: "var(--accent)" }}>
         <span className="card-eyebrow">Resultado</span>
-        <div className="metric accent">{EUR(Math.abs(resultado))}</div>
+        <div className="metric accent">{isCount ? `${resultado}` : EUR(Math.abs(resultado))}</div>
         <div className={`metric-foot ${resultado >= 0 ? "warn" : "accent"}`}>
           {resultado >= 0 ? "A ingresar a Hacienda" : "A compensar"}
         </div>

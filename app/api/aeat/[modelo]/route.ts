@@ -5,15 +5,19 @@ import { getUserFromRequest } from "@/lib/supabase/auth";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { canAccessLaborCompany, isGestorOrAdmin } from "@/lib/laboral/access";
 import { currentTrimestre, type Trimestre } from "@/lib/aeat/queries";
-import { calcular111 } from "@/lib/aeat/calc/m111";
-import { calcular115 } from "@/lib/aeat/calc/m115";
+import { calcular111, type Casillas111 } from "@/lib/aeat/calc/m111";
+import { calcular115, type Casillas115 } from "@/lib/aeat/calc/m115";
 import { calcular130 } from "@/lib/aeat/calc/m130";
 import { calcular390, type DeclaracionTrimestral } from "@/lib/aeat/calc/m390";
+import { calcular347 } from "@/lib/aeat/calc/m347";
+import { calcular349 } from "@/lib/aeat/calc/m349";
+import { calcular180 } from "@/lib/aeat/calc/m180";
+import { calcular190 } from "@/lib/aeat/calc/m190";
 import type { Casillas303 } from "@/lib/aeat/calc/m303";
 import { fetchDatos111, fetchDatos115, fetchDatos130 } from "@/lib/aeat/queries-extra";
 import { validateNif } from "@/lib/aeat/validators";
 
-const SUPPORTED = ["111", "115", "130", "390"] as const;
+const SUPPORTED = ["111", "115", "130", "180", "190", "347", "349", "390"] as const;
 type Modelo = (typeof SUPPORTED)[number];
 
 const QuerySchema = z.object({
@@ -72,6 +76,80 @@ async function compute(
     const r = calcular390({ declaraciones303: decls });
     return { casillas: r.casillas as unknown as Record<string, number>, warnings: r.warnings, resumen: r.resumen };
   }
+  if (modelo === "180" || modelo === "190") {
+    const sourceModel = modelo === "180" ? "115" : "111";
+    const { data } = await admin
+      .from("aeat_declaraciones")
+      .select("modelo,ejercicio,periodo,status,casillas")
+      .eq("empresa_id", empresaId)
+      .eq("modelo", sourceModel)
+      .eq("ejercicio", ejercicio);
+    const decls = (data ?? []).map((d) => ({
+      modelo: d.modelo,
+      ejercicio: d.ejercicio,
+      periodo: d.periodo,
+      status: d.status,
+      casillas: d.casillas as Casillas111 | Casillas115,
+    }));
+    const r =
+      modelo === "180"
+        ? calcular180({ declaraciones115: decls as Array<{ modelo: string; ejercicio: number; periodo: string; status: string; casillas: Casillas115 }> })
+        : calcular190({ declaraciones111: decls as Array<{ modelo: string; ejercicio: number; periodo: string; status: string; casillas: Casillas111 }> });
+    return { casillas: r.casillas as unknown as Record<string, number>, warnings: r.warnings, resumen: r.resumen };
+  }
+  if (modelo === "347") {
+    const from = `${ejercicio}-01-01`;
+    const to = `${ejercicio}-12-31`;
+    const { data } = await admin
+      .from("facturas")
+      .select("id,tipo,contacto_nombre,base,iva,fecha_emision,metadata")
+      .eq("empresa_id", empresaId)
+      .gte("fecha_emision", from)
+      .lte("fecha_emision", to);
+    const facturas = (data ?? []).map((f) => ({
+      id: f.id,
+      tipo: f.tipo as "emitida" | "recibida" | "simplificada",
+      contacto_nombre: f.contacto_nombre,
+      contacto_nif: ((f.metadata as Record<string, unknown> | null)?.contacto_nif as string | undefined) ?? null,
+      base: Number(f.base ?? 0),
+      iva: Number(f.iva ?? 0),
+      fecha_emision: f.fecha_emision ?? null,
+      metadata: f.metadata as Record<string, unknown> | null,
+    }));
+    const r = calcular347({ facturas });
+    return {
+      casillas: r.casillas as unknown as Record<string, number>,
+      warnings: r.warnings,
+      resumen: { operadores: r.operadores.length, top: r.operadores.slice(0, 5) },
+    };
+  }
+  if (modelo === "349") {
+    // Periodo mensual o trimestral: para MVP usamos trimestral
+    if (periodo === "ANUAL") throw new Error("El 349 es trimestral o mensual");
+    const { trimestreToRange } = await import("@/lib/aeat/queries");
+    const { from, to } = trimestreToRange(ejercicio, periodo);
+    const { data } = await admin
+      .from("facturas")
+      .select("id,tipo,contacto_nombre,base,fecha_emision,metadata")
+      .eq("empresa_id", empresaId)
+      .gte("fecha_emision", from)
+      .lte("fecha_emision", to);
+    const facturas = (data ?? []).map((f) => ({
+      id: f.id,
+      tipo: f.tipo as "emitida" | "recibida" | "simplificada",
+      contacto_nombre: f.contacto_nombre,
+      contacto_nif: ((f.metadata as Record<string, unknown> | null)?.contacto_nif as string | undefined) ?? null,
+      base: Number(f.base ?? 0),
+      fecha_emision: f.fecha_emision ?? null,
+      metadata: f.metadata as Record<string, unknown> | null,
+    }));
+    const r = calcular349({ facturas });
+    return {
+      casillas: r.casillas as unknown as Record<string, number>,
+      warnings: r.warnings,
+      resumen: { operadores: r.operaciones.length, top: r.operaciones.slice(0, 5) },
+    };
+  }
   throw new Error("Modelo no soportado");
 }
 
@@ -88,7 +166,8 @@ export async function GET(request: NextRequest, ctx: { params: Promise<{ modelo:
 
   const { year, trimestre } = currentTrimestre();
   const ejercicio = parsed.data.ejercicio ?? year;
-  const periodo = (modelo === "390"
+  const anualModels = ["390", "347", "180", "190"] as const;
+  const periodo = (anualModels.includes(modelo as "390" | "347" | "180" | "190")
     ? "ANUAL"
     : (parsed.data.periodo ?? trimestre)) as Trimestre | "ANUAL";
 
