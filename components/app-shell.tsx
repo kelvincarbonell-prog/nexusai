@@ -33,19 +33,20 @@ export function AppShell({
           <span className="brand-mark">NX</span>
           <span>NexusAI</span>
         </div>
-        <nav className="nav">
+        <nav className="nav" aria-label="Navegación principal">
           {[...nav, ...(showSuperAdmin ? adminNav : [])].map((item) => {
             const Icon = item.icon;
+            const isActive = item.href === active;
             return (
-              <Link key={item.href} href={item.href} className={item.href === active ? "active" : undefined}>
-                <Icon size={18} />
+              <Link key={item.href} href={item.href} className={isActive ? "active" : undefined} aria-current={isActive ? "page" : undefined}>
+                <Icon size={18} aria-hidden="true" />
                 {item.label}
               </Link>
             );
           })}
         </nav>
         <div style={{ marginTop: "auto" }} className="muted">
-          <BarChart3 size={18} />
+          <BarChart3 size={18} aria-hidden="true" />
           <p>Next.js + Supabase migration</p>
         </div>
       </aside>

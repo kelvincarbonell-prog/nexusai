@@ -50,11 +50,23 @@ export default async function AccountingPage() {
                   <div className="eyebrow">Diario</div>
                   <h2>Últimos asientos</h2>
                 </div>
-                <BookOpen size={20} />
+                <BookOpen size={20} aria-hidden="true" />
               </div>
               <table className="table">
+                <caption className="sr-only">Últimos asientos contables</caption>
+                <thead>
+                  <tr>
+                    <th>Fecha</th>
+                    <th>Descripción</th>
+                    <th>Estado</th>
+                  </tr>
+                </thead>
                 <tbody>
-                  {data.entries.map((entry) => (
+                  {data.entries.length === 0 ? (
+                    <tr>
+                      <td colSpan={3}>Todavía no hay asientos registrados.</td>
+                    </tr>
+                  ) : data.entries.map((entry) => (
                     <tr key={entry.id}>
                       <td>{entry.entry_date}</td>
                       <td>{entry.description}</td>
@@ -71,11 +83,23 @@ export default async function AccountingPage() {
                   <div className="eyebrow">Balance</div>
                   <h2>Sumas y saldos</h2>
                 </div>
-                <Scale size={20} />
+                <Scale size={20} aria-hidden="true" />
               </div>
               <table className="table">
+                <caption className="sr-only">Balance de sumas y saldos</caption>
+                <thead>
+                  <tr>
+                    <th>Cuenta</th>
+                    <th>Nombre</th>
+                    <th>Saldo</th>
+                  </tr>
+                </thead>
                 <tbody>
-                  {data.trialBalance.slice(0, 12).map((row) => (
+                  {data.trialBalance.length === 0 ? (
+                    <tr>
+                      <td colSpan={3}>Sin saldos contables todavía.</td>
+                    </tr>
+                  ) : data.trialBalance.slice(0, 12).map((row) => (
                     <tr key={row.code}>
                       <td>{row.code}</td>
                       <td>{row.name}</td>
@@ -87,17 +111,17 @@ export default async function AccountingPage() {
             </article>
 
             <article className="card span-4">
-              <Landmark size={26} color="#145c4a" />
+              <Landmark size={26} color="#145c4a" aria-hidden="true" />
               <h2>Conciliación bancaria</h2>
               <p className="muted">Base preparada para importar Norma 43, CAMT.053 o CSV y casar movimientos con asientos.</p>
             </article>
             <article className="card span-4">
-              <ListChecks size={26} color="#145c4a" />
+              <ListChecks size={26} color="#145c4a" aria-hidden="true" />
               <h2>Cierres y periodos</h2>
               <p className="muted">Periodos contables con estados abierto, bloqueado y cerrado para controlar cambios.</p>
             </article>
             <article className="card span-4">
-              <BookOpen size={26} color="#145c4a" />
+              <BookOpen size={26} color="#145c4a" aria-hidden="true" />
               <h2>Libros de IVA</h2>
               <p className="muted">Estructura preparada para IVA soportado, repercutido y modelos tributarios.</p>
             </article>

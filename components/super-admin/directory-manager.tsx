@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { Save } from "lucide-react";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 
@@ -44,18 +44,21 @@ export function DirectoryManager({
   const [profileRows, setProfileRows] = useState(profiles);
   const [companyRows, setCompanyRows] = useState(companies);
   const [message, setMessage] = useState("");
-  const [isPending, startTransition] = useTransition();
+  const [isSaving, setIsSaving] = useState(false);
 
-  function save(payload: Record<string, unknown>) {
+  async function save(payload: Record<string, unknown>) {
     setMessage("");
-    startTransition(async () => {
+    setIsSaving(true);
+    try {
       const res = await fetch("/api/super-admin/directory", {
         method: "PATCH",
         headers: await headers(),
         body: JSON.stringify(payload),
       });
       setMessage(res.ok ? "Cambios guardados." : "No se pudieron guardar los cambios.");
-    });
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   return (
@@ -68,8 +71,20 @@ export function DirectoryManager({
           </div>
         </div>
         <table className="table">
+          <caption className="sr-only">Gestores y perfiles de la plataforma</caption>
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Rol</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
           <tbody>
-            {profileRows.map((profile) => (
+            {profileRows.length === 0 ? (
+              <tr>
+                <td colSpan={3}>No hay perfiles para mostrar.</td>
+              </tr>
+            ) : profileRows.map((profile) => (
               <tr key={profile.id}>
                 <td>
                   <strong>{profile.gestoria_slug || profile.id.slice(0, 8)}</strong>
@@ -93,10 +108,11 @@ export function DirectoryManager({
                   <button
                     className="button secondary"
                     type="button"
-                    disabled={isPending}
+                    disabled={isSaving}
+                    aria-label={`Guardar cambios del perfil ${profile.gestoria_slug || profile.id.slice(0, 8)}`}
                     onClick={() => save({ type: "profile", id: profile.id, rol: profile.rol, nombre_gestoria: profile.nombre_gestoria })}
                   >
-                    <Save size={14} />
+                    <Save size={14} aria-hidden="true" />
                   </button>
                 </td>
               </tr>
@@ -113,8 +129,21 @@ export function DirectoryManager({
           </div>
         </div>
         <table className="table">
+          <caption className="sr-only">Autónomos y empresas de la plataforma</caption>
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Tipo</th>
+              <th>Origen</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
           <tbody>
-            {companyRows.map((company) => (
+            {companyRows.length === 0 ? (
+              <tr>
+                <td colSpan={4}>No hay clientes para mostrar.</td>
+              </tr>
+            ) : companyRows.map((company) => (
               <tr key={company.id}>
                 <td>
                   <strong>{company.cliente_slug || company.id.slice(0, 8)}</strong>
@@ -148,7 +177,8 @@ export function DirectoryManager({
                   <button
                     className="button secondary"
                     type="button"
-                    disabled={isPending}
+                    disabled={isSaving}
+                    aria-label={`Guardar cambios del cliente ${company.cliente_slug || company.id.slice(0, 8)}`}
                     onClick={() =>
                       save({
                         type: "company",
@@ -160,14 +190,14 @@ export function DirectoryManager({
                       })
                     }
                   >
-                    <Save size={14} />
+                    <Save size={14} aria-hidden="true" />
                   </button>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
-        {message ? <p className="muted">{message}</p> : null}
+        {message ? <p className="muted" role="status">{message}</p> : null}
       </article>
     </>
   );

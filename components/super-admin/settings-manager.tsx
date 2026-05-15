@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { Save } from "lucide-react";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 
@@ -13,11 +13,12 @@ type SettingRow = {
 export function SettingsManager({ settings }: { settings: SettingRow[] }) {
   const [rows, setRows] = useState(settings);
   const [message, setMessage] = useState("");
-  const [isPending, startTransition] = useTransition();
+  const [isSaving, setIsSaving] = useState(false);
 
-  function save(row: SettingRow) {
+  async function save(row: SettingRow) {
     setMessage("");
-    startTransition(async () => {
+    setIsSaving(true);
+    try {
       const supabase = createBrowserSupabase();
       const { data } = await supabase.auth.getSession();
       let parsedValue = row.value;
@@ -38,11 +39,13 @@ export function SettingsManager({ settings }: { settings: SettingRow[] }) {
         body: JSON.stringify({ ...row, value: parsedValue }),
       });
       setMessage(res.ok ? "Ajuste guardado." : "No se pudo guardar el ajuste.");
-    });
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   return (
-    <article className="card span-12">
+    <article className="card span-12" id="settings">
       <div className="eyebrow">Configuración Super Admin</div>
       <h2>Ajustes globales</h2>
       <div className="settings-grid">
@@ -52,19 +55,20 @@ export function SettingsManager({ settings }: { settings: SettingRow[] }) {
             <small>{row.description}</small>
             <textarea
               className="input textarea"
+              aria-label={`JSON del ajuste ${row.key}`}
               value={typeof row.value === "string" ? row.value : JSON.stringify(row.value, null, 2)}
               onChange={(event) =>
                 setRows((current) => current.map((item) => (item.key === row.key ? { ...item, value: event.target.value } : item)))
               }
             />
-            <button className="button secondary" type="button" onClick={() => save(row)} disabled={isPending}>
-              <Save size={14} />
+            <button className="button secondary" type="button" onClick={() => save(row)} disabled={isSaving}>
+              <Save size={14} aria-hidden="true" />
               Guardar ajuste
             </button>
           </div>
         ))}
       </div>
-      {message ? <p className="muted">{message}</p> : null}
+      {message ? <p className="muted" role="status">{message}</p> : null}
     </article>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { Plus, Save, Send, Trash2 } from "lucide-react";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 import type { AgentConfig } from "@/lib/agents/defaults";
@@ -17,7 +17,7 @@ export function AgentManager({ initialAgents }: { initialAgents: AgentConfig[] }
   const [agents, setAgents] = useState(initialAgents);
   const [selectedId, setSelectedId] = useState(initialAgents[0]?.id ?? "");
   const [message, setMessage] = useState("");
-  const [isPending, startTransition] = useTransition();
+  const [isSaving, setIsSaving] = useState(false);
   const selected = agents.find((agent) => agent.id === selectedId) ?? agents[0];
 
   async function authHeaders() {
@@ -34,23 +34,27 @@ export function AgentManager({ initialAgents }: { initialAgents: AgentConfig[] }
     setAgents((current) => current.map((agent) => (agent.id === selected.id ? { ...agent, ...patch } : agent)));
   }
 
-  function saveAgent() {
+  async function saveAgent() {
     if (!selected) return;
     setMessage("");
-    startTransition(async () => {
+    setIsSaving(true);
+    try {
       const res = await fetch("/api/super-admin/agents", {
         method: "PUT",
         headers: await authHeaders(),
         body: JSON.stringify(selected),
       });
       setMessage(res.ok ? "Agente guardado." : "No se pudo guardar el agente.");
-    });
+    } finally {
+      setIsSaving(false);
+    }
   }
 
-  function deleteAgent() {
+  async function deleteAgent() {
     if (!selected) return;
     setMessage("");
-    startTransition(async () => {
+    setIsSaving(true);
+    try {
       const res = await fetch(`/api/super-admin/agents?id=${encodeURIComponent(selected.id)}`, {
         method: "DELETE",
         headers: await authHeaders(),
@@ -62,7 +66,9 @@ export function AgentManager({ initialAgents }: { initialAgents: AgentConfig[] }
       } else {
         setMessage("No se pudo eliminar el agente.");
       }
-    });
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   function addAgent() {
@@ -93,7 +99,7 @@ export function AgentManager({ initialAgents }: { initialAgents: AgentConfig[] }
         <h2>Agentes</h2>
         <p className="muted">Todavia no hay agentes configurados.</p>
         <button className="button" onClick={addAgent} type="button">
-          <Plus size={16} />
+          <Plus size={16} aria-hidden="true" />
           Añadir agente
         </button>
       </section>
@@ -108,8 +114,8 @@ export function AgentManager({ initialAgents }: { initialAgents: AgentConfig[] }
             <div className="eyebrow">Agentes</div>
             <h2>Normas configurables</h2>
           </div>
-          <button className="button secondary" onClick={addAgent} type="button" title="Añadir agente">
-            <Plus size={16} />
+          <button className="button secondary" onClick={addAgent} type="button" title="Añadir agente" aria-label="Añadir agente">
+            <Plus size={16} aria-hidden="true" />
           </button>
         </div>
         <div className="agent-list">
@@ -119,6 +125,7 @@ export function AgentManager({ initialAgents }: { initialAgents: AgentConfig[] }
               key={agent.id}
               className={`agent-row ${agent.id === selected.id ? "active" : ""}`}
               onClick={() => setSelectedId(agent.id)}
+              aria-pressed={agent.id === selected.id}
             >
               <span>{agent.name}</span>
               <small>{agent.enabled ? "Activo" : "Pausado"}</small>
@@ -188,20 +195,20 @@ export function AgentManager({ initialAgents }: { initialAgents: AgentConfig[] }
         </div>
 
         <div className="button-row">
-          <button className="button" type="button" onClick={saveAgent} disabled={isPending}>
-            <Save size={16} />
+          <button className="button" type="button" onClick={saveAgent} disabled={isSaving}>
+            <Save size={16} aria-hidden="true" />
             Guardar
           </button>
           <button className="button secondary" type="button" onClick={sendOrder}>
-            <Send size={16} />
+            <Send size={16} aria-hidden="true" />
             Dar orden
           </button>
-          <button className="button danger" type="button" onClick={deleteAgent} disabled={isPending}>
-            <Trash2 size={16} />
+          <button className="button danger" type="button" onClick={deleteAgent} disabled={isSaving}>
+            <Trash2 size={16} aria-hidden="true" />
             Eliminar
           </button>
         </div>
-        {message ? <p className="muted">{message}</p> : null}
+        {message ? <p className="muted" role="status">{message}</p> : null}
       </div>
     </section>
   );

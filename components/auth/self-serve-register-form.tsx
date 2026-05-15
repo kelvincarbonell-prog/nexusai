@@ -1,16 +1,17 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { Building2, UserRoundPlus } from "lucide-react";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 
 export function SelfServeRegisterForm() {
   const [message, setMessage] = useState("");
-  const [isPending, startTransition] = useTransition();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  function submit(formData: FormData) {
+  async function submit(formData: FormData) {
     setMessage("");
-    startTransition(async () => {
+    setIsSubmitting(true);
+    try {
       const email = String(formData.get("email") ?? "");
       const password = String(formData.get("password") ?? "");
       const name = String(formData.get("name") ?? "");
@@ -43,7 +44,7 @@ export function SelfServeRegisterForm() {
         return;
       }
 
-      await supabase.from("perfiles").upsert({
+      const { error: profileError } = await supabase.from("perfiles").upsert({
         id: data.user.id,
         email,
         nombre: name,
@@ -51,7 +52,12 @@ export function SelfServeRegisterForm() {
         nombre_gestoria: null,
       });
 
-      await supabase.from("empresas").insert({
+      if (profileError) {
+        setMessage("Cuenta creada, pero no se pudo preparar el perfil. Contacta con soporte.");
+        return;
+      }
+
+      const { error: companyError } = await supabase.from("empresas").insert({
         owner_user_id: data.user.id,
         razon_social: businessName,
         nif,
@@ -60,31 +66,56 @@ export function SelfServeRegisterForm() {
         estado: "activo",
       });
 
+      if (companyError) {
+        setMessage("Cuenta creada, pero no se pudo crear la entidad. Contacta con soporte.");
+        return;
+      }
+
       setMessage("Cuenta creada. Ya puedes acceder a tu panel.");
-    });
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
     <form action={submit} className="login-card form">
-      <Building2 size={28} color="#145c4a" />
+      <Building2 size={28} color="#145c4a" aria-hidden="true" />
       <div>
         <h2>Registro independiente</h2>
         <p className="muted">Para autónomos y empresas que usarán NexusAI sin depender de una gestoría.</p>
       </div>
-      <input className="input" name="name" placeholder="Nombre de contacto" required />
-      <input className="input" name="businessName" placeholder="Nombre fiscal / razón social" required />
-      <input className="input" name="nif" placeholder="NIF / CIF" required />
-      <select className="input" name="accountType" defaultValue="empresa">
-        <option value="autonomo">Autónomo</option>
-        <option value="empresa">Empresa</option>
-      </select>
-      <input className="input" name="email" type="email" placeholder="Email" autoComplete="email" required />
-      <input className="input" name="password" type="password" placeholder="Contraseña" autoComplete="new-password" required />
-      <button className="button" type="submit" disabled={isPending}>
-        <UserRoundPlus size={17} />
-        {isPending ? "Creando..." : "Crear cuenta"}
+      <label>
+        Nombre de contacto
+        <input className="input" name="name" placeholder="Nombre de contacto" required />
+      </label>
+      <label>
+        Nombre fiscal o razón social
+        <input className="input" name="businessName" placeholder="Nombre fiscal / razón social" required />
+      </label>
+      <label>
+        NIF / CIF
+        <input className="input" name="nif" placeholder="NIF / CIF" required />
+      </label>
+      <label>
+        Tipo de cuenta
+        <select className="input" name="accountType" defaultValue="empresa">
+          <option value="autonomo">Autónomo</option>
+          <option value="empresa">Empresa</option>
+        </select>
+      </label>
+      <label>
+        Email
+        <input className="input" name="email" type="email" placeholder="Email" autoComplete="email" required />
+      </label>
+      <label>
+        Contraseña
+        <input className="input" name="password" type="password" placeholder="Contraseña" autoComplete="new-password" required />
+      </label>
+      <button className="button" type="submit" disabled={isSubmitting}>
+        <UserRoundPlus size={17} aria-hidden="true" />
+        {isSubmitting ? "Creando..." : "Crear cuenta"}
       </button>
-      {message ? <p className="muted">{message}</p> : null}
+      {message ? <p className="muted" role="status">{message}</p> : null}
     </form>
   );
 }

@@ -29,7 +29,8 @@ export function JournalEntryForm({ empresaId, accounts }: { empresaId: string; a
 
   const debit = lines.reduce((sum, line) => sum + Number(line.debit || 0), 0);
   const credit = lines.reduce((sum, line) => sum + Number(line.credit || 0), 0);
-  const balanced = debit > 0 && debit.toFixed(2) === credit.toFixed(2);
+  const hasAccounts = accounts.length > 0;
+  const balanced = hasAccounts && debit > 0 && debit.toFixed(2) === credit.toFixed(2);
 
   function patchLine(index: number, patch: Partial<Line>) {
     setLines((current) => current.map((line, i) => (i === index ? { ...line, ...patch } : line)));
@@ -45,6 +46,10 @@ export function JournalEntryForm({ empresaId, accounts }: { empresaId: string; a
   }
 
   async function submit() {
+    if (!hasAccounts) {
+      setMessage("Primero necesitas una cuenta contable disponible.");
+      return;
+    }
     setMessage("");
     setIsSaving(true);
     try {
@@ -94,28 +99,41 @@ export function JournalEntryForm({ empresaId, accounts }: { empresaId: string; a
       <div className="journal-lines">
         {lines.map((line, index) => (
           <div className="journal-line" key={index}>
-            <select className="input" value={line.account_id} onChange={(event) => patchLine(index, { account_id: event.target.value })}>
-              {accounts.map((account) => (
-                <option value={account.id} key={account.id}>{account.code} - {account.name}</option>
-              ))}
-            </select>
-            <input className="input" placeholder="Detalle" value={line.description} onChange={(event) => patchLine(index, { description: event.target.value })} />
-            <input className="input" placeholder="Debe" type="number" step="0.01" value={line.debit} onChange={(event) => patchLine(index, { debit: event.target.value, credit: event.target.value ? "" : line.credit })} />
-            <input className="input" placeholder="Haber" type="number" step="0.01" value={line.credit} onChange={(event) => patchLine(index, { credit: event.target.value, debit: event.target.value ? "" : line.debit })} />
+            <label>
+              <span className="sr-only">Cuenta contable línea {index + 1}</span>
+              <select className="input" value={line.account_id} onChange={(event) => patchLine(index, { account_id: event.target.value })}>
+                {accounts.map((account) => (
+                  <option value={account.id} key={account.id}>{account.code} - {account.name}</option>
+                ))}
+              </select>
+            </label>
+            <label>
+              <span className="sr-only">Detalle línea {index + 1}</span>
+              <input className="input" placeholder="Detalle" value={line.description} onChange={(event) => patchLine(index, { description: event.target.value })} />
+            </label>
+            <label>
+              <span className="sr-only">Debe línea {index + 1}</span>
+              <input className="input" placeholder="Debe" type="number" step="0.01" min="0" value={line.debit} onChange={(event) => patchLine(index, { debit: event.target.value, credit: event.target.value ? "" : line.credit })} />
+            </label>
+            <label>
+              <span className="sr-only">Haber línea {index + 1}</span>
+              <input className="input" placeholder="Haber" type="number" step="0.01" min="0" value={line.credit} onChange={(event) => patchLine(index, { credit: event.target.value, debit: event.target.value ? "" : line.debit })} />
+            </label>
           </div>
         ))}
       </div>
       <div className="button-row">
-        <button className="button secondary" type="button" onClick={() => setLines((current) => [...current, { account_id: accounts[0]?.id ?? "", description: "", debit: "", credit: "" }])}>
-          <Plus size={16} />
+        <button className="button secondary" type="button" disabled={!hasAccounts} onClick={() => setLines((current) => [...current, { account_id: accounts[0]?.id ?? "", description: "", debit: "", credit: "" }])}>
+          <Plus size={16} aria-hidden="true" />
           Línea
         </button>
         <button className="button" type="button" disabled={!balanced || isSaving} onClick={submit}>
-          <Save size={16} />
+          <Save size={16} aria-hidden="true" />
           Guardar asiento
         </button>
       </div>
-      {message ? <p className="muted">{message}</p> : null}
+      {!hasAccounts ? <p className="muted" role="alert">No hay cuentas contables disponibles para crear asientos.</p> : null}
+      {message ? <p className="muted" role="status">{message}</p> : null}
     </section>
   );
 }

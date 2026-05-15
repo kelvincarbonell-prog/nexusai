@@ -57,8 +57,21 @@ export default async function SelfServeHomePage() {
         <article className="card span-12">
           <h2>Mis entidades</h2>
           <table className="table">
+            <caption className="sr-only">Entidades vinculadas al usuario independiente</caption>
+            <thead>
+              <tr>
+                <th>Código</th>
+                <th>NIF</th>
+                <th>Tipo</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
             <tbody>
-              {(companies ?? []).map((company) => (
+              {(companies ?? []).length === 0 ? (
+                <tr>
+                  <td colSpan={4}>Aún no hay entidades vinculadas a tu cuenta.</td>
+                </tr>
+              ) : (companies ?? []).map((company) => (
                 <tr key={company.id}>
                   <td>{company.cliente_slug || company.id.slice(0, 8)}</td>
                   <td>{company.nif}</td>

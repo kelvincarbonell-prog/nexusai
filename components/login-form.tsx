@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { LogIn } from "lucide-react";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
@@ -8,11 +8,12 @@ import { createBrowserSupabase } from "@/lib/supabase/browser";
 export function LoginForm({ redirectTo = "/dashboard", caption = "Usa el usuario de Supabase Auth." }: { redirectTo?: string; caption?: string }) {
   const router = useRouter();
   const [error, setError] = useState("");
-  const [isPending, startTransition] = useTransition();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  function submit(formData: FormData) {
+  async function submit(formData: FormData) {
     setError("");
-    startTransition(async () => {
+    setIsSubmitting(true);
+    try {
       const email = String(formData.get("email") ?? "");
       const password = String(formData.get("password") ?? "");
       const supabase = createBrowserSupabase();
@@ -25,7 +26,11 @@ export function LoginForm({ redirectTo = "/dashboard", caption = "Usa el usuario
 
       router.replace(redirectTo);
       router.refresh();
-    });
+    } catch {
+      setError("No se pudo conectar con Supabase. Inténtalo de nuevo.");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -34,12 +39,18 @@ export function LoginForm({ redirectTo = "/dashboard", caption = "Usa el usuario
         <h2>Acceder</h2>
         <p className="muted">{caption}</p>
       </div>
-      <input className="input" name="email" type="email" placeholder="tu@email.com" autoComplete="email" required />
-      <input className="input" name="password" type="password" placeholder="Contraseña" autoComplete="current-password" required />
-      {error ? <p style={{ color: "var(--danger)", margin: 0 }}>{error}</p> : null}
-      <button className="button" type="submit" disabled={isPending}>
-        <LogIn size={17} />
-        {isPending ? "Entrando..." : "Entrar"}
+      <label>
+        Email
+        <input className="input" name="email" type="email" placeholder="tu@email.com" autoComplete="email" required />
+      </label>
+      <label>
+        Contraseña
+        <input className="input" name="password" type="password" placeholder="Contraseña" autoComplete="current-password" required />
+      </label>
+      {error ? <p role="alert" style={{ color: "var(--danger)", margin: 0 }}>{error}</p> : null}
+      <button className="button" type="submit" disabled={isSubmitting}>
+        <LogIn size={17} aria-hidden="true" />
+        {isSubmitting ? "Entrando..." : "Entrar"}
       </button>
     </form>
   );

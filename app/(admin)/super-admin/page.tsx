@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { Bot, FileText, Settings, Shield } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { StatCard } from "@/components/stat-card";
@@ -29,10 +30,10 @@ export default async function SuperAdminPage() {
             Control global de gestores, clientes, autónomos, empresas independientes, agentes, configuración y métricas.
           </p>
         </div>
-        <button className="button">
-          <Settings size={17} />
+        <Link className="button" href="#settings">
+          <Settings size={17} aria-hidden="true" />
           Configuración
-        </button>
+        </Link>
       </header>
 
       <section className="grid">
@@ -42,21 +43,21 @@ export default async function SuperAdminPage() {
         <StatCard label="Agentes" value={String(metrics.agentes)} hint="Normas configurables" />
 
         <article className="card span-4">
-          <Shield size={28} color="#145c4a" />
+          <Shield size={28} color="#145c4a" aria-hidden="true" />
           <h2>Configuraciones críticas</h2>
           <p className="muted">
             Revisa RLS, Storage privado, claves IA, dominios, onboarding independiente, límites de uso y auditoría.
           </p>
         </article>
         <article className="card span-4">
-          <FileText size={28} color="#145c4a" />
+          <FileText size={28} color="#145c4a" aria-hidden="true" />
           <h2>Documentos y firma</h2>
           <p className="muted">
             Métricas actuales: {metrics.documentos} documentos y {metrics.firmas} firmas registradas.
           </p>
         </article>
         <article className="card span-4">
-          <Bot size={28} color="#145c4a" />
+          <Bot size={28} color="#145c4a" aria-hidden="true" />
           <h2>Agentes operativos</h2>
           <p className="muted">Fiscal, laboral, seguridad, QA, SEO, UX, performance, DevOps y Supabase/RLS.</p>
         </article>
