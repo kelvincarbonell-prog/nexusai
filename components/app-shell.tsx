@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
+import { Bell, Mic } from "lucide-react";
 
 type NavItem = {
   href: string;
@@ -95,10 +97,20 @@ export function AppShell({
               <label className="topbar-search" aria-label="Buscador">
                 <span className="kbd">⌘K</span>
                 <input placeholder="Pide a Nexus algo… ej. «presenta el IVA 2T de Innova»" />
-                <span className="pill plain" style={{ background: "transparent", border: 0, color: "var(--muted)" }}>● voz</span>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 4, color: "var(--muted)" }}>
+                  <span className="pulse-dot" aria-hidden="true" />
+                  <Mic size={13} aria-hidden="true" /> voz
+                </span>
               </label>
               <div className="topbar-meta">
-                <time suppressHydrationWarning>{new Date().toLocaleString("es-ES", { weekday: "short", day: "2-digit", hour: "2-digit", minute: "2-digit" })}</time>
+                <time suppressHydrationWarning>
+                  {new Date().toLocaleString("es-ES", { weekday: "short", day: "2-digit", hour: "2-digit", minute: "2-digit" })}
+                </time>
+                <span className="bell" aria-label="5 notificaciones">
+                  <Bell size={14} aria-hidden="true" />
+                  <span className="dot">5</span>
+                </span>
+                <ThemeToggle compact />
                 <span className="avatar" aria-hidden="true">N</span>
               </div>
             </div>
