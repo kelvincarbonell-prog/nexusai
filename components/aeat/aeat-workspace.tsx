@@ -3,10 +3,11 @@
 import { useState } from "react";
 import { Casillas303 } from "@/components/aeat/casillas-303";
 import { CasillasSimple } from "@/components/aeat/casillas-simple";
+import { Casillas200 } from "@/components/aeat/casillas-200";
 
 type Empresa = { id: string; nombre: string; nif?: string };
 
-type ModeloKey = "303" | "111" | "115" | "130" | "390" | "347" | "349" | "180" | "190" | "232";
+type ModeloKey = "303" | "111" | "115" | "130" | "390" | "347" | "349" | "180" | "190" | "232" | "200";
 
 const TABS: { key: ModeloKey; label: string; hint: string; group: "trimestral" | "anual" }[] = [
   { key: "303", label: "303 · IVA", hint: "Autoliquidación trimestral de IVA", group: "trimestral" },
@@ -19,6 +20,7 @@ const TABS: { key: ModeloKey; label: string; hint: string; group: "trimestral" |
   { key: "180", label: "180 · Resumen alquileres", hint: "Resumen anual retenciones alquileres", group: "anual" },
   { key: "347", label: "347 · Terceros", hint: "Operaciones con terceros >3.005 € anuales", group: "anual" },
   { key: "232", label: "232 · Vinculadas", hint: "Operaciones vinculadas y paraísos fiscales", group: "anual" },
+  { key: "200", label: "200 · Sociedades", hint: "Impuesto sobre Sociedades anual", group: "anual" },
 ];
 
 export function AeatWorkspace({ empresas, initialModelo = "303" }: { empresas: Empresa[]; initialModelo?: ModeloKey }) {
@@ -42,6 +44,8 @@ export function AeatWorkspace({ empresas, initialModelo = "303" }: { empresas: E
       </div>
       {active === "303" ? (
         <Casillas303 empresas={empresas} />
+      ) : active === "200" ? (
+        <Casillas200 empresas={empresas} />
       ) : (
         <CasillasSimple modelo={active} empresas={empresas} />
       )}

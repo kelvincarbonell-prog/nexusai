@@ -11,13 +11,17 @@ type NavItem = {
 
 const gestorNav: NavItem[] = [
   { href: "/dashboard", label: "Hoy", kbd: "⌘1" },
-  { href: "/dashboard?view=clientes", label: "Clientes", kbd: "⌘2" },
+  { href: "/clientes", label: "Clientes", kbd: "⌘2" },
   { href: "/facturacion", label: "Facturación", kbd: "⌘3" },
   { href: "/aeat", label: "Modelos AEAT", kbd: "⌘4" },
   { href: "/contabilidad", label: "Contabilidad", kbd: "⌘5" },
   { href: "/laboral", label: "Laboral", kbd: "⌘6" },
   { href: "/agentes", label: "Agentes IA", kbd: "⌘7" },
   { href: "/movil", label: "Móvil", kbd: "⌘8" },
+];
+
+const accountNav: NavItem[] = [
+  { href: "/perfil", label: "Mi perfil" },
 ];
 
 const adminExtras: NavItem[] = [
@@ -43,7 +47,7 @@ export function AppShell({
   hideTopbar = false,
   topbar,
 }: AppShellProps) {
-  const allNav = [...gestorNav, ...(showSuperAdmin ? adminExtras : [])];
+  const allNav = [...gestorNav, ...accountNav, ...(showSuperAdmin ? adminExtras : [])];
   return (
     <div className={rightRail ? "shell with-copilot" : "shell"}>
       <aside className="sidebar" aria-label="Navegación principal">

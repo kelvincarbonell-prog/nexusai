@@ -14,11 +14,12 @@ import { calcular349 } from "@/lib/aeat/calc/m349";
 import { calcular180 } from "@/lib/aeat/calc/m180";
 import { calcular190 } from "@/lib/aeat/calc/m190";
 import { calcular232 } from "@/lib/aeat/calc/m232";
+import { calcular200, type Modelo200Input } from "@/lib/aeat/calc/m200";
 import type { Casillas303 } from "@/lib/aeat/calc/m303";
 import { fetchDatos111, fetchDatos115, fetchDatos130 } from "@/lib/aeat/queries-extra";
 import { validateNif } from "@/lib/aeat/validators";
 
-const SUPPORTED = ["111", "115", "130", "180", "190", "232", "347", "349", "390"] as const;
+const SUPPORTED = ["111", "115", "130", "180", "190", "200", "232", "347", "349", "390"] as const;
 type Modelo = (typeof SUPPORTED)[number];
 
 const QuerySchema = z.object({
@@ -27,13 +28,76 @@ const QuerySchema = z.object({
   periodo: z.enum(["1T", "2T", "3T", "4T", "ANUAL"]).optional(),
 });
 
+const M200InputSchema = z.object({
+  resultado_contable: z.number().optional(),
+  ajuste_aumento_permanente: z.number().min(0).optional(),
+  ajuste_disminucion_permanente: z.number().min(0).optional(),
+  ajuste_aumento_temporal: z.number().min(0).optional(),
+  ajuste_disminucion_temporal: z.number().min(0).optional(),
+  compensacion_bin: z.number().min(0).optional(),
+  bin_disponible: z.number().min(0).optional(),
+  tipo_gravamen: z.enum(["general", "nueva_creacion", "pyme", "otro"]).optional(),
+  tipo_gravamen_custom: z.number().min(0).max(50).optional(),
+  deduccion_id_i: z.number().min(0).optional(),
+  deduccion_doble_imposicion: z.number().min(0).optional(),
+  deduccion_donativos: z.number().min(0).optional(),
+  deduccion_otras: z.number().min(0).optional(),
+  retenciones_soportadas: z.number().min(0).optional(),
+  pagos_fraccionados: z.number().min(0).optional(),
+  cifra_negocios: z.number().min(0).optional(),
+});
+
 const SaveSchema = z.object({
   empresa_id: z.string().uuid(),
   ejercicio: z.number().int().min(2020).max(2099),
   periodo: z.enum(["1T", "2T", "3T", "4T", "ANUAL"]),
   status: z.enum(["borrador", "revisado", "presentado"]).default("borrador"),
   notas: z.string().max(2000).optional(),
+  inputs_200: M200InputSchema.optional(),
 });
+
+async function autoResultadoContable(
+  admin: ReturnType<typeof createSupabaseAdmin>,
+  empresaId: string,
+  ejercicio: number,
+): Promise<number> {
+  const from = `${ejercicio}-01-01`;
+  const to = `${ejercicio}-12-31`;
+  const [{ data: entries }, { data: lines }] = await Promise.all([
+    admin
+      .from("journal_entries")
+      .select("id,entry_date,status")
+      .eq("empresa_id", empresaId)
+      .gte("entry_date", from)
+      .lte("entry_date", to)
+      .neq("status", "draft"),
+    admin
+      .from("journal_lines")
+      .select("debit,credit,account_id,entry_id")
+      .eq("empresa_id", empresaId),
+  ]);
+  const validIds = new Set((entries ?? []).map((e) => e.id));
+  const accountIds = Array.from(new Set((lines ?? []).map((l) => l.account_id)));
+  const { data: accounts } = await admin
+    .from("pgc_accounts")
+    .select("id,code")
+    .in("id", accountIds);
+  const codeMap = new Map((accounts ?? []).map((a) => [a.id, a.code]));
+
+  let ingresos = 0;
+  let gastos = 0;
+  for (const l of lines ?? []) {
+    if (!validIds.has(l.entry_id)) continue;
+    const code = codeMap.get(l.account_id);
+    if (!code) continue;
+    const g = Number(code.charAt(0));
+    const debit = Number(l.debit ?? 0);
+    const credit = Number(l.credit ?? 0);
+    if (g === 7) ingresos += credit - debit;       // saldo acreedor neto
+    if (g === 6) gastos += debit - credit;          // saldo deudor neto
+  }
+  return Math.round((ingresos - gastos) * 100) / 100;
+}
 
 async function compute(
   modelo: Modelo,
@@ -178,6 +242,75 @@ async function compute(
   throw new Error("Modelo no soportado");
 }
 
+async function compute200(
+  admin: ReturnType<typeof createSupabaseAdmin>,
+  empresaId: string,
+  ejercicio: number,
+  inputs: Modelo200Input,
+): Promise<{ casillas: Record<string, number>; warnings: string[]; resumen: Record<string, unknown> }> {
+  // Auto-completa lo que no venga en inputs leyendo el sistema
+  let resultadoContable = inputs.resultado_contable;
+  if (resultadoContable == null) {
+    resultadoContable = await autoResultadoContable(admin, empresaId, ejercicio);
+  }
+
+  // Retenciones soportadas: sumar facturas recibidas con metadata.retencion_irpf
+  let retencionesSoportadas = inputs.retenciones_soportadas;
+  if (retencionesSoportadas == null) {
+    const { data: rec } = await admin
+      .from("facturas")
+      .select("metadata")
+      .eq("empresa_id", empresaId)
+      .eq("tipo", "recibida")
+      .gte("fecha_emision", `${ejercicio}-01-01`)
+      .lte("fecha_emision", `${ejercicio}-12-31`);
+    retencionesSoportadas = (rec ?? []).reduce((s, f) => {
+      const m = (f.metadata ?? {}) as Record<string, unknown>;
+      return s + Number(m.retencion_irpf ?? 0);
+    }, 0);
+  }
+
+  // Pagos fraccionados 202 ya guardados
+  let pagosFracc = inputs.pagos_fraccionados;
+  if (pagosFracc == null) {
+    const { data: m202 } = await admin
+      .from("aeat_declaraciones")
+      .select("resultado")
+      .eq("empresa_id", empresaId)
+      .eq("modelo", "202")
+      .eq("ejercicio", ejercicio)
+      .in("status", ["presentado", "revisado"]);
+    pagosFracc = (m202 ?? []).reduce((s, d) => s + Math.max(0, Number(d.resultado ?? 0)), 0);
+  }
+
+  // Cifra de negocios: si no se da, suma facturas emitidas
+  let cifraNegocios = inputs.cifra_negocios;
+  if (cifraNegocios == null) {
+    const { data: emit } = await admin
+      .from("facturas")
+      .select("base")
+      .eq("empresa_id", empresaId)
+      .in("tipo", ["emitida", "simplificada"])
+      .gte("fecha_emision", `${ejercicio}-01-01`)
+      .lte("fecha_emision", `${ejercicio}-12-31`);
+    cifraNegocios = (emit ?? []).reduce((s, f) => s + Number(f.base ?? 0), 0);
+  }
+
+  const r = calcular200({
+    ...inputs,
+    resultado_contable: resultadoContable,
+    retenciones_soportadas: retencionesSoportadas,
+    pagos_fraccionados: pagosFracc,
+    cifra_negocios: cifraNegocios,
+  });
+
+  return {
+    casillas: r.casillas as unknown as Record<string, number>,
+    warnings: r.warnings,
+    resumen: { ...r.resumen, inputs_aplicados: { resultado_contable: resultadoContable, retenciones_soportadas: retencionesSoportadas, pagos_fraccionados: pagosFracc, cifra_negocios: cifraNegocios } },
+  };
+}
+
 export async function GET(request: NextRequest, ctx: { params: Promise<{ modelo: string }> }) {
   const { modelo } = await ctx.params;
   if (!SUPPORTED.includes(modelo as Modelo)) return jsonError("Modelo no soportado", 404);
@@ -191,8 +324,8 @@ export async function GET(request: NextRequest, ctx: { params: Promise<{ modelo:
 
   const { year, trimestre } = currentTrimestre();
   const ejercicio = parsed.data.ejercicio ?? year;
-  const anualModels = ["390", "347", "180", "190", "232"] as const;
-  const periodo = (anualModels.includes(modelo as "390" | "347" | "180" | "190" | "232")
+  const anualModels = ["390", "347", "180", "190", "200", "232"] as const;
+  const periodo = (anualModels.includes(modelo as "390" | "347" | "180" | "190" | "200" | "232")
     ? "ANUAL"
     : (parsed.data.periodo ?? trimestre)) as Trimestre | "ANUAL";
 
@@ -202,7 +335,21 @@ export async function GET(request: NextRequest, ctx: { params: Promise<{ modelo:
     .eq("id", parsed.data.empresa_id)
     .single();
 
-  const result = await compute(modelo as Modelo, admin, parsed.data.empresa_id, ejercicio, periodo);
+  let result;
+  if (modelo === "200") {
+    // Cargar inputs guardados si existen
+    const { data: prev } = await admin
+      .from("aeat_declaraciones")
+      .select("resumen")
+      .eq("empresa_id", parsed.data.empresa_id)
+      .eq("modelo", "200")
+      .eq("ejercicio", ejercicio)
+      .maybeSingle();
+    const prevInputs = ((prev?.resumen as Record<string, unknown> | undefined)?.inputs_aplicados ?? {}) as Modelo200Input;
+    result = await compute200(admin, parsed.data.empresa_id, ejercicio, prevInputs);
+  } else {
+    result = await compute(modelo as Modelo, admin, parsed.data.empresa_id, ejercicio, periodo);
+  }
   const nifCheck = empresa?.nif ? validateNif(empresa.nif) : { ok: false, reason: "Empresa sin NIF" };
   const nifWarning = nifCheck.ok ? null : `NIF inválido: ${nifCheck.reason}.`;
 
@@ -240,13 +387,18 @@ export async function POST(request: NextRequest, ctx: { params: Promise<{ modelo
   const admin = createSupabaseAdmin();
   if (!(await isGestorOrAdmin(admin, user.id, parsed.data.empresa_id))) return jsonError("Sin permiso", 403);
 
-  const result = await compute(modelo as Modelo, admin, parsed.data.empresa_id, parsed.data.ejercicio, parsed.data.periodo);
+  const result =
+    modelo === "200"
+      ? await compute200(admin, parsed.data.empresa_id, parsed.data.ejercicio, parsed.data.inputs_200 ?? {})
+      : await compute(modelo as Modelo, admin, parsed.data.empresa_id, parsed.data.ejercicio, parsed.data.periodo);
   const resultado =
-    modelo === "111"
-      ? (result.casillas as { c28?: number }).c28 ?? 0
-      : modelo === "115"
+    modelo === "200"
+      ? (result.casillas as { c599?: number }).c599 ?? 0
+      : modelo === "111"
         ? (result.casillas as { c28?: number }).c28 ?? 0
-        : (result.casillas as { c19?: number }).c19 ?? 0;
+        : modelo === "115"
+          ? (result.casillas as { c28?: number }).c28 ?? 0
+          : (result.casillas as { c19?: number }).c19 ?? 0;
 
   const { data, error } = await admin
     .from("aeat_declaraciones")
