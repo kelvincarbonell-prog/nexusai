@@ -58,12 +58,12 @@ export async function getSuperAdminDirectory() {
   const [profiles, companies, settings] = await Promise.all([
     admin
       .from("perfiles")
-      .select("id,email,nombre,apellidos,rol,nombre_gestoria,created_at")
+      .select("id,email,nombre,apellidos,rol,nombre_gestoria,gestoria_slug,created_at")
       .order("created_at", { ascending: false })
       .limit(50),
     admin
       .from("empresas")
-      .select("id,razon_social,nif,estado,account_type,onboarding_source,plan,gestor_id,owner_user_id,created_at")
+      .select("id,razon_social,nif,estado,account_type,onboarding_source,plan,cliente_slug,gestor_id,owner_user_id,created_at")
       .order("created_at", { ascending: false })
       .limit(50),
     admin

@@ -11,6 +11,7 @@ type ProfileRow = {
   apellidos: string | null;
   rol: string;
   nombre_gestoria: string | null;
+  gestoria_slug: string | null;
 };
 
 type CompanyRow = {
@@ -21,6 +22,7 @@ type CompanyRow = {
   account_type: string | null;
   onboarding_source: string | null;
   plan: string | null;
+  cliente_slug: string | null;
 };
 
 async function headers() {
@@ -69,7 +71,10 @@ export function DirectoryManager({
           <tbody>
             {profileRows.map((profile) => (
               <tr key={profile.id}>
-                <td>{profile.nombre || profile.email}</td>
+                <td>
+                  <strong>{profile.gestoria_slug || profile.id.slice(0, 8)}</strong>
+                  <div className="muted">Código gestoría</div>
+                </td>
                 <td>
                   <select
                     className="input compact"
@@ -111,7 +116,10 @@ export function DirectoryManager({
           <tbody>
             {companyRows.map((company) => (
               <tr key={company.id}>
-                <td>{company.razon_social}</td>
+                <td>
+                  <strong>{company.cliente_slug || company.id.slice(0, 8)}</strong>
+                  <div className="muted">Código cliente</div>
+                </td>
                 <td>
                   <select
                     className="input compact"

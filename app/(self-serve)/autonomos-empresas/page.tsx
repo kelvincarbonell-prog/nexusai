@@ -37,7 +37,7 @@ export default async function SelfServeHomePage() {
 
   const { data: companies } = await supabase
     .from("empresas")
-    .select("id,razon_social,nif,account_type,onboarding_source,estado")
+    .select("id,razon_social,nif,cliente_slug,account_type,onboarding_source,estado")
     .eq("owner_user_id", auth.user.id)
     .limit(10);
 
@@ -60,7 +60,7 @@ export default async function SelfServeHomePage() {
             <tbody>
               {(companies ?? []).map((company) => (
                 <tr key={company.id}>
-                  <td>{company.razon_social}</td>
+                  <td>{company.cliente_slug || company.id.slice(0, 8)}</td>
                   <td>{company.nif}</td>
                   <td>{company.account_type}</td>
                   <td><span className="status">{company.estado}</span></td>
