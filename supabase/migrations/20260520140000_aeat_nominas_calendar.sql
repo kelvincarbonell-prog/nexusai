@@ -27,6 +27,23 @@ as $$
   );
 $$;
 
+-- Normaliza el nombre de la columna: en proyectos antiguos puede llamarse
+-- asesor_id en lugar de gestor_id. Renombramos para alinear con el código.
+do $rename$
+begin
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'empresas' and column_name = 'asesor_id'
+  ) and not exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'empresas' and column_name = 'gestor_id'
+  ) then
+    execute 'alter table public.empresas rename column asesor_id to gestor_id';
+  end if;
+end;
+$rename$;
+
+alter table public.empresas add column if not exists gestor_id uuid references auth.users(id) on delete set null;
 alter table public.empresas add column if not exists owner_user_id uuid references auth.users(id) on delete set null;
 
 do $preflight$
