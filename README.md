@@ -28,6 +28,7 @@ Run the SQL in `supabase/migrations/20260515180000_initial_nexusai.sql` from the
 
 Run additional SQL files in chronological order. Each new database change is kept in a separate file so it can be copied manually into Supabase SQL Editor.
 
+- `supabase/migrations/20260515192500_empresas_schema_compatibility.sql`: compatibility patch for existing Supabase projects where `empresas` already existed without `gestor_id`, `owner_user_id`, account type, onboarding source, plan, notes, or numeric slug columns. Run this before retrying failed migrations if Supabase reports missing `empresas` columns.
 - `supabase/migrations/20260515193000_super_admin_agents_self_serve.sql`: Super Admin, configurable agents, audit settings, and independent autónomo/empresa onboarding.
 - `supabase/migrations/20260515194500_numeric_public_slugs.sql`: numeric public slugs for clients and gestorías, without exposing names in public identifiers.
 - `supabase/migrations/20260515201000_accounting_pgc.sql`: accounting base for PGC accounts, journal, ledger data, trial balance, periods, bank reconciliation, fixed assets, amortization and VAT ledger.
