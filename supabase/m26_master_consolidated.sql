@@ -8,6 +8,35 @@
 create extension if not exists pgcrypto;
 create extension if not exists "uuid-ossp";
 
+-- ============================================================================
+-- PRE-NORMALIZACIÓN: renombra asesor_id -> gestor_id en cualquier tabla legacy
+-- que tenga el nombre antiguo. Idempotente: si ya está renombrado, no hace nada.
+-- ============================================================================
+do $rename_all$
+declare
+  t text;
+  tables text[] := array[
+    'empresas', 'facturas', 'gastos', 'trabajadores', 'nominas',
+    'documentos', 'firma_docs', 'solicitudes_laborales'
+  ];
+begin
+  foreach t in array tables loop
+    if to_regclass('public.' || t) is not null then
+      if exists (
+        select 1 from information_schema.columns
+        where table_schema = 'public' and table_name = t and column_name = 'asesor_id'
+      ) and not exists (
+        select 1 from information_schema.columns
+        where table_schema = 'public' and table_name = t and column_name = 'gestor_id'
+      ) then
+        execute format('alter table public.%I rename column asesor_id to gestor_id', t);
+      end if;
+      execute format('alter table public.%I add column if not exists gestor_id uuid', t);
+    end if;
+  end loop;
+end;
+$rename_all$;
+
 
 -- ===========================================================================
 -- 20260515180000_initial_nexusai.sql
