@@ -33,6 +33,29 @@ Run additional SQL files in chronological order. Each new database change is kep
 - `supabase/migrations/20260515193000_super_admin_agents_self_serve.sql`: Super Admin, configurable agents, audit settings, and independent autónomo/empresa onboarding.
 - `supabase/migrations/20260515194500_numeric_public_slugs.sql`: numeric public slugs for clients and gestorías, without exposing names in public identifiers.
 - `supabase/migrations/20260515201000_accounting_pgc.sql`: accounting base for PGC accounts, journal, ledger data, trial balance, periods, bank reconciliation, fixed assets, amortization and VAT ledger.
+- `supabase/migrations/20260515210000_labor_agents_inbox.sql`: labor module (contratos, ausencias, registro horario), forwarding inbox alias per empresa, invoice extractions, expense categorization history and agent runs.
+
+## Labor Module
+
+- `/laboral`: alta y baja de trabajadores, contratos, ausencias (vacaciones, IT, permisos, maternidad/paternidad), fichaje obligatorio RD 8/2019 y nóminas.
+- `/api/laboral/trabajadores`, `/api/laboral/contratos`, `/api/laboral/ausencias`, `/api/laboral/horario`, `/api/laboral/nominas`, `/api/laboral/solicitudes`.
+
+## Autonomous Agents
+
+Agentes ejecutables con multi-proveedor IA (OpenAI GPT-4o → Anthropic Claude → Gemini → Groq).
+
+- `/agentes`: consola para gestor/asesor.
+- `/api/agents/extract-invoice`: extracción de proveedor, NIF, base, IVA, total, fecha y concepto desde imagen o texto.
+- `/api/agents/categorize-expense`: sugerencia de cuenta PGC con histórico de la empresa + reglas + LLM.
+- `/api/agents/runs`: trazabilidad de ejecuciones.
+- `/api/inbound/email`: webhook para forwarding de email (Postmark/Mailgun/SendGrid). Cada empresa recibe un alias `facturas-xxx@inbox.nexusai.app` (`empresas.inbox_alias`).
+- `/api/voice/query`: clasificador de intención + respuesta sobre IVA, gastos, vacaciones, fichajes…
+
+## Mobile-First + PWA + voz
+
+- `/movil`: home táctil con foto-factura, fichaje rápido y asistente de voz.
+- `public/manifest.webmanifest` + `public/sw.js`: instalable como PWA con shortcuts (fichar, factura, voz).
+- Web Speech API en español para reconocimiento y síntesis de voz.
 
 ## Accounting Module
 
