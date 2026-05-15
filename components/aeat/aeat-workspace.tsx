@@ -6,19 +6,20 @@ import { CasillasSimple } from "@/components/aeat/casillas-simple";
 
 type Empresa = { id: string; nombre: string; nif?: string };
 
-const TABS: { key: "303" | "111" | "115" | "130"; label: string; hint: string }[] = [
+const TABS: { key: "303" | "111" | "115" | "130" | "390"; label: string; hint: string }[] = [
   { key: "303", label: "303 · IVA", hint: "Autoliquidación trimestral de IVA" },
   { key: "111", label: "111 · IRPF retenciones", hint: "Trabajadores y profesionales" },
   { key: "115", label: "115 · Alquileres", hint: "Retenciones de arrendamientos" },
   { key: "130", label: "130 · Autónomos", hint: "Pago fraccionado IRPF" },
+  { key: "390", label: "390 · Resumen IVA", hint: "Resumen anual de IVA (agrega los 4 trimestres del 303)" },
 ];
 
-export function AeatWorkspace({ empresas, initialModelo = "303" }: { empresas: Empresa[]; initialModelo?: "303" | "111" | "115" | "130" }) {
+export function AeatWorkspace({ empresas, initialModelo = "303" }: { empresas: Empresa[]; initialModelo?: "303" | "111" | "115" | "130" | "390" }) {
   const [active, setActive] = useState(initialModelo);
 
   return (
     <div style={{ display: "grid", gap: 16 }}>
-      <div role="tablist" aria-label="Modelos AEAT" style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+      <div className="aeat-tabs" role="tablist" aria-label="Modelos AEAT">
         {TABS.map((t) => (
           <button
             key={t.key}

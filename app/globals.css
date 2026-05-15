@@ -1764,6 +1764,130 @@ code {
 @media (max-width: 540px) {
   .floating-cta { right: 12px; left: 12px; justify-content: space-between; }
   .floating-cta-text { display: none; }
+  .form.two-cols, .form.three-cols { grid-template-columns: 1fr; }
+  .card .table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap; }
+  .topbar { flex-wrap: wrap; }
+  .display { font-size: clamp(28px, 9vw, 44px); }
+  .action-row { grid-template-columns: 1fr; }
+  .action-card { min-height: 0; }
+  .onboarding-body { padding: 18px; }
+  .alias-box code { font-size: 12px; }
+}
+
+/* ============================================================
+   Onboarding wizard (dashboard primera entrada)
+   ============================================================ */
+.onboarding {
+  padding: 0;
+}
+
+.onboarding-dots {
+  display: flex;
+  gap: 6px;
+  padding: 16px 22px 0;
+}
+
+.onboarding-dots span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--line-strong);
+}
+
+.onboarding-dots span.active {
+  background: var(--accent);
+  box-shadow: 0 0 12px var(--accent-glow);
+}
+
+.onboarding-dots span.done {
+  background: var(--good);
+}
+
+.onboarding-bar {
+  height: 2px;
+  background: var(--line);
+  margin: 12px 22px 0;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.onboarding-bar > span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  width: var(--p, 0%);
+  transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.onboarding-body {
+  padding: 22px;
+  display: grid;
+  gap: 4px;
+}
+
+.onboarding-bullets {
+  list-style: none;
+  padding: 0;
+  margin: 14px 0 0;
+  display: grid;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+
+.onboarding-alias {
+  margin-top: 18px;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-lg);
+  padding: 14px;
+  background: var(--accent-soft);
+  display: grid;
+  gap: 8px;
+}
+
+.alias-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.alias-box code {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--mono);
+  font-size: 14px;
+  padding: 8px 12px;
+  background: var(--panel);
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  word-break: break-all;
+  color: var(--ink);
+}
+
+/* AEAT tabs responsive: scroll horizontal en móvil */
+.aeat-tabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 640px) {
+  .aeat-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 4px;
+    margin: 0 -16px;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  .aeat-tabs::-webkit-scrollbar { display: none; }
+  .aeat-tabs .button {
+    flex-shrink: 0;
+  }
 }
 
 /* Status ticker */

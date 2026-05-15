@@ -1,5 +1,6 @@
 import { AppShell } from "@/components/app-shell";
 import { UpcomingObligations } from "@/components/dashboard/upcoming-obligations";
+import { OnboardingWizard } from "@/components/dashboard/onboarding-wizard";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 
@@ -53,9 +54,12 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   const activeView = params.view ?? "panel";
 
   const [{ data: profile }, { count: companyCount }] = await Promise.all([
-    supabase.from("perfiles").select("rol,nombre").eq("id", auth.user.id).maybeSingle(),
+    supabase.from("perfiles").select("rol,nombre,metadata").eq("id", auth.user.id).maybeSingle(),
     supabase.from("empresas").select("*", { count: "exact", head: true }),
   ]);
+
+  const onboardingDone = Boolean((profile?.metadata as Record<string, unknown> | null)?.onboarding_done);
+  const showOnboarding = !onboardingDone && (companyCount ?? 0) === 0;
 
   // Clientes finales (rol portal_cliente) ven directamente su portal.
   if (profile?.rol === "portal_cliente") redirect("/portal");
@@ -93,6 +97,12 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
           <button className="button">Firmar las 5 →</button>
         </div>
       </header>
+
+      {showOnboarding ? (
+        <section className="grid">
+          <OnboardingWizard userName={profile?.nombre ?? undefined} />
+        </section>
+      ) : null}
 
       <section className="action-row">
         <article className="action-card">

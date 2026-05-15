@@ -71,27 +71,63 @@ const SECTIONS_130: Section[] = [
   },
 ];
 
-const SECTIONS: Record<string, Section[]> = { "111": SECTIONS_111, "115": SECTIONS_115, "130": SECTIONS_130 };
+const SECTIONS_390: Section[] = [
+  {
+    eyebrow: "IVA devengado anual",
+    rows: [
+      { code: "c01", label: "Base · tipo 4 %" },
+      { code: "c04", label: "Base · tipo 10 %" },
+      { code: "c07", label: "Base · tipo 21 %" },
+      { code: "c662", label: "Total IVA devengado", accent: true },
+    ],
+  },
+  {
+    eyebrow: "IVA deducible anual",
+    rows: [
+      { code: "c28", label: "Base · operaciones interiores" },
+      { code: "c29", label: "Cuota · operaciones interiores" },
+      { code: "c663", label: "Total IVA deducible", accent: true },
+    ],
+  },
+  {
+    eyebrow: "Volumen anual",
+    rows: [
+      { code: "c98", label: "Operaciones interiores" },
+      { code: "c99", label: "Intracomunitarias / ISP" },
+      { code: "c97", label: "Total volumen de operaciones", accent: true },
+      { code: "c95", label: "% prorrata aplicado" },
+    ],
+  },
+  {
+    eyebrow: "Resultado anual",
+    rows: [{ code: "c664", label: "Resultado liquidación anual", accent: true }],
+  },
+];
+
+const SECTIONS: Record<string, Section[]> = { "111": SECTIONS_111, "115": SECTIONS_115, "130": SECTIONS_130, "390": SECTIONS_390 };
 
 const TITLES: Record<string, string> = {
   "111": "Modelo 111 · Retenciones IRPF",
   "115": "Modelo 115 · Retenciones alquileres",
   "130": "Modelo 130 · Pago fraccionado autónomos",
+  "390": "Modelo 390 · Resumen anual IVA",
 };
 
 const HINTS: Record<string, string> = {
   "111": "Retenciones de IRPF practicadas a trabajadores y profesionales en el trimestre.",
   "115": "Retenciones por arrendamientos de inmuebles urbanos pagados en el trimestre (tipo 19 %).",
   "130": "Pago fraccionado de IRPF de autónomos en estimación directa. Cálculo acumulado del ejercicio.",
+  "390": "Resumen anual informativo de IVA. Agrega automáticamente los 4 trimestres del 303 ya guardados.",
 };
 
 const EUR = (n: number) => new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR" }).format(n);
 
-export function CasillasSimple({ modelo, empresas }: { modelo: "111" | "115" | "130"; empresas: Empresa[] }) {
+export function CasillasSimple({ modelo, empresas }: { modelo: "111" | "115" | "130" | "390"; empresas: Empresa[] }) {
   const supabase = useMemo(() => createBrowserSupabase(), []);
   const now = new Date();
   const defaultYear = now.getUTCFullYear();
-  const defaultPeriodo = (`${Math.ceil((now.getUTCMonth() + 1) / 3)}T`) as "1T" | "2T" | "3T" | "4T";
+  const isAnual = modelo === "390";
+  const defaultPeriodo = (isAnual ? "ANUAL" : `${Math.ceil((now.getUTCMonth() + 1) / 3)}T`) as "1T" | "2T" | "3T" | "4T" | "ANUAL";
 
   const [empresaId, setEmpresaId] = useState(empresas[0]?.id ?? "");
   const [ejercicio, setEjercicio] = useState(defaultYear);
@@ -133,6 +169,16 @@ export function CasillasSimple({ modelo, empresas }: { modelo: "111" | "115" | "
   }
 
   useEffect(() => {
+    // si cambias a 390/desde 390, normaliza el periodo
+    setPeriodo((current) => {
+      if (isAnual && current !== "ANUAL") return "ANUAL";
+      if (!isAnual && current === "ANUAL") return defaultPeriodo;
+      return current;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [modelo]);
+
+  useEffect(() => {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [empresaId, ejercicio, periodo, modelo]);
@@ -160,7 +206,12 @@ export function CasillasSimple({ modelo, empresas }: { modelo: "111" | "115" | "
     }
   }
 
-  const resultado = (modelo === "130" ? casillas.c19 : casillas.c28) ?? 0;
+  const resultado =
+    (modelo === "130"
+      ? casillas.c19
+      : modelo === "390"
+        ? casillas.c664
+        : casillas.c28) ?? 0;
 
   return (
     <section className="grid">
@@ -195,11 +246,22 @@ export function CasillasSimple({ modelo, empresas }: { modelo: "111" | "115" | "
           </label>
           <label className="label">
             Periodo
-            <select className="input" value={periodo} onChange={(e) => setPeriodo(e.target.value as typeof periodo)}>
-              <option value="1T">1T · ene–mar</option>
-              <option value="2T">2T · abr–jun</option>
-              <option value="3T">3T · jul–sep</option>
-              <option value="4T">4T · oct–dic</option>
+            <select
+              className="input"
+              value={periodo}
+              onChange={(e) => setPeriodo(e.target.value as typeof periodo)}
+              disabled={isAnual}
+            >
+              {isAnual ? (
+                <option value="ANUAL">ANUAL · ejercicio completo</option>
+              ) : (
+                <>
+                  <option value="1T">1T · ene–mar</option>
+                  <option value="2T">2T · abr–jun</option>
+                  <option value="3T">3T · jul–sep</option>
+                  <option value="4T">4T · oct–dic</option>
+                </>
+              )}
             </select>
           </label>
         </div>
