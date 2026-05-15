@@ -1856,6 +1856,171 @@ code {
 }
 
 /* ============================================================
+   Inteligencia · KPIs y bars
+   ============================================================ */
+.intel-kpi {
+  opacity: 0;
+  transform: translateY(12px);
+  animation: intel-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  position: relative;
+  overflow: hidden;
+}
+
+.intel-kpi::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(140px 60px at 100% 0%, var(--accent-soft) 0%, transparent 70%);
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+.intel-block {
+  opacity: 0;
+  transform: translateY(16px);
+  animation: intel-in 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes intel-in {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.alertas-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 8px;
+}
+
+.alerta-card {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 12px 14px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--line);
+  background: var(--panel-soft);
+  font-size: 13px;
+  transition: transform 0.12s, border-color 0.12s;
+}
+
+.alerta-card:hover { transform: translateX(2px); }
+
+.alerta-warn { border-color: rgba(251, 191, 36, 0.4); background: rgba(251, 191, 36, 0.06); }
+.alerta-bad { border-color: rgba(248, 113, 113, 0.4); background: rgba(248, 113, 113, 0.06); }
+
+.intel-bars {
+  display: grid;
+  gap: 10px;
+}
+
+.intel-bar-row {
+  display: grid;
+  grid-template-columns: minmax(120px, 1.4fr) minmax(60px, 2fr) auto;
+  gap: 14px;
+  align-items: center;
+  font-size: 13px;
+  opacity: 0;
+  animation: intel-bar-in 0.4s ease forwards;
+}
+
+@keyframes intel-bar-in {
+  from { opacity: 0; transform: translateX(-6px); }
+  to { opacity: 1; transform: none; }
+}
+
+.intel-bar-label { display: grid; gap: 1px; min-width: 0; }
+.intel-bar-label strong { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.intel-bar-label small { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+
+.intel-bar-track {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--line);
+  overflow: hidden;
+  position: relative;
+}
+
+.intel-bar-track span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  border-radius: 999px;
+  transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 0 10px var(--accent-glow);
+}
+
+.intel-bar-value {
+  font-family: var(--mono);
+  font-weight: 600;
+  font-size: 12px;
+  text-align: right;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.intel-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+@media (max-width: 540px) {
+  .intel-bar-row { grid-template-columns: 1fr; gap: 4px; }
+}
+
+/* ============================================================
+   Storage badge (sidebar bottom)
+   ============================================================ */
+.storage-badge {
+  display: grid;
+  gap: 6px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--panel);
+  font-family: var(--mono);
+}
+
+.storage-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+}
+
+.storage-label {
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.storage-value {
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.storage-value.warn { color: var(--warn); }
+.storage-value.bad { color: var(--bad); }
+
+.storage-bar {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--line);
+  overflow: hidden;
+}
+
+.storage-bar span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.storage-bar span.warn { background: var(--warn); }
+.storage-bar span.bad { background: var(--bad); }
+.storage-bar span.good { background: var(--accent); }
+
+/* ============================================================
    Onboarding wizard (dashboard primera entrada)
    ============================================================ */
 .onboarding {

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { Bell, Mic } from "lucide-react";
+import { StorageBadge } from "@/components/storage/storage-badge";
 
 type NavItem = {
   href: string;
@@ -21,6 +22,7 @@ const gestorNav: NavItem[] = [
 ];
 
 const accountNav: NavItem[] = [
+  { href: "/inteligencia", label: "Inteligencia" },
   { href: "/crm", label: "CRM" },
   { href: "/perfil", label: "Mi perfil" },
 ];
@@ -93,6 +95,8 @@ export function AppShell({
           <span>● SEPA · <strong>hace 4m</strong></span>
           <span>● Holvi · <strong>revisar</strong></span>
         </div>
+
+        <StorageBadge />
       </aside>
 
       <main className="main">

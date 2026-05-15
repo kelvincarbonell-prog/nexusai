@@ -3,6 +3,7 @@ import { z } from "zod";
 import { jsonError } from "@/lib/http";
 import { getUserFromRequest } from "@/lib/supabase/auth";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
+import { checkQuotaOrThrow } from "@/lib/storage/quota";
 
 const Schema = z.object({
   filename: z.string().max(240),
@@ -19,6 +20,14 @@ export async function POST(request: NextRequest) {
   if (!parsed.success) return jsonError(parsed.error.errors[0]?.message ?? "Datos inválidos");
 
   const admin = createSupabaseAdmin();
+
+  // Comprobación de cuota
+  const aproxBytes = Math.floor((parsed.data.base64.length * 3) / 4);
+  try {
+    await checkQuotaOrThrow(user.id, aproxBytes);
+  } catch (e: unknown) {
+    return jsonError(e instanceof Error ? e.message : "Cuota excedida", 413);
+  }
 
   // Asegurar el bucket existe (público para mostrar la foto vía URL directa)
   await admin.storage.createBucket(BUCKET, { public: true }).catch(() => {

@@ -7,6 +7,7 @@ import { canAccessLaborCompany } from "@/lib/laboral/access";
 import { confidenceScore, extractInvoiceFromImage } from "@/lib/agents/invoice-extractor";
 import { categorizeExpense } from "@/lib/agents/expense-categorizer";
 import { checkAgentRateLimit } from "@/lib/agents/rate-limit";
+import { checkQuotaOrThrow } from "@/lib/storage/quota";
 
 /**
  * Endpoint optimizado para captura rápida desde móvil:
@@ -35,6 +36,14 @@ export async function POST(request: NextRequest) {
 
   const admin = createSupabaseAdmin();
   if (!(await canAccessLaborCompany(admin, user.id, parsed.data.empresa_id))) return jsonError("Sin acceso", 403);
+
+  // Comprobación de cuota de storage
+  const aproxBytes = Math.floor((parsed.data.base64.length * 3) / 4);
+  try {
+    await checkQuotaOrThrow(user.id, aproxBytes);
+  } catch (e: unknown) {
+    return jsonError(e instanceof Error ? e.message : "Cuota excedida", 413);
+  }
 
   const rl = await checkAgentRateLimit({ userId: user.id, agentId: "quick-capture", perMinute: 12, perHour: 200 });
   if (!rl.ok) {
