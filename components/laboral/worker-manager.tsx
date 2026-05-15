@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
+import { PayrollPanel } from "@/components/laboral/payroll-panel";
 
 type Empresa = { id: string; nombre: string; nif?: string };
 type Trabajador = {
@@ -355,9 +356,7 @@ export function WorkerManager({ empresas }: { empresas: Empresa[] }) {
       ) : null}
 
       {tab === "nominas" ? (
-        <div>
-          <p className="muted">Subida de nóminas (PDF) pendiente de carga manual. Próxima iteración: agente de generación con plantillas según convenio.</p>
-        </div>
+        <PayrollPanel empresaId={empresaId} trabajadores={trabajadores} />
       ) : null}
     </section>
   );

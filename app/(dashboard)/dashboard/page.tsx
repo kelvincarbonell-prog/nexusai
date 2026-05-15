@@ -1,4 +1,5 @@
 import { AppShell } from "@/components/app-shell";
+import { UpcomingObligations } from "@/components/dashboard/upcoming-obligations";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 
@@ -61,7 +62,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
 
   const empresasRes = await supabase
     .from("empresas")
-    .select("id,nombre,nif,plan")
+    .select("id,nombre,nif,plan,account_type")
     .order("nombre")
     .limit(12);
   const empresas = empresasRes.data ?? [];
@@ -136,7 +137,23 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
       </section>
 
       <section className="grid">
-        <article className="card span-7">
+        <UpcomingObligations empresas={empresas} />
+
+        <article className="card span-5">
+          <div className="topbar" style={{ border: 0, padding: 0, margin: 0 }}>
+            <span className="card-eyebrow">Honorarios YTD</span>
+            <div className="chart-tabs">
+              <button className="active">3M</button>
+              <button>YTD</button>
+              <button>12M</button>
+            </div>
+          </div>
+          <div className="metric">€ 84.620</div>
+          <div className="metric-foot good">+14% vs 2025 &nbsp;·&nbsp; meta Q4 · € 180k</div>
+          <Sparkline values={[40, 44, 50, 48, 55, 60, 64, 70, 73, 78, 80, 84]} />
+        </article>
+
+        <article className="card span-12">
           <div className="topbar" style={{ border: 0, padding: 0, margin: 0 }}>
             <div>
               <span className="card-eyebrow">Copiloto en vivo</span>
@@ -153,20 +170,6 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
               </div>
             ))}
           </div>
-        </article>
-
-        <article className="card span-5">
-          <div className="topbar" style={{ border: 0, padding: 0, margin: 0 }}>
-            <span className="card-eyebrow">Honorarios YTD</span>
-            <div className="chart-tabs">
-              <button className="active">3M</button>
-              <button>YTD</button>
-              <button>12M</button>
-            </div>
-          </div>
-          <div className="metric">€ 84.620</div>
-          <div className="metric-foot good">+14% vs 2025 &nbsp;·&nbsp; meta Q4 · € 180k</div>
-          <Sparkline values={[40, 44, 50, 48, 55, 60, 64, 70, 73, 78, 80, 84]} />
         </article>
 
         <article className="card span-12">
