@@ -22,6 +22,14 @@ function tagPill(tag: string) {
   return <span className={cls}>{tag}</span>;
 }
 
+function greeting() {
+  const h = new Date().getHours();
+  if (h < 6) return "Buenas noches";
+  if (h < 13) return "Buenos días";
+  if (h < 20) return "Buenas tardes";
+  return "Buenas noches";
+}
+
 function Sparkline({ values, color = "var(--ink)" }: { values: number[]; color?: string }) {
   const max = Math.max(...values);
   const min = Math.min(...values);
@@ -48,6 +56,9 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     supabase.from("empresas").select("*", { count: "exact", head: true }),
   ]);
 
+  // Clientes finales (rol portal_cliente) ven directamente su portal.
+  if (profile?.rol === "portal_cliente") redirect("/portal");
+
   const empresasRes = await supabase
     .from("empresas")
     .select("id,nombre,nif,plan")
@@ -55,18 +66,21 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     .limit(12);
   const empresas = empresasRes.data ?? [];
   const isAdmin = profile?.rol === "admin";
+  const firstName = profile?.nombre?.split(" ")[0];
 
   return (
     <AppShell
       active="/dashboard"
       showSuperAdmin={isAdmin}
-      espacio={{ nombre: "Gabinete M26", tipo: "despacho", personas: 4 }}
+      espacio={{ nombre: profile?.nombre ?? "Mi despacho", tipo: isAdmin ? "super admin" : "despacho", personas: 4 }}
     >
       <header style={{ display: "flex", justifyContent: "space-between", gap: 24, flexWrap: "wrap" }}>
         <div style={{ maxWidth: 760 }}>
-          <span className="eyebrow">Buenas noches{profile?.nombre ? `, ${profile.nombre}` : ""} · 0 cosas urgentes</span>
+          <span className="eyebrow">
+            {greeting()}{firstName ? `, ${firstName}` : ""} · 0 cosas urgentes
+          </span>
           <h1 className="display">
-            Esta semana M26 te ha ahorrado <em>31 h 12 m</em>.
+            Esta semana <span className="brand-text">M26</span> te ha ahorrado <em>31 h 12 m</em>.
           </h1>
           <p className="subtitle">
             Tienes 5 cosas listas para firmar. Todo lo demás corre solo. Pulsa <span className="kbd">?</span> en cualquier

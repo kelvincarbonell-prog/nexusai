@@ -12,12 +12,12 @@ type NavItem = {
 const gestorNav: NavItem[] = [
   { href: "/dashboard", label: "Hoy", count: 5, kbd: "⌘1" },
   { href: "/dashboard?view=clientes", label: "Clientes", count: 16, kbd: "⌘2" },
-  { href: "/contabilidad", label: "Modelos", count: 3, kbd: "⌘3" },
-  { href: "/laboral", label: "Nóminas", kbd: "⌘4" },
-  { href: "/agentes", label: "Bancos", kbd: "⌘5" },
-  { href: "/dashboard?view=alertas", label: "BOE & alertas", count: 2, kbd: "⌘6" },
-  { href: "/dashboard?view=honorarios", label: "Honorarios", kbd: "⌘7" },
-  { href: "/dashboard?view=auditoria", label: "Auditoría", kbd: "⌘8" },
+  { href: "/aeat", label: "Modelos AEAT", kbd: "⌘3" },
+  { href: "/contabilidad", label: "Contabilidad", kbd: "⌘4" },
+  { href: "/laboral", label: "Laboral", kbd: "⌘5" },
+  { href: "/agentes", label: "Agentes IA", kbd: "⌘6" },
+  { href: "/dashboard?view=alertas", label: "BOE & alertas", count: 2, kbd: "⌘7" },
+  { href: "/movil", label: "Móvil", kbd: "⌘8" },
 ];
 
 const adminExtras: NavItem[] = [
