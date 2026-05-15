@@ -2,6 +2,10 @@ import Link from "next/link";
 import { Aurora } from "@/components/effects/aurora";
 import { Reveal } from "@/components/effects/reveal";
 import { CountUp } from "@/components/effects/count-up";
+import { LiveDemoHero } from "@/components/effects/live-demo-hero";
+import { LiveDemoVoice } from "@/components/effects/live-demo-voice";
+import { LiveDemoFichaje } from "@/components/effects/live-demo-fichaje";
+import { LiveDemoModelo } from "@/components/effects/live-demo-modelo";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 
 export const metadata = {
@@ -106,6 +110,12 @@ export default function LandingPage() {
               <strong><CountUp to={12} suffix=" s" /></strong>
               <small>cierre medio · IVA</small>
             </div>
+          </div>
+        </Reveal>
+
+        <Reveal delay={400}>
+          <div style={{ marginTop: 56 }}>
+            <LiveDemoHero />
           </div>
         </Reveal>
       </section>
@@ -213,6 +223,16 @@ export default function LandingPage() {
             </p>
           </div>
         </Reveal>
+
+        <Reveal>
+          <div style={{ marginTop: 56 }}>
+            <span className="card-eyebrow">Ver en directo</span>
+            <h3 className="title" style={{ fontSize: 28, marginTop: 8, marginBottom: 24 }}>
+              Modelo 303 montado <em>en 7 segundos.</em>
+            </h3>
+            <LiveDemoModelo />
+          </div>
+        </Reveal>
       </section>
 
       <section className="landing-section" id="autonomos">
@@ -241,8 +261,31 @@ export default function LandingPage() {
             </Reveal>
           ))}
         </div>
+        <div className="grid" style={{ marginTop: 32, gap: 32, alignItems: "center" }}>
+          <Reveal className="span-7">
+            <div>
+              <span className="card-eyebrow">Asistente de voz · habla con Nexus</span>
+              <h3 className="title" style={{ fontSize: 32, marginTop: 8 }}>
+                «¿Cuánto IVA llevo este trimestre?»
+              </h3>
+              <p className="subtitle" style={{ marginTop: 12 }}>
+                Pregunta en voz alta desde el móvil. Nexus consulta tus libros en tiempo real y te responde con
+                la cifra exacta, la cuenta pendiente y el plazo. Sin abrir ningún menú.
+              </p>
+              <ul className="landing-bullets" style={{ marginTop: 16 }}>
+                <li>● IVA · IRPF · IS</li>
+                <li>● Gastos por categoría</li>
+                <li>● Vacaciones y fichajes</li>
+              </ul>
+            </div>
+          </Reveal>
+          <Reveal className="span-5" delay={120}>
+            <LiveDemoVoice />
+          </Reveal>
+        </div>
+
         <Reveal>
-          <div className="button-row" style={{ marginTop: 12 }}>
+          <div className="button-row" style={{ marginTop: 24 }}>
             <Link href="/autonomos-empresas/registro" className="button" style={{ padding: "14px 18px" }}>
               Empezar como autónomo · 9 €/mes
             </Link>
@@ -275,6 +318,30 @@ export default function LandingPage() {
               </article>
             </Reveal>
           ))}
+        </div>
+
+        <div className="grid" style={{ marginTop: 48, gap: 32, alignItems: "center" }}>
+          <Reveal className="span-5">
+            <LiveDemoFichaje />
+          </Reveal>
+          <Reveal className="span-7" delay={120}>
+            <div>
+              <span className="card-eyebrow">Fichaje legal · RD 8/2019</span>
+              <h3 className="title" style={{ fontSize: 32, marginTop: 8 }}>
+                Tu plantilla ficha <em>desde el móvil</em>. La AEAT, contenta.
+              </h3>
+              <p className="subtitle" style={{ marginTop: 12 }}>
+                Foto del trabajador, geolocalización opcional, firma con Cl@ve. Reporte mensual descargable y
+                listo para inspecciones de trabajo. Sin reloj físico ni hojas Excel.
+              </p>
+              <ul className="landing-bullets" style={{ marginTop: 16 }}>
+                <li>● Sincroniza con nóminas</li>
+                <li>● Geolocalización opcional</li>
+                <li>● Multi-centro de trabajo</li>
+                <li>● Calendario laboral por convenio</li>
+              </ul>
+            </div>
+          </Reveal>
         </div>
       </section>
 
