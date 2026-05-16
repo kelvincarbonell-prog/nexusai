@@ -40,6 +40,7 @@ export default async function AeatPage({ searchParams }: Props) {
           </p>
         </div>
         <div className="button-row">
+          <Link href="/aeat/calendario" className="button secondary">Calendario fiscal</Link>
           <Link href="/aeat/prorrata" className="button secondary">Prorrata IVA</Link>
           <Link href="/contabilidad" className="button secondary">Contabilidad</Link>
         </div>
