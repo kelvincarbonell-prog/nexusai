@@ -47,10 +47,15 @@ export async function DELETE(request: NextRequest, ctx: { params: Promise<{ id: 
   const admin = createSupabaseAdmin();
   if (!(await isGestorOrAdmin(admin, user.id, id))) return jsonError("Sin permiso", 403);
 
-  // Soft delete por defecto — marcamos como inactiva
+  // Soft delete: marcamos como inactiva en metadata + estado='archivada'.
+  const { data: existing } = await admin.from("empresas").select("metadata").eq("id", id).single();
+  const prevMeta = ((existing?.metadata ?? {}) as Record<string, unknown>);
   const { error } = await admin
     .from("empresas")
-    .update({ metadata_patch: undefined })
+    .update({
+      metadata: { ...prevMeta, archived: true, archived_at: new Date().toISOString() },
+      estado: "archivada",
+    })
     .eq("id", id);
   if (error) return jsonError(error.message, 500);
   return NextResponse.json({ ok: true });
