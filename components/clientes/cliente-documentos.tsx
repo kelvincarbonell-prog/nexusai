@@ -14,7 +14,7 @@ type Documento = {
   updated_at: string;
 };
 
-export function ClienteDocumentos({ empresaId }: { empresaId: string }) {
+export function ClienteDocumentos({ empresaId, filtro = "todos" }: { empresaId: string; filtro?: string }) {
   const supabase = useMemo(() => createBrowserSupabase(), []);
   const [items, setItems] = useState<Documento[]>([]);
   const [loading, setLoading] = useState(true);
@@ -39,11 +39,18 @@ export function ClienteDocumentos({ empresaId }: { empresaId: string }) {
     })();
   }, [empresaId, supabase]);
 
+  const filtered = filtro === "todos" || !filtro
+    ? items
+    : items.filter((d) => (d.tipo ?? "").toLowerCase().includes(filtro));
+
   return (
     <section className="grid">
       <article className="card span-12">
         <span className="card-eyebrow">Documentos</span>
-        <h2 style={{ fontSize: 18, margin: "4px 0 0" }}>{items.length} documento{items.length !== 1 ? "s" : ""}</h2>
+        <h2 style={{ fontSize: 18, margin: "4px 0 0" }}>
+          {filtered.length} documento{filtered.length !== 1 ? "s" : ""}
+          {filtro && filtro !== "todos" ? <span className="muted" style={{ fontSize: 14, marginLeft: 8 }}>· filtro: {filtro}</span> : null}
+        </h2>
         <p className="muted" style={{ fontSize: 13, marginTop: 4 }}>
           Documentos cargados por gestor o cliente. Para subir nuevas facturas con OCR usa la pestaña «Subir factura».
         </p>
@@ -51,8 +58,8 @@ export function ClienteDocumentos({ empresaId }: { empresaId: string }) {
         {loading ? <p className="muted">Cargando…</p> : null}
         {error ? <p role="alert" style={{ color: "var(--bad)" }}>{error}</p> : null}
 
-        {items.length === 0 && !loading ? (
-          <p className="muted" style={{ marginTop: 12, fontSize: 13 }}>Sin documentos registrados.</p>
+        {filtered.length === 0 && !loading ? (
+          <p className="muted" style={{ marginTop: 12, fontSize: 13 }}>{items.length === 0 ? "Sin documentos registrados." : `Sin documentos en "${filtro}".`}</p>
         ) : (
           <table className="table" style={{ marginTop: 12 }}>
             <thead>
@@ -65,7 +72,7 @@ export function ClienteDocumentos({ empresaId }: { empresaId: string }) {
               </tr>
             </thead>
             <tbody>
-              {items.map((d) => (
+              {filtered.map((d) => (
                 <tr key={d.id}>
                   <td><strong>{d.nombre}</strong></td>
                   <td>{d.tipo ?? "—"}</td>
