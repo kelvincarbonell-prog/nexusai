@@ -25,7 +25,10 @@ export async function POST(request: NextRequest) {
   const fullPrompt = system ? `${system}\n\n${prompt}` : prompt;
 
   if (geminiKey) {
-    const geminiModel = model === "pro" ? "gemini-2.5-pro" : "gemini-2.5-flash";
+    // Por defecto siempre flash, pro solo si el usuario lo configura.
+    const proModel = process.env.GEMINI_PRO_MODEL ?? "gemini-2.5-flash";
+    const fastModel = process.env.GEMINI_FAST_MODEL ?? "gemini-2.5-flash";
+    const geminiModel = model === "pro" ? proModel : fastModel;
     const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${geminiKey}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },

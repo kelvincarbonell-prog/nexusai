@@ -10,8 +10,11 @@ type LLMResult = {
   error?: string;
 };
 
+// NOTA: por defecto ambos modelos apuntan a 2.5-flash porque la mayoría de
+// claves de Gemini solo tienen acceso a flash, no a pro. Si tu key tiene
+// acceso a pro, fija GEMINI_PRO_MODEL=gemini-2.5-pro en Vercel.
 const FAST_MODEL = process.env.GEMINI_FAST_MODEL ?? "gemini-2.5-flash";
-const PRO_MODEL = process.env.GEMINI_PRO_MODEL ?? "gemini-2.5-pro";
+const PRO_MODEL = process.env.GEMINI_PRO_MODEL ?? "gemini-2.5-flash";
 
 export async function geminiGenerate(
   parts: GeminiPart[],
@@ -163,6 +166,14 @@ export async function anthropicChat(
   return { ok: true, provider: "anthropic", text, raw: data };
 }
 
+/**
+ * Orden de proveedores:
+ * - OCR / visión: Gemini (flash, único que soporta imágenes con tus claves
+ *   actuales) → si Gemini falla y tienes Anthropic/OpenAI, prueba esos.
+ *   Groq se salta porque no soporta visión.
+ * - Texto puro / JSON: Gemini flash → Groq (llama 70B pro → llama 8B fast).
+ *   Anthropic / OpenAI son fallback adicional si los configuras.
+ */
 export async function bestAvailableJSON(
   prompt: string,
   options: { system?: string; images?: { mimeType: string; data: string }[]; preferVision?: boolean } = {},
@@ -170,26 +181,8 @@ export async function bestAvailableJSON(
   const hasImages = (options.images?.length ?? 0) > 0;
   const order: Array<{ name: string; run: () => Promise<LLMResult> }> = [];
 
-  if (process.env.OPENAI_API_KEY) {
-    order.push({
-      name: "openai-pro",
-      run: () => openaiChat(prompt, { model: "pro", system: options.system, json: true, images: options.images }),
-    });
-  }
-  if (process.env.ANTHROPIC_API_KEY) {
-    order.push({
-      name: "anthropic-pro",
-      run: () =>
-        anthropicChat(prompt + "\n\nResponde ÚNICAMENTE con JSON válido, sin texto adicional.", {
-          model: "pro",
-          system: options.system,
-          images: options.images,
-        }),
-    });
-  }
+  // 1) Gemini PRIMERO siempre (cubre visión y texto, y es lo que tienes).
   if (process.env.GEMINI_API_KEY) {
-    // Para visión: probar PRIMERO flash (más disponible, más barato) y caer a pro
-    // solo si flash falla. Para texto: pro primero.
     const buildGemini = (model: "fast" | "pro") => () =>
       geminiGenerate(
         [
@@ -198,34 +191,67 @@ export async function bestAvailableJSON(
         ],
         { model, json: true, system: options.system },
       );
-    if (hasImages) {
-      order.push({ name: "gemini-flash", run: buildGemini("fast") });
+    // Flash primero porque la mayoría de claves solo dan acceso a flash.
+    order.push({ name: "gemini-flash", run: buildGemini("fast") });
+    // Solo intentamos pro si el usuario explícitamente configura un modelo
+    // distinto de flash en GEMINI_PRO_MODEL.
+    if ((process.env.GEMINI_PRO_MODEL ?? "gemini-2.5-flash") !== "gemini-2.5-flash") {
       order.push({ name: "gemini-pro", run: buildGemini("pro") });
-    } else {
-      order.push({ name: "gemini-pro", run: buildGemini("pro") });
-      order.push({ name: "gemini-flash", run: buildGemini("fast") });
     }
   }
+
+  // 2) Groq como fallback de texto (no soporta visión).
   if (!hasImages && process.env.GROQ_API_KEY) {
     order.push({
-      name: "groq-pro",
+      name: "groq-llama-70b",
       run: () => groqChat(prompt, { model: "pro", system: options.system, json: true }),
     });
     order.push({
-      name: "groq-fast",
+      name: "groq-llama-8b",
       run: () => groqChat(prompt, { model: "fast", system: options.system, json: true }),
     });
   }
 
+  // 3) OpenAI / Anthropic — solo si están configurados (no es tu caso).
+  if (process.env.OPENAI_API_KEY) {
+    order.push({
+      name: "openai",
+      run: () => openaiChat(prompt, { model: "pro", system: options.system, json: true, images: options.images }),
+    });
+  }
+  if (process.env.ANTHROPIC_API_KEY) {
+    order.push({
+      name: "anthropic",
+      run: () =>
+        anthropicChat(prompt + "\n\nResponde ÚNICAMENTE con JSON válido, sin texto adicional.", {
+          model: "pro",
+          system: options.system,
+          images: options.images,
+        }),
+    });
+  }
+
   if (order.length === 0) {
-    return { ok: false, provider: "none", text: "", error: "No hay proveedor IA configurado (configura GEMINI_API_KEY o GROQ_API_KEY)" };
+    return {
+      ok: false,
+      provider: "none",
+      text: "",
+      error: "No hay proveedor IA configurado. Define GEMINI_API_KEY (recomendado para OCR) o GROQ_API_KEY en Vercel.",
+    };
+  }
+  if (hasImages && !process.env.GEMINI_API_KEY && !process.env.OPENAI_API_KEY && !process.env.ANTHROPIC_API_KEY) {
+    return {
+      ok: false,
+      provider: "none",
+      text: "",
+      error: "El OCR necesita un proveedor con visión. Configura GEMINI_API_KEY (gratuito) en Vercel. Groq solo soporta texto.",
+    };
   }
 
   const errors: string[] = [];
   for (const step of order) {
     const result = await step.run();
     if (result.ok && result.text) {
-      // Log para depuración en producción (solo en server).
       if (process.env.NODE_ENV !== "production") {
         // eslint-disable-next-line no-console
         console.log(`[llm] OK via ${step.name}`);

@@ -203,16 +203,15 @@ export function OcrUpload({ empresaId, modo = "gasto" }: { empresaId: string; mo
     <section style={{ display: "grid", gap: 16 }}>
       {aiUnavailable ? (
         <article className="card" style={{ borderColor: "var(--bad)", background: "color-mix(in srgb, var(--bad) 6%, transparent)" }}>
-          <span className="card-eyebrow bad">Falta configurar la IA</span>
+          <span className="card-eyebrow bad">Falta configurar la IA con visión</span>
           <p style={{ marginTop: 8, fontSize: 14 }}>
-            El lector OCR necesita una clave de IA con visión. Configura al menos una de estas variables en Vercel
-            (Settings → Environment Variables) y vuelve a desplegar:
+            El lector OCR necesita un proveedor que soporte imágenes. Groq solo procesa texto. Configura en
+            Vercel <code style={{ fontFamily: "var(--mono)" }}>GEMINI_API_KEY</code> (gratuito, recomendado) y vuelve a desplegar.
           </p>
-          <ul style={{ margin: "8px 0 0", paddingLeft: 20, fontSize: 13, fontFamily: "var(--mono)" }}>
-            <li><code>OPENAI_API_KEY</code> — GPT-4o (recomendado, mejor extracción)</li>
-            <li><code>ANTHROPIC_API_KEY</code> — Claude 3.5 Sonnet</li>
-            <li><code>GEMINI_API_KEY</code> — Gemini 1.5 Pro (más barato)</li>
-          </ul>
+          <p style={{ marginTop: 8, fontSize: 12, color: "var(--muted)" }}>
+            Si tu key Gemini solo tiene acceso a <code>flash</code>, deja <code>GEMINI_PRO_MODEL=gemini-2.5-flash</code> también.
+            Para OCR ya está configurado por defecto a flash.
+          </p>
         </article>
       ) : null}
 
