@@ -1969,6 +1969,62 @@ code {
 }
 
 /* ============================================================
+   Page transitions y micro-interacciones premium
+   ============================================================ */
+.main > * {
+  animation: page-section-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+.main > *:nth-child(1) { animation-delay: 0ms; }
+.main > *:nth-child(2) { animation-delay: 60ms; }
+.main > *:nth-child(3) { animation-delay: 120ms; }
+.main > *:nth-child(4) { animation-delay: 180ms; }
+.main > *:nth-child(5) { animation-delay: 240ms; }
+.main > *:nth-child(n+6) { animation-delay: 300ms; }
+
+@keyframes page-section-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Hover suave en cards del grid */
+.grid .card,
+.grid article {
+  transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.18s ease;
+}
+
+.grid .card:hover {
+  border-color: var(--accent);
+  box-shadow: 0 14px 36px -18px var(--accent-glow);
+}
+
+/* Buttons con feedback de tap */
+.button:active { transform: scale(0.97); }
+
+/* Tablas con highlight de fila */
+.table tbody tr {
+  transition: background 0.15s;
+}
+.table tbody tr:hover {
+  background: var(--panel-soft);
+}
+
+/* Inputs con foco luminoso */
+.input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+  outline: none;
+}
+
+/* Badge sutil para enlaces de modelos */
+.aeat-tabs .button.compact {
+  position: relative;
+  transition: all 0.18s;
+}
+.aeat-tabs .button.compact:hover:not([aria-selected="true"]) {
+  transform: translateY(-1px);
+}
+
+/* ============================================================
    Notifications dropdown
    ============================================================ */
 .bell {
