@@ -27,6 +27,7 @@ import { NotificationsBell } from "@/components/notifications/notifications-bell
 import { UserAvatarButton } from "@/components/user/user-avatar-button";
 import { ClienteResumen } from "@/components/clientes/cliente-resumen";
 import { ClienteCopilot } from "@/components/clientes/cliente-copilot";
+import { StorageBadge } from "@/components/storage/storage-badge";
 
 // Lazy-load para acelerar el primer render.
 const OcrUpload = dynamic(() => import("@/components/clientes/ocr-upload").then((m) => m.OcrUpload), { loading: () => <p className="muted">Cargando lector…</p>, ssr: false });
@@ -292,6 +293,8 @@ export function ClienteWorkspace({ empresa }: { empresa: Empresa }) {
             <MessageSquare size={13} aria-hidden="true" /> Enviar mensaje
           </button>
         </div>
+
+        <StorageBadge />
       </aside>
 
       {/* Main */}
