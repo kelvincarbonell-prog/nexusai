@@ -1,5 +1,5 @@
-import { AppShell } from "@/components/app-shell";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { TimeTracker } from "@/components/tracking/time-tracker";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
@@ -257,6 +257,7 @@ export default async function ClienteDetailPage({ params }: Props) {
 
   return (
     <div className="shell with-copilot">
+      <TimeTracker empresaId={id} />
       {sidebar}
       {main}
       {copilot}

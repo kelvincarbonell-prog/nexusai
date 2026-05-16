@@ -24,6 +24,7 @@ const gestorNav: NavItem[] = [
 ];
 
 const accountNav: NavItem[] = [
+  { href: "/tareas", label: "Tareas" },
   { href: "/inteligencia", label: "Inteligencia" },
   { href: "/crm", label: "CRM" },
   { href: "/perfil", label: "Mi perfil" },
