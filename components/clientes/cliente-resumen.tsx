@@ -59,28 +59,37 @@ export function ClienteResumen({ empresaId }: { empresaId: string }) {
   if (error) return <p role="alert" style={{ color: "var(--bad)" }}>{error}</p>;
   if (!data) return null;
 
+  const metricStyle: React.CSSProperties = {
+    fontSize: "clamp(20px, 2.3vw, 30px)",
+    overflowWrap: "anywhere",
+    wordBreak: "break-word",
+    minWidth: 0,
+    lineHeight: 1.1,
+  };
+  const cardStyle: React.CSSProperties = { minWidth: 0, overflow: "hidden" };
+
   return (
     <section className="grid">
-      <article className="card span-3">
+      <article className="card span-3" style={cardStyle}>
         <span className="card-eyebrow">Facturado · {data.ejercicio}</span>
-        <div className="metric">{EUR(data.facturado)}</div>
+        <div className="metric" style={metricStyle}>{EUR(data.facturado)}</div>
         <div className="metric-foot good">{data.facturado_count} facturas emitidas</div>
       </article>
-      <article className="card span-3">
+      <article className="card span-3" style={cardStyle}>
         <span className="card-eyebrow">Gastos</span>
-        <div className="metric">{EUR(data.gastos + data.recibido)}</div>
+        <div className="metric" style={metricStyle}>{EUR(data.gastos + data.recibido)}</div>
         <div className="metric-foot warn">{data.gastos_count + data.recibido_count} apuntes</div>
       </article>
-      <article className="card span-3" style={{ borderColor: data.resultado_estimado >= 0 ? "var(--accent)" : "var(--bad)" }}>
+      <article className="card span-3" style={{ ...cardStyle, borderColor: data.resultado_estimado >= 0 ? "var(--accent)" : "var(--bad)" }}>
         <span className="card-eyebrow">Resultado estimado</span>
-        <div className={`metric ${data.resultado_estimado >= 0 ? "accent" : ""}`}>{EUR(data.resultado_estimado)}</div>
+        <div className={`metric ${data.resultado_estimado >= 0 ? "accent" : ""}`} style={metricStyle}>{EUR(data.resultado_estimado)}</div>
         <div className={`metric-foot ${data.resultado_estimado >= 0 ? "good" : "bad"}`}>
           {data.resultado_estimado >= 0 ? "Beneficio antes de impuestos" : "Pérdida"}
         </div>
       </article>
-      <article className="card span-3">
+      <article className="card span-3" style={cardStyle}>
         <span className="card-eyebrow">Pendiente de cobro</span>
-        <div className="metric">{EUR(data.pendiente_cobro)}</div>
+        <div className="metric" style={metricStyle}>{EUR(data.pendiente_cobro)}</div>
         <div className="metric-foot warn">facturas no cobradas</div>
       </article>
 

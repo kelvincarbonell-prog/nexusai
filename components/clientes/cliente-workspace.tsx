@@ -9,6 +9,7 @@ import { PlantillaFacturaForm } from "@/components/empresas/plantilla-factura-fo
 import { OcrUpload } from "@/components/clientes/ocr-upload";
 import { ClienteResumen } from "@/components/clientes/cliente-resumen";
 import { ClienteConfigForm } from "@/components/clientes/cliente-config-form";
+import { ClienteCopilot } from "@/components/clientes/cliente-copilot";
 
 type Empresa = {
   id: string;
@@ -129,6 +130,15 @@ export function ClienteWorkspace({ empresa }: { empresa: Empresa }) {
         {tab === "plantilla" ? <PlantillaFacturaForm empresaId={empresa.id} empresaNombre={empresa.nombre} /> : null}
         {tab === "config" ? <ClienteConfigForm empresa={empresa} /> : null}
       </div>
+
+      <ClienteCopilot
+        empresa={{
+          id: empresa.id,
+          nombre: empresa.nombre,
+          nif: empresa.nif,
+          account_type: empresa.account_type,
+        }}
+      />
     </div>
   );
 }
