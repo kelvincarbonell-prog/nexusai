@@ -5,6 +5,7 @@ import { createBrowserSupabase } from "@/lib/supabase/browser";
 import { PayrollPanel } from "@/components/laboral/payroll-panel";
 import { CalendarioLaboral } from "@/components/laboral/calendario-laboral";
 import { FiniquitoModal } from "@/components/laboral/finiquito-modal";
+import { BonificacionesModal } from "@/components/laboral/bonificaciones-modal";
 
 type Empresa = { id: string; nombre: string; nif?: string };
 type Trabajador = {
@@ -40,6 +41,7 @@ export function WorkerManager({ empresas }: { empresas: Empresa[] }) {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [finiquitoTrabajador, setFiniquitoTrabajador] = useState<Trabajador | null>(null);
+  const [bonisTrabajador, setBonisTrabajador] = useState<Trabajador | null>(null);
 
   const [nuevo, setNuevo] = useState({
     nombre: "",
@@ -288,7 +290,12 @@ export function WorkerManager({ empresas }: { empresas: Empresa[] }) {
                       className="button secondary compact"
                       title="Calcular finiquito"
                       onClick={() => setFiniquitoTrabajador(t)}
-                    >Finiquito</button>
+                    >Finiquito</button>{" "}
+                    <button
+                      className="button secondary compact"
+                      title="Bonificaciones SS"
+                      onClick={() => setBonisTrabajador(t)}
+                    >Bonis</button>
                   </td>
                   <td>
                     {t.activo ? <button className="button danger compact" onClick={() => bajaTrabajador(t.id)}>Dar de baja</button> : null}
@@ -402,6 +409,13 @@ export function WorkerManager({ empresas }: { empresas: Empresa[] }) {
           empresaId={empresaId}
           trabajador={finiquitoTrabajador}
           onClose={() => setFiniquitoTrabajador(null)}
+        />
+      ) : null}
+
+      {bonisTrabajador ? (
+        <BonificacionesModal
+          trabajador={bonisTrabajador}
+          onClose={() => setBonisTrabajador(null)}
         />
       ) : null}
     </section>

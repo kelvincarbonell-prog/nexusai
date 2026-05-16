@@ -1,5 +1,6 @@
 import { AppShell } from "@/components/app-shell";
 import { InteligenciaDashboard } from "@/components/inteligencia/inteligencia-dashboard";
+import { AgentRunsHistory } from "@/components/inteligencia/agent-runs-history";
 import { SetupRequired } from "@/components/setup-required";
 import { hasSupabaseConfig } from "@/lib/env";
 import { createServerSupabase } from "@/lib/supabase/server";
@@ -20,6 +21,11 @@ export default async function InteligenciaPage() {
   if (profile?.rol === "portal_cliente") redirect("/portal");
   const isAdmin = profile?.rol === "admin";
 
+  const empresasRes = isAdmin
+    ? await supabase.from("empresas").select("id,nombre").order("nombre").limit(50)
+    : await supabase.from("empresas").select("id,nombre").or(`gestor_id.eq.${auth.user.id},owner_user_id.eq.${auth.user.id}`).order("nombre");
+  const empresas = empresasRes.data ?? [];
+
   return (
     <AppShell active="/inteligencia" showSuperAdmin={isAdmin} espacio={{ nombre: profile?.nombre ?? "Mi gestoría", tipo: "Inteligencia" }}>
       <header style={{ marginBottom: 8 }}>
@@ -32,6 +38,11 @@ export default async function InteligenciaPage() {
         </p>
       </header>
       <InteligenciaDashboard />
+      {empresas.length > 0 ? (
+        <section className="grid" style={{ marginTop: 24 }}>
+          <AgentRunsHistory empresas={empresas} />
+        </section>
+      ) : null}
     </AppShell>
   );
 }
