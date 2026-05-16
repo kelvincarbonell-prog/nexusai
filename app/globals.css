@@ -3238,3 +3238,57 @@ code {
   .obli-row .when, .obli-row .bar, .obli-row > :last-child { display: none; }
   .login-left, .login-right { padding: 32px 24px; }
 }
+
+/* ============================================================
+   Premium card entrance — applies to .grid > .card inside .main
+   ============================================================ */
+@keyframes card-rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.main .grid > .card,
+.main > section.grid > .card,
+.main > .grid > .card {
+  animation: card-rise 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.main .grid > .card:nth-child(2) { animation-delay: 0.04s; }
+.main .grid > .card:nth-child(3) { animation-delay: 0.08s; }
+.main .grid > .card:nth-child(4) { animation-delay: 0.12s; }
+.main .grid > .card:nth-child(5) { animation-delay: 0.16s; }
+.main .grid > .card:nth-child(6) { animation-delay: 0.20s; }
+.main .grid > .card:nth-child(7) { animation-delay: 0.24s; }
+.main .grid > .card:nth-child(n+8) { animation-delay: 0.28s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .main .grid > .card { animation: none; }
+}
+
+/* Subtle card focus glow on hover */
+.card {
+  position: relative;
+}
+.card:hover {
+  box-shadow: 0 6px 24px -16px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+/* Pill micro-anim */
+.pill { transition: transform 0.12s ease, background-color 0.15s ease; }
+.pill.bad { animation: pulse 1.8s ease-in-out infinite; }
+
+/* AEAT tab indicator slide */
+.aeat-tabs .button {
+  transition: transform 0.12s ease, background-color 0.18s ease, color 0.18s ease;
+}
+.aeat-tabs .button:not(.secondary) {
+  box-shadow: 0 4px 18px -10px color-mix(in srgb, var(--accent) 55%, transparent);
+}
+
+/* Table row hover */
+.table tbody tr {
+  transition: background-color 0.15s ease;
+}
+.table tbody tr:hover {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+}
