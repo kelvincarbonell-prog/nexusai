@@ -178,49 +178,186 @@ const SECTIONS_232: Section[] = [
   },
 ];
 
+const SECTIONS_123: Section[] = [
+  {
+    eyebrow: "Retenciones capital mobiliario",
+    rows: [
+      { code: "c01", label: "Nº perceptores" },
+      { code: "c02", label: "Base retenciones" },
+      { code: "c03", label: "Retenciones (19 %)", accent: true },
+      { code: "c28", label: "Total a ingresar", accent: true },
+    ],
+  },
+];
+
+const SECTIONS_100: Section[] = [
+  {
+    eyebrow: "Bases imponibles",
+    rows: [
+      { code: "c0500", label: "Rendimientos trabajo netos" },
+      { code: "c0220", label: "Actividades económicas" },
+      { code: "c0085", label: "Capital inmobiliario" },
+      { code: "c0030", label: "Capital mobiliario" },
+      { code: "c0400", label: "Ganancias patrimoniales" },
+      { code: "c0510", label: "Base liquidable general", accent: true },
+      { code: "c0455", label: "Base imponible ahorro" },
+    ],
+  },
+  {
+    eyebrow: "Resultado",
+    rows: [
+      { code: "c0545", label: "Cuota líquida", accent: true },
+      { code: "c0625", label: "Retenciones y pagos a cuenta" },
+      { code: "c0670", label: "Resultado · a ingresar / devolver", accent: true },
+    ],
+  },
+];
+
+const SECTIONS_184: Section[] = [
+  {
+    eyebrow: "Atribución de rentas",
+    rows: [
+      { code: "total_ingresos", label: "Total ingresos anuales" },
+      { code: "total_gastos", label: "Total gastos deducibles" },
+      { code: "rendimiento_neto", label: "Rendimiento neto", accent: true },
+      { code: "num_comuneros", label: "Nº comuneros / socios" },
+      { code: "porcentaje_total", label: "Suma % atribución" },
+    ],
+  },
+];
+
+const SECTIONS_193: Section[] = [
+  {
+    eyebrow: "Resumen anual capital mobiliario",
+    rows: [
+      { code: "num_perceptores", label: "Nº perceptores" },
+      { code: "total_base", label: "Base anual" },
+      { code: "total_retenciones", label: "Retenciones anuales", accent: true },
+    ],
+  },
+];
+
+const SECTIONS_210: Section[] = [
+  {
+    eyebrow: "Renta de no residente",
+    rows: [
+      { code: "c01", label: "Ingresos brutos" },
+      { code: "c02", label: "Gastos deducibles (UE/EEE)" },
+      { code: "c03", label: "Base imponible", accent: true },
+      { code: "c04", label: "Tipo gravamen %" },
+      { code: "c05", label: "Cuota íntegra" },
+      { code: "c06", label: "Retenciones soportadas" },
+      { code: "c07", label: "Resultado a ingresar", accent: true },
+    ],
+  },
+];
+
+const SECTIONS_296: Section[] = [
+  {
+    eyebrow: "Resumen anual no residentes",
+    rows: [
+      { code: "num_perceptores", label: "Nº perceptores" },
+      { code: "total_base", label: "Base total" },
+      { code: "total_retenciones", label: "Retenciones totales", accent: true },
+    ],
+  },
+];
+
+const SECTIONS_309: Section[] = [
+  {
+    eyebrow: "Liquidación IVA no periódica",
+    rows: [
+      { code: "c01", label: "Base imponible" },
+      { code: "c02", label: "Tipo aplicado %" },
+      { code: "c03", label: "Cuota IVA", accent: true },
+      { code: "c04", label: "Retenciones" },
+      { code: "c05", label: "A ingresar", accent: true },
+    ],
+  },
+];
+
+const SECTIONS_720: Section[] = [
+  {
+    eyebrow: "Bienes en el extranjero",
+    rows: [
+      { code: "cuentas_num", label: "Nº cuentas extranjeras" },
+      { code: "cuentas_valor", label: "Valor cuentas (€)" },
+      { code: "valores_num", label: "Nº valores/derechos" },
+      { code: "valores_valor", label: "Valor (€)" },
+      { code: "inmuebles_num", label: "Nº inmuebles" },
+      { code: "inmuebles_valor", label: "Valor inmuebles (€)" },
+      { code: "total_bloques_obligados", label: "Bloques obligados (>50.000 €)", accent: true },
+    ],
+  },
+];
+
 const SECTIONS: Record<string, Section[]> = {
+  "100": SECTIONS_100,
   "111": SECTIONS_111,
   "115": SECTIONS_115,
+  "123": SECTIONS_123,
   "130": SECTIONS_130,
-  "390": SECTIONS_390,
+  "180": SECTIONS_180,
+  "184": SECTIONS_184,
+  "190": SECTIONS_190,
+  "193": SECTIONS_193,
+  "210": SECTIONS_210,
+  "232": SECTIONS_232,
+  "296": SECTIONS_296,
+  "309": SECTIONS_309,
   "347": SECTIONS_347,
   "349": SECTIONS_349,
-  "180": SECTIONS_180,
-  "190": SECTIONS_190,
-  "232": SECTIONS_232,
+  "390": SECTIONS_390,
+  "720": SECTIONS_720,
 };
 
 const TITLES: Record<string, string> = {
+  "100": "Modelo 100 · IRPF anual",
   "111": "Modelo 111 · Retenciones IRPF",
   "115": "Modelo 115 · Retenciones alquileres",
+  "123": "Modelo 123 · Capital mobiliario",
   "130": "Modelo 130 · Pago fraccionado autónomos",
-  "390": "Modelo 390 · Resumen anual IVA",
+  "180": "Modelo 180 · Resumen anual alquileres",
+  "184": "Modelo 184 · Atribución de rentas",
+  "190": "Modelo 190 · Resumen anual IRPF",
+  "193": "Modelo 193 · Resumen capital mobiliario",
+  "210": "Modelo 210 · No residentes",
+  "232": "Modelo 232 · Operaciones vinculadas",
+  "296": "Modelo 296 · Resumen no residentes",
+  "309": "Modelo 309 · IVA no periódico",
   "347": "Modelo 347 · Operaciones con terceros",
   "349": "Modelo 349 · Operaciones intracomunitarias",
-  "180": "Modelo 180 · Resumen anual alquileres",
-  "190": "Modelo 190 · Resumen anual IRPF",
-  "232": "Modelo 232 · Operaciones vinculadas",
+  "390": "Modelo 390 · Resumen anual IVA",
+  "720": "Modelo 720 · Bienes en extranjero",
 };
 
 const HINTS: Record<string, string> = {
+  "100": "Declaración anual de IRPF (autónomos y particulares). Incluye rendimientos del trabajo, capital y actividades económicas.",
   "111": "Retenciones de IRPF practicadas a trabajadores y profesionales en el trimestre.",
   "115": "Retenciones por arrendamientos de inmuebles urbanos pagados en el trimestre (tipo 19 %).",
+  "123": "Retenciones sobre rendimientos del capital mobiliario (dividendos, intereses). Tipo 19 %.",
   "130": "Pago fraccionado de IRPF de autónomos en estimación directa. Cálculo acumulado del ejercicio.",
-  "390": "Resumen anual informativo de IVA. Agrega automáticamente los 4 trimestres del 303 ya guardados.",
+  "180": "Resumen anual de retenciones de alquileres. Agrega los 4 trimestres del 115.",
+  "184": "Declaración informativa de entidades en régimen de atribución (CB, SC, herencias yacentes).",
+  "190": "Resumen anual de retenciones IRPF (trabajadores + profesionales). Agrega los 4 trimestres del 111.",
+  "193": "Resumen anual de retenciones del capital mobiliario. Agrega los 4 trimestres del 123.",
+  "210": "Retenciones sobre rentas obtenidas en España por no residentes (sin establecimiento permanente).",
+  "232": "Operaciones vinculadas (>250.000 € general o >100.000 € específico) y operaciones con paraísos fiscales. Presentación: noviembre.",
+  "296": "Resumen anual de retenciones a no residentes. Agrega trimestres del 210.",
+  "309": "Liquidación IVA puntual para sujetos no obligados al 303. Operación específica.",
   "347": "Declaración informativa anual. Terceros con quien operas >3.005,06 € en el año (excluyendo intracomunitarias y alquileres con retención). Presentación: febrero.",
   "349": "Operaciones con operadores intracomunitarios. Presentación trimestral o mensual según volumen.",
-  "180": "Resumen anual de retenciones de alquileres. Agrega los 4 trimestres del 115.",
-  "190": "Resumen anual de retenciones IRPF (trabajadores + profesionales). Agrega los 4 trimestres del 111.",
-  "232": "Operaciones vinculadas (>250.000 € general o >100.000 € específico) y operaciones con paraísos fiscales. Presentación: noviembre del año siguiente.",
+  "390": "Resumen anual informativo de IVA. Agrega automáticamente los 4 trimestres del 303 ya guardados.",
+  "720": "Bienes y derechos situados en el extranjero (cuentas, valores, inmuebles). Obligatorio si supera 50.000 € por bloque.",
 };
 
 const EUR = (n: number) => new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR" }).format(n);
 
-export function CasillasSimple({ modelo, empresas }: { modelo: "111" | "115" | "130" | "390" | "347" | "349" | "180" | "190" | "232"; empresas: Empresa[] }) {
+export function CasillasSimple({ modelo, empresas }: { modelo: "100" | "111" | "115" | "123" | "130" | "180" | "184" | "190" | "193" | "210" | "232" | "296" | "309" | "347" | "349" | "390" | "720"; empresas: Empresa[] }) {
   const supabase = useMemo(() => createBrowserSupabase(), []);
   const now = new Date();
   const defaultYear = now.getUTCFullYear();
-  const isAnual = ["390", "347", "180", "190", "232"].includes(modelo);
+  const isAnual = ["100", "180", "184", "190", "193", "232", "296", "347", "390", "720"].includes(modelo);
   const defaultPeriodo = (isAnual ? "ANUAL" : `${Math.ceil((now.getUTCMonth() + 1) / 3)}T`) as "1T" | "2T" | "3T" | "4T" | "ANUAL";
 
   const [empresaId, setEmpresaId] = useState(empresas[0]?.id ?? "");
@@ -301,22 +438,22 @@ export function CasillasSimple({ modelo, empresas }: { modelo: "111" | "115" | "
   }
 
   const resultado =
-    (modelo === "130"
-      ? casillas.c19
-      : modelo === "390"
-        ? casillas.c664
-        : modelo === "347"
-          ? casillas.c05 // num operadores
-          : modelo === "349"
-            ? casillas.total
-            : modelo === "180"
-              ? casillas.c03
-              : modelo === "190"
-                ? casillas.total_retenciones
-                : modelo === "232"
-                  ? casillas.total_vinculados
-                  : casillas.c28) ?? 0;
-  const isCount = modelo === "347" || modelo === "232"; // muestra como número entero, no €
+    (modelo === "130" ? casillas.c19
+      : modelo === "390" ? casillas.c664
+      : modelo === "347" ? casillas.c05
+      : modelo === "349" ? casillas.total
+      : modelo === "180" ? casillas.c03
+      : modelo === "190" ? casillas.total_retenciones
+      : modelo === "193" ? casillas.total_retenciones
+      : modelo === "232" ? casillas.total_vinculados
+      : modelo === "296" ? casillas.total_retenciones
+      : modelo === "210" ? casillas.c07
+      : modelo === "309" ? casillas.c05
+      : modelo === "100" ? casillas.c0670
+      : modelo === "184" ? casillas.rendimiento_neto
+      : modelo === "720" ? casillas.total_bloques_obligados
+      : casillas.c28) ?? 0;
+  const isCount = ["347", "232", "720"].includes(modelo);
 
   return (
     <section className="grid">

@@ -1969,6 +1969,70 @@ code {
 }
 
 /* ============================================================
+   Notifications dropdown
+   ============================================================ */
+.bell {
+  cursor: pointer;
+}
+
+.notifications-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: min(360px, 90vw);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 20px 50px -20px rgba(0,0,0,0.4), 0 0 0 1px var(--accent-soft);
+  z-index: 40;
+  animation: pop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+}
+
+.notifications-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.notifications-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+.notification-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  text-decoration: none;
+  color: var(--ink);
+  border-bottom: 1px solid var(--line);
+  transition: background 0.12s;
+}
+
+.notification-item:hover { background: var(--pill-soft); }
+
+.notification-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-top: 4px;
+  flex-shrink: 0;
+  background: var(--muted);
+}
+
+.notification-dot.dot-bad { background: var(--bad); box-shadow: 0 0 8px rgba(248,113,113,0.6); }
+.notification-dot.dot-warn { background: var(--warn); }
+.notification-dot.dot-good { background: var(--good); }
+.notification-dot.dot-info { background: var(--accent); }
+
+/* ============================================================
    Storage badge (sidebar bottom)
    ============================================================ */
 .storage-badge {

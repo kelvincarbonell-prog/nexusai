@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
-import { Bell, Mic } from "lucide-react";
+import { Mic } from "lucide-react";
 import { StorageBadge } from "@/components/storage/storage-badge";
+import { NotificationsBell } from "@/components/notifications/notifications-bell";
+import { UserAvatarButton } from "@/components/user/user-avatar-button";
 
 type NavItem = {
   href: string;
@@ -115,12 +117,9 @@ export function AppShell({
                 <time suppressHydrationWarning>
                   {new Date().toLocaleString("es-ES", { weekday: "short", day: "2-digit", hour: "2-digit", minute: "2-digit" })}
                 </time>
-                <span className="bell" aria-label="5 notificaciones">
-                  <Bell size={14} aria-hidden="true" />
-                  <span className="dot">5</span>
-                </span>
+                <NotificationsBell />
                 <ThemeToggle compact />
-                <span className="avatar m26-avatar" aria-hidden="true">M</span>
+                <UserAvatarButton />
               </div>
             </div>
           )

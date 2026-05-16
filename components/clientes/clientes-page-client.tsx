@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { ClientesList } from "@/components/clientes/clientes-list";
 import { NuevoClienteForm } from "@/components/clientes/nuevo-cliente-form";
+import { createBrowserSupabase } from "@/lib/supabase/browser";
 
 type Empresa = {
   id: string;
@@ -17,7 +19,39 @@ type Empresa = {
 };
 
 export function ClientesPageClient({ initialEmpresas, isAdmin, userId }: { initialEmpresas: Empresa[]; isAdmin: boolean; userId: string }) {
+  const supabase = useMemo(() => createBrowserSupabase(), []);
+  const router = useRouter();
   const [showNew, setShowNew] = useState(false);
+  const [busy, setBusy] = useState<string | null>(null);
+  const hasDemo = initialEmpresas.some((e) => (e.metadata as Record<string, unknown> | null)?.demo === true);
+
+  async function token() {
+    const { data } = await supabase.auth.getSession();
+    return data.session?.access_token ?? "";
+  }
+
+  async function crearDemo() {
+    setBusy("seed");
+    try {
+      const tk = await token();
+      await fetch("/api/clientes/seed-demo", { method: "POST", headers: { Authorization: `Bearer ${tk}` } });
+      router.refresh();
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function borrarDemo() {
+    if (!confirm("¿Borrar las 3 empresas de prueba? Esta acción es irreversible.")) return;
+    setBusy("seed");
+    try {
+      const tk = await token();
+      await fetch("/api/clientes/seed-demo", { method: "DELETE", headers: { Authorization: `Bearer ${tk}` } });
+      router.refresh();
+    } finally {
+      setBusy(null);
+    }
+  }
 
   return (
     <>
@@ -32,6 +66,15 @@ export function ClientesPageClient({ initialEmpresas, isAdmin, userId }: { initi
           </p>
         </div>
         <div className="button-row" style={{ marginTop: 6 }}>
+          {hasDemo ? (
+            <button className="button ghost compact" onClick={borrarDemo} disabled={busy === "seed"} title="Eliminar empresas de prueba">
+              🗑 Borrar demo
+            </button>
+          ) : initialEmpresas.length === 0 ? (
+            <button className="button secondary" onClick={crearDemo} disabled={busy === "seed"} title="Crea 3 empresas ficticias para probar la plataforma">
+              {busy === "seed" ? "Creando…" : "✨ Crear 3 empresas demo"}
+            </button>
+          ) : null}
           <button className="button" onClick={() => setShowNew((v) => !v)}>
             {showNew ? "Cancelar" : "+ Nuevo cliente"}
           </button>

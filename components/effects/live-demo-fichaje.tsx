@@ -3,11 +3,12 @@
 import { useEffect, useRef, useState } from "react";
 
 const STEPS = [
-  { label: "Abriendo M26 móvil", duration: 900 },
-  { label: "Fichaje entrada", duration: 1100 },
-  { label: "Jornada en curso · 8 h 14 m", duration: 2400 },
-  { label: "Fichaje salida · firma con Cl@ve", duration: 1800 },
-  { label: "Registrado en libro de horas · listo para AEAT", duration: 1800 },
+  { label: "Detectada factura vencida hace 32 días", duration: 1200 },
+  { label: "Redactando email personalizado con IA…", duration: 1800 },
+  { label: "Generando enlace de pago Stripe", duration: 1400 },
+  { label: "Enviado a Daniel · contabilidad@singular", duration: 1800 },
+  { label: "✓ Cliente abrió el email · clic en pagar", duration: 2200 },
+  { label: "💰 Cobrado · 3.180 € · conciliado al instante", duration: 2400 },
 ];
 
 export function LiveDemoFichaje() {
@@ -29,34 +30,36 @@ export function LiveDemoFichaje() {
     return () => clearTimeout(t);
   }, [step, active]);
 
-  const entradaDone = step >= 1;
-  const salidaDone = step >= 3;
+  const sent = step >= 3;
+  const paid = step >= 5;
 
   return (
     <div ref={ref} className="live-demo fichaje-demo" aria-hidden="true">
       <div className="demo-window phone narrow">
         <div className="demo-phone-bar">
-          <span>09:02</span>
+          <span>14:08</span>
           <span className="demo-muted">●●●● 5G</span>
         </div>
 
         <div className="fichaje-body">
-          <span className="demo-eyebrow">Innova Apps · móvil</span>
-          <strong className="demo-title">Fichaje del día</strong>
+          <span className="demo-eyebrow">Agente · cobros automáticos</span>
+          <strong className="demo-title">Factura #0228 vencida</strong>
 
-          <div className="fichaje-clock">
-            {step <= 1 ? "09:02" : step === 2 ? "13:48" : step === 3 ? "18:01" : "18:01"}
-            <small>{step <= 1 ? "lunes" : step === 2 ? "en curso" : "cerrada"}</small>
+          <div className="fichaje-clock" style={{ fontSize: 36 }}>
+            3.180 €
+            <small style={{ color: paid ? "var(--good)" : "var(--bad)" }}>
+              {paid ? "cobrada hoy" : "32 días vencida"}
+            </small>
           </div>
 
           <div className="fichaje-buttons">
-            <button className={`fichaje-btn entrada ${entradaDone ? "done" : "active"}`}>
-              <span className="check">{entradaDone ? "✓" : "→"}</span>
-              <span>Entrada {entradaDone ? "· 09:02" : ""}</span>
+            <button className={`fichaje-btn entrada ${sent ? "done" : "active"}`} disabled>
+              <span className="check">{sent ? "✓" : "→"}</span>
+              <span>Recordar {sent ? "· enviado" : ""}</span>
             </button>
-            <button className={`fichaje-btn salida ${salidaDone ? "done" : entradaDone ? "active" : ""}`} disabled={!entradaDone}>
-              <span className="check">{salidaDone ? "✓" : "—"}</span>
-              <span>Salida {salidaDone ? "· 18:01" : ""}</span>
+            <button className={`fichaje-btn salida ${paid ? "done" : sent ? "active" : ""}`} disabled>
+              <span className="check">{paid ? "✓" : "—"}</span>
+              <span>Cobrar {paid ? "· OK" : ""}</span>
             </button>
           </div>
 
@@ -65,9 +68,9 @@ export function LiveDemoFichaje() {
             {STEPS[step].label}
           </div>
 
-          <div className={`fichaje-toast ${step === 4 ? "show" : ""}`}>
-            <strong>✓ Jornada registrada</strong>
-            <span className="demo-muted">RD 8/2019 cumplido · 8 h 59 m</span>
+          <div className={`fichaje-toast ${paid ? "show" : ""}`}>
+            <strong>✓ €3.180 conciliados</strong>
+            <span className="demo-muted">BBVA → factura #0228 · sin tocar nada</span>
           </div>
         </div>
       </div>

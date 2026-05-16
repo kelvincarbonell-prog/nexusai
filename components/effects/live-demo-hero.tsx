@@ -94,8 +94,8 @@ export function LiveDemoHero() {
                 <span className="demo-pill">📧 Email</span>
                 <span className="demo-muted">facturas-9k2x@inbox.m26.app</span>
               </div>
-              <strong>Telefónica España S.A.U. — Factura marzo</strong>
-              <span className="demo-muted">Adjunto · TF-2603419.pdf · 84 KB</span>
+              <strong>Cloudly Workspace S.L. — Suscripción anual</strong>
+              <span className="demo-muted">Adjunto · CW-2026-04185.pdf · 92 KB</span>
             </div>
 
             <div className={`demo-card extract ${after("extracting") ? "show" : ""}`}>
@@ -106,9 +106,9 @@ export function LiveDemoHero() {
                 <span className="demo-muted">GPT-4o · vision</span>
               </div>
               <div className="demo-fields">
-                <Field label="Proveedor" value="Telefónica España S.A.U." show={after("extracting")} delay={0} />
-                <Field label="NIF" value="A82018474" show={after("extracting")} delay={200} />
-                <Field label="Nº factura" value="TF-2603419" show={after("extracting")} delay={400} />
+                <Field label="Proveedor" value="Cloudly Workspace S.L." show={after("extracting")} delay={0} />
+                <Field label="NIF" value="B66428133" show={after("extracting")} delay={200} />
+                <Field label="Nº factura" value="CW-2026-04185" show={after("extracting")} delay={400} />
                 <Field label="Fecha" value="03·03·2026" show={after("extracting")} delay={600} />
                 <Field label="Base" value="€ 128,93" show={after("extracted")} delay={0} />
                 <Field label="IVA 21%" value="€ 27,07" show={after("extracted")} delay={200} mark />

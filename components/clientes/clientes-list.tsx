@@ -144,9 +144,6 @@ export function ClientesList({ initialEmpresas, isAdmin, userId }: { initialEmpr
               <span className="muted" style={{ fontSize: 14, marginLeft: 8 }}>· {stats.autonomos} autónomos · {stats.empresas} empresas</span>
             </h2>
           </div>
-          <div className="button-row">
-            <Link href="/dashboard?view=clientes" className="button">+ Nuevo cliente</Link>
-          </div>
         </div>
 
         <div className="form" style={{ gridTemplateColumns: "minmax(220px, 1fr) auto auto auto auto", gap: 8, alignItems: "center" }}>

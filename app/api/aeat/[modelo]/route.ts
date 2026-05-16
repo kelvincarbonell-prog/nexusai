@@ -15,11 +15,20 @@ import { calcular180 } from "@/lib/aeat/calc/m180";
 import { calcular190 } from "@/lib/aeat/calc/m190";
 import { calcular232 } from "@/lib/aeat/calc/m232";
 import { calcular200, type Modelo200Input } from "@/lib/aeat/calc/m200";
+import { calcular100, type Modelo100Input } from "@/lib/aeat/calc/m100";
+import { calcular184, type Modelo184Input } from "@/lib/aeat/calc/m184";
+import { calcular720, type BienExtranjero } from "@/lib/aeat/calc/m720";
+import { calcular309 } from "@/lib/aeat/calc/m309";
+import { calcular210 } from "@/lib/aeat/calc/m210";
+import { calcular296 } from "@/lib/aeat/calc/m296";
+import { calcular123 } from "@/lib/aeat/calc/m123";
+import { calcular193, type DeclTrim } from "@/lib/aeat/calc/m193";
+import type { Casillas123 } from "@/lib/aeat/calc/m123";
 import type { Casillas303 } from "@/lib/aeat/calc/m303";
 import { fetchDatos111, fetchDatos115, fetchDatos130 } from "@/lib/aeat/queries-extra";
 import { validateNif } from "@/lib/aeat/validators";
 
-const SUPPORTED = ["111", "115", "130", "180", "190", "200", "232", "347", "349", "390"] as const;
+const SUPPORTED = ["100", "111", "115", "123", "130", "180", "184", "190", "193", "200", "210", "232", "296", "309", "347", "349", "390", "720"] as const;
 type Modelo = (typeof SUPPORTED)[number];
 
 const QuerySchema = z.object({
@@ -54,6 +63,9 @@ const SaveSchema = z.object({
   status: z.enum(["borrador", "revisado", "presentado"]).default("borrador"),
   notas: z.string().max(2000).optional(),
   inputs_200: M200InputSchema.optional(),
+  inputs_100: z.record(z.unknown()).optional(),
+  inputs_184: z.record(z.unknown()).optional(),
+  inputs_720: z.record(z.unknown()).optional(),
 });
 
 async function autoResultadoContable(
@@ -239,6 +251,97 @@ async function compute(
       resumen: { operadores: r.operaciones.length, top: r.operaciones.slice(0, 5) },
     };
   }
+  if (modelo === "100") {
+    // Datos guardados previamente o defaults a 0
+    const { data: prev } = await admin
+      .from("aeat_declaraciones")
+      .select("resumen")
+      .eq("empresa_id", empresaId)
+      .eq("modelo", "100")
+      .eq("ejercicio", ejercicio)
+      .maybeSingle();
+    const prevInputs = ((prev?.resumen as Record<string, unknown> | undefined)?.inputs_aplicados ?? {}) as Modelo100Input;
+    const inputs: Modelo100Input = { ...prevInputs, rend_trabajo: Number(prevInputs.rend_trabajo ?? 0) };
+    const r = calcular100(inputs);
+    return {
+      casillas: r.casillas as unknown as Record<string, number>,
+      warnings: r.warnings,
+      resumen: { ...r.resumen, inputs_aplicados: inputs },
+    };
+  }
+  if (modelo === "184") {
+    const { data: prev } = await admin
+      .from("aeat_declaraciones")
+      .select("resumen")
+      .eq("empresa_id", empresaId)
+      .eq("modelo", "184")
+      .eq("ejercicio", ejercicio)
+      .maybeSingle();
+    const prevInputs = ((prev?.resumen as Record<string, unknown> | undefined)?.inputs_aplicados ?? {}) as Modelo184Input;
+    const inputs: Modelo184Input = {
+      ...prevInputs,
+      ingresos_totales: Number(prevInputs.ingresos_totales ?? 0),
+      gastos_totales: Number(prevInputs.gastos_totales ?? 0),
+      comuneros: Array.isArray(prevInputs.comuneros) ? prevInputs.comuneros : [],
+    };
+    const r = calcular184(inputs);
+    return {
+      casillas: r.casillas as unknown as Record<string, number>,
+      warnings: r.warnings,
+      resumen: { reparto: r.reparto, inputs_aplicados: inputs },
+    };
+  }
+  if (modelo === "720") {
+    const { data: prev } = await admin
+      .from("aeat_declaraciones")
+      .select("resumen")
+      .eq("empresa_id", empresaId)
+      .eq("modelo", "720")
+      .eq("ejercicio", ejercicio)
+      .maybeSingle();
+    const prevInputs = ((prev?.resumen as Record<string, unknown> | undefined)?.inputs_aplicados ?? {}) as { bienes?: BienExtranjero[] };
+    const bienes: BienExtranjero[] = prevInputs?.bienes ?? [];
+    const r = calcular720({ bienes });
+    return {
+      casillas: r.casillas as unknown as Record<string, number>,
+      warnings: r.warnings,
+      resumen: { bloques: r.bloques, inputs_aplicados: { bienes } },
+    };
+  }
+  if (modelo === "309" || modelo === "210" || modelo === "296" || modelo === "123") {
+    const { data: prev } = await admin
+      .from("aeat_declaraciones")
+      .select("resumen,casillas")
+      .eq("empresa_id", empresaId)
+      .eq("modelo", modelo)
+      .eq("ejercicio", ejercicio)
+      .eq("periodo", periodo)
+      .maybeSingle();
+    const inputs = ((prev?.resumen as Record<string, unknown> | undefined)?.inputs_aplicados ?? {}) as Record<string, unknown>;
+    let r;
+    if (modelo === "309") r = calcular309({ base_imponible: Number(inputs.base_imponible ?? 0), iva_pct: Number(inputs.iva_pct ?? 21), retenciones_aplicadas: Number(inputs.retenciones_aplicadas ?? 0) });
+    else if (modelo === "210") r = calcular210({ tipo_renta: (inputs.tipo_renta as "trabajo" | "actividades" | "dividendos" | "intereses" | "ganancias_patrimoniales" | "inmuebles" | "otros") ?? "otros", ingresos_brutos: Number(inputs.ingresos_brutos ?? 0), es_residente_ue_eee: inputs.es_residente_ue_eee !== false, gastos_deducibles: Number(inputs.gastos_deducibles ?? 0), retenciones_practicadas: Number(inputs.retenciones_practicadas ?? 0), pais_residencia: inputs.pais_residencia as string | undefined });
+    else if (modelo === "296") r = calcular296({ perceptores: (inputs.perceptores as Array<{ nombre: string; nif: string; pais: string; base: number; retencion: number }>) ?? [] });
+    else r = calcular123({ rentas: (inputs.rentas as Array<{ perceptor_nif: string; perceptor_nombre: string; base: number; retencion_pct?: number }>) ?? [] });
+    return { casillas: r.casillas as unknown as Record<string, number>, warnings: r.warnings, resumen: { ...r.resumen, inputs_aplicados: inputs } };
+  }
+  if (modelo === "193") {
+    const { data } = await admin
+      .from("aeat_declaraciones")
+      .select("modelo,ejercicio,periodo,status,casillas")
+      .eq("empresa_id", empresaId)
+      .eq("modelo", "123")
+      .eq("ejercicio", ejercicio);
+    const decls: DeclTrim[] = (data ?? []).map((d) => ({
+      modelo: d.modelo,
+      ejercicio: d.ejercicio,
+      periodo: d.periodo,
+      status: d.status,
+      casillas: d.casillas as Casillas123,
+    }));
+    const r = calcular193({ declaraciones123: decls });
+    return { casillas: r.casillas as unknown as Record<string, number>, warnings: r.warnings, resumen: r.resumen };
+  }
   throw new Error("Modelo no soportado");
 }
 
@@ -324,8 +427,8 @@ export async function GET(request: NextRequest, ctx: { params: Promise<{ modelo:
 
   const { year, trimestre } = currentTrimestre();
   const ejercicio = parsed.data.ejercicio ?? year;
-  const anualModels = ["390", "347", "180", "190", "200", "232"] as const;
-  const periodo = (anualModels.includes(modelo as "390" | "347" | "180" | "190" | "200" | "232")
+  const anualModels = ["100", "184", "190", "193", "200", "232", "296", "347", "390", "720"] as const;
+  const periodo = (anualModels.includes(modelo as "100" | "184" | "190" | "193" | "200" | "232" | "296" | "347" | "390" | "720")
     ? "ANUAL"
     : (parsed.data.periodo ?? trimestre)) as Trimestre | "ANUAL";
 
@@ -387,18 +490,30 @@ export async function POST(request: NextRequest, ctx: { params: Promise<{ modelo
   const admin = createSupabaseAdmin();
   if (!(await isGestorOrAdmin(admin, user.id, parsed.data.empresa_id))) return jsonError("Sin permiso", 403);
 
-  const result =
-    modelo === "200"
-      ? await compute200(admin, parsed.data.empresa_id, parsed.data.ejercicio, parsed.data.inputs_200 ?? {})
-      : await compute(modelo as Modelo, admin, parsed.data.empresa_id, parsed.data.ejercicio, parsed.data.periodo);
+  let result;
+  if (modelo === "200") {
+    result = await compute200(admin, parsed.data.empresa_id, parsed.data.ejercicio, parsed.data.inputs_200 ?? {});
+  } else if (modelo === "100" && parsed.data.inputs_100) {
+    const r = calcular100(parsed.data.inputs_100 as unknown as Modelo100Input);
+    result = { casillas: r.casillas as unknown as Record<string, number>, warnings: r.warnings, resumen: { ...r.resumen, inputs_aplicados: parsed.data.inputs_100 } };
+  } else if (modelo === "184" && parsed.data.inputs_184) {
+    const r = calcular184(parsed.data.inputs_184 as unknown as Modelo184Input);
+    result = { casillas: r.casillas as unknown as Record<string, number>, warnings: r.warnings, resumen: { reparto: r.reparto, inputs_aplicados: parsed.data.inputs_184 } };
+  } else if (modelo === "720" && parsed.data.inputs_720) {
+    const inputsObj = parsed.data.inputs_720 as { bienes?: BienExtranjero[] };
+    const r = calcular720({ bienes: inputsObj.bienes ?? [] });
+    result = { casillas: r.casillas as unknown as Record<string, number>, warnings: r.warnings, resumen: { bloques: r.bloques, inputs_aplicados: parsed.data.inputs_720 } };
+  } else {
+    result = await compute(modelo as Modelo, admin, parsed.data.empresa_id, parsed.data.ejercicio, parsed.data.periodo);
+  }
   const resultado =
-    modelo === "200"
-      ? (result.casillas as { c599?: number }).c599 ?? 0
-      : modelo === "111"
-        ? (result.casillas as { c28?: number }).c28 ?? 0
-        : modelo === "115"
-          ? (result.casillas as { c28?: number }).c28 ?? 0
-          : (result.casillas as { c19?: number }).c19 ?? 0;
+    modelo === "200" ? (result.casillas as { c599?: number }).c599 ?? 0
+    : modelo === "100" ? (result.casillas as { c0670?: number }).c0670 ?? 0
+    : modelo === "184" ? 0
+    : modelo === "720" ? 0
+    : modelo === "111" ? (result.casillas as { c28?: number }).c28 ?? 0
+    : modelo === "115" ? (result.casillas as { c28?: number }).c28 ?? 0
+    : (result.casillas as { c19?: number }).c19 ?? 0;
 
   const { data, error } = await admin
     .from("aeat_declaraciones")

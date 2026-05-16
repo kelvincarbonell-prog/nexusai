@@ -328,19 +328,20 @@ export default function LandingPage() {
           </Reveal>
           <Reveal className="span-7" delay={120}>
             <div>
-              <span className="card-eyebrow">Fichaje legal · RD 8/2019</span>
+              <span className="card-eyebrow">Cobros automáticos · agente</span>
               <h3 className="title" style={{ fontSize: 32, marginTop: 8 }}>
-                Tu plantilla ficha <em>desde el móvil</em>. La AEAT, contenta.
+                Tus clientes morosos <em>pagan solos</em>. Sin perseguir a nadie.
               </h3>
               <p className="subtitle" style={{ marginTop: 12 }}>
-                Foto del trabajador, geolocalización opcional, firma con Cl@ve. Reporte mensual descargable y
-                listo para inspecciones de trabajo. Sin reloj físico ni hojas Excel.
+                El agente detecta facturas vencidas, redacta el email con tono adecuado, genera enlace de pago Stripe
+                y concilia el ingreso cuando llega al banco. La pyme media recupera <strong>+12.000 € al año</strong> de
+                facturas que se le olvidaban.
               </p>
               <ul className="landing-bullets" style={{ marginTop: 16 }}>
-                <li>● Sincroniza con nóminas</li>
-                <li>● Geolocalización opcional</li>
-                <li>● Multi-centro de trabajo</li>
-                <li>● Calendario laboral por convenio</li>
+                <li>● Detección automática a 30/60/90 días</li>
+                <li>● Email + WhatsApp + enlace de pago</li>
+                <li>● Conciliación SEPA al instante</li>
+                <li>● Sin tener llamadas incómodas</li>
               </ul>
             </div>
           </Reveal>
