@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Sparkles, ReceiptText, FileImage, FilePlus2, Check, X } from "lucide-react";
+import { Sparkles, ReceiptText, FileImage, FilePlus2, Check, X, Eye, Trash2 } from "lucide-react";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 
 type ExtractedInvoice = {
@@ -235,6 +235,39 @@ export function OcrUpload({ empresaId, modo = "gasto" }: { empresaId: string; mo
       const json = await res.json();
       if (!json.ok) throw new Error(json.error ?? "Error");
       await load();
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Error");
+    }
+  }
+
+  async function borrar(extraccionId: string) {
+    if (!confirm("¿Borrar definitivamente esta extracción y su archivo? No se puede deshacer.")) return;
+    setError(null);
+    try {
+      const tk = await token();
+      const res = await fetch(`/api/portal/extracciones/${extraccionId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${tk}` },
+      });
+      const json = await res.json();
+      if (!json.ok) throw new Error(json.error ?? "Error");
+      setSuccess("Extracción borrada.");
+      await load();
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Error");
+    }
+  }
+
+  async function visualizar(extraccionId: string) {
+    setError(null);
+    try {
+      const tk = await token();
+      const res = await fetch(`/api/portal/extracciones/${extraccionId}/archivo`, {
+        headers: { Authorization: `Bearer ${tk}` },
+      });
+      const json = await res.json();
+      if (!json.ok || !json.url) throw new Error(json.error ?? "Sin archivo");
+      window.open(json.url, "_blank", "noopener,noreferrer");
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Error");
     }
@@ -579,7 +612,7 @@ export function OcrUpload({ empresaId, modo = "gasto" }: { empresaId: string; mo
                 <th className="num">Base</th>
                 <th className="num">IVA</th>
                 <th className="num">Total</th>
-                <th>Confianza</th>
+                <th>Estado</th>
                 <th></th>
               </tr>
             </thead>
@@ -587,7 +620,7 @@ export function OcrUpload({ empresaId, modo = "gasto" }: { empresaId: string; mo
               {filtered.map((e) => {
                 const d = e.datos_extraidos ?? {};
                 const conf = e.confidence ?? 0;
-                const confColor = conf >= 80 ? "var(--good)" : conf >= 50 ? "var(--warn)" : "var(--bad)";
+                const okScan = conf >= 70 && e.status !== "failed";
                 const linked = e.factura_id || e.gasto_id;
                 return (
                   <tr key={e.id}>
@@ -602,33 +635,46 @@ export function OcrUpload({ empresaId, modo = "gasto" }: { empresaId: string; mo
                     <td className="num">{d.iva != null ? EUR(d.iva) : "—"}</td>
                     <td className="num" style={{ fontWeight: 600 }}>{d.total != null ? EUR(d.total) : "—"}</td>
                     <td>
-                      <div style={{ display: "grid", gap: 4, minWidth: 90 }}>
-                        <div style={{ height: 6, borderRadius: 4, background: "color-mix(in srgb, var(--line) 60%, transparent)", overflow: "hidden" }}>
-                          <div style={{ width: `${conf}%`, height: "100%", background: confColor, transition: "width 0.6s cubic-bezier(0.16, 1, 0.3, 1)" }} />
-                        </div>
-                        <small style={{ fontFamily: "var(--mono)", fontSize: 10, color: confColor }}>
-                          {conf.toFixed(0)}% · {e.status}
-                        </small>
-                      </div>
+                      {e.status === "failed" ? (
+                        <span className="pill bad" style={{ fontSize: 11 }}>No leída</span>
+                      ) : okScan ? (
+                        <span className="pill good" style={{ fontSize: 11, display: "inline-flex", alignItems: "center", gap: 4 }}>
+                          <Check size={11} strokeWidth={2.5} /> Escaneada correctamente
+                        </span>
+                      ) : (
+                        <span className="pill warn" style={{ fontSize: 11 }}>Revisa los datos</span>
+                      )}
                     </td>
                     <td>
-                      {linked ? (
-                        <span className="pill good" style={{ fontSize: 11 }}>✓ vinculado</span>
-                      ) : e.status === "rejected" ? (
-                        <span className="muted" style={{ fontSize: 11 }}>descartado</span>
-                      ) : (
-                        <div className="button-row" style={{ gap: 4 }}>
-                          {modo === "ingreso" ? (
-                            <button className="button compact" onClick={() => confirmar(e.id, "factura")} title="Crear factura emitida">+ Ingreso</button>
-                          ) : (
-                            <>
-                              <button className="button compact" onClick={() => confirmar(e.id, "gasto")} title="Convertir en gasto">+ Gasto</button>
-                              <button className="button secondary compact" onClick={() => confirmar(e.id, "factura")} title="Convertir en factura recibida">+ Factura</button>
-                            </>
-                          )}
-                          <button className="button ghost compact" onClick={() => descartar(e.id)} title="Descartar">✕</button>
-                        </div>
-                      )}
+                      <div className="button-row" style={{ gap: 4, flexWrap: "wrap" }}>
+                        {e.storage_path ? (
+                          <button className="button ghost compact" onClick={() => visualizar(e.id)} title="Ver archivo original" style={{ padding: "4px 8px" }}>
+                            <Eye size={13} strokeWidth={1.8} />
+                          </button>
+                        ) : null}
+                        {linked ? (
+                          <span className="pill good" style={{ fontSize: 11 }}>✓ vinculado</span>
+                        ) : e.status === "rejected" ? (
+                          <span className="muted" style={{ fontSize: 11 }}>descartado</span>
+                        ) : (
+                          <>
+                            {modo === "ingreso" ? (
+                              <button className="button compact" onClick={() => confirmar(e.id, "factura")} title="Crear factura emitida">+ Ingreso</button>
+                            ) : (
+                              <>
+                                <button className="button compact" onClick={() => confirmar(e.id, "gasto")} title="Convertir en gasto">+ Gasto</button>
+                                <button className="button secondary compact" onClick={() => confirmar(e.id, "factura")} title="Convertir en factura recibida">+ Factura</button>
+                              </>
+                            )}
+                            <button className="button ghost compact" onClick={() => descartar(e.id)} title="Descartar (no se borra)" style={{ padding: "4px 8px" }}>
+                              <X size={13} strokeWidth={1.8} />
+                            </button>
+                          </>
+                        )}
+                        <button className="button ghost compact" onClick={() => borrar(e.id)} title="Borrar definitivamente" style={{ padding: "4px 8px", color: "var(--bad)" }}>
+                          <Trash2 size={13} strokeWidth={1.8} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );

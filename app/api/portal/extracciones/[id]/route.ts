@@ -39,3 +39,27 @@ export async function PATCH(request: NextRequest, ctx: { params: Promise<{ id: s
   if (error || !data) return jsonError(error?.message ?? "Error", 500);
   return NextResponse.json({ ok: true, item: data });
 }
+
+export async function DELETE(request: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+  const { user } = await getUserFromRequest(request);
+  if (!user) return jsonError("No autorizado", 401);
+  const { id } = await ctx.params;
+  const admin = createSupabaseAdmin();
+
+  const { data: existing } = await admin
+    .from("facturas_recibidas_extracciones")
+    .select("empresa_id,storage_path,factura_id,gasto_id")
+    .eq("id", id)
+    .single();
+  if (!existing) return jsonError("Extracción no encontrada", 404);
+  if (!(await canAccessLaborCompany(admin, user.id, existing.empresa_id))) return jsonError("Sin acceso", 403);
+
+  // Borra el archivo de storage si existía (no falla si no está).
+  if (existing.storage_path) {
+    await admin.storage.from("ocr-uploads").remove([existing.storage_path]).catch(() => null);
+  }
+
+  const { error } = await admin.from("facturas_recibidas_extracciones").delete().eq("id", id);
+  if (error) return jsonError(error.message, 500);
+  return NextResponse.json({ ok: true });
+}

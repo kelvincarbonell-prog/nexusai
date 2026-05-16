@@ -47,6 +47,24 @@ export async function POST(request: NextRequest) {
   const confidence = extraction.ok ? confidenceScore(datos) : 0;
   const status = extraction.ok && confidence >= 50 ? "extracted" : extraction.ok ? "pending" : "failed";
 
+  // Sube el archivo original a storage (ocr-uploads) para poder visualizarlo después.
+  let storagePath = parsed.data.storage_path ?? null;
+  if (!storagePath && parsed.data.base64) {
+    try {
+      const safeFilename = (parsed.data.filename ?? "factura").replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 120);
+      const ts = Date.now();
+      const candidate = `${parsed.data.empresa_id}/${ts}-${safeFilename}`;
+      const fileBuf = Uint8Array.from(atob(parsed.data.base64), (c) => c.charCodeAt(0));
+      const up = await admin.storage.from("ocr-uploads").upload(candidate, fileBuf, {
+        contentType: parsed.data.mime_type ?? "application/octet-stream",
+        upsert: false,
+      });
+      if (!up.error) storagePath = candidate;
+    } catch {
+      // Si falla el storage, seguimos sin storage_path — la extracción ya está hecha.
+    }
+  }
+
   const { data: row, error } = await admin
     .from("facturas_recibidas_extracciones")
     .insert({
@@ -54,7 +72,7 @@ export async function POST(request: NextRequest) {
       gestor_id: user.id,
       source: parsed.data.source,
       inbound_email_id: parsed.data.inbound_email_id ?? null,
-      storage_path: parsed.data.storage_path ?? null,
+      storage_path: storagePath,
       filename: parsed.data.filename ?? null,
       raw_text: extraction.raw ?? null,
       datos_extraidos: datos,
