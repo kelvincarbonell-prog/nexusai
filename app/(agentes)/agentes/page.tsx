@@ -1,4 +1,5 @@
 import { AppShell } from "@/components/app-shell";
+import { AgentPanel } from "@/components/agents/agent-panel";
 import { AgentConsole } from "@/components/agents/agent-console";
 import { VoiceAssistant } from "@/components/voice/voice-assistant";
 import { createServerSupabase } from "@/lib/supabase/server";
@@ -25,20 +26,31 @@ export default async function AgentesPage() {
     <AppShell active="/agentes" showSuperAdmin={isAdmin}>
       <header className="topbar">
         <div>
-          <span className="eyebrow">Agentes IA</span>
-          <h1 className="title">Operaciones autónomas y asistente de voz</h1>
-          <p className="subtitle">Extrae facturas del correo, categoriza gastos con histórico y pregunta por voz indicadores clave en segundos.</p>
+          <span className="eyebrow">Agentes IA del asesor</span>
+          <h1 className="title">Ejecuta acciones reales con un clic</h1>
+          <p className="subtitle">
+            Catálogo de agentes fiscales, laborales, de facturación y análisis. Cada uno ejecuta una acción
+            concreta sobre la plataforma (calcular un modelo, alta de trabajador, calcular nómina o finiquito,
+            emitir factura, cerrar ejercicio…) y queda registrado en el historial.
+          </p>
         </div>
       </header>
 
       {empresas.length === 0 ? (
-        <div className="card span-12"><p>No tienes empresas todavía.</p></div>
+        <div className="card span-12"><p>No tienes empresas todavía. Crea la primera desde Clientes.</p></div>
       ) : (
-        <div className="grid">
-          <AgentConsole empresas={empresas} />
-          <div className="span-12">
-            <VoiceAssistant empresaId={empresas[0].id} />
-          </div>
+        <div style={{ display: "grid", gap: 24 }}>
+          <AgentPanel empresas={empresas} />
+
+          <details>
+            <summary className="card-eyebrow" style={{ cursor: "pointer" }}>Asistente de voz y consola libre</summary>
+            <div className="grid" style={{ marginTop: 12 }}>
+              <AgentConsole empresas={empresas} />
+              <div className="span-12">
+                <VoiceAssistant empresaId={empresas[0].id} />
+              </div>
+            </div>
+          </details>
         </div>
       )}
     </AppShell>

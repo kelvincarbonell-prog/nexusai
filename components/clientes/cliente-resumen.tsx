@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { ScanLine, ListChecks } from "lucide-react";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 
 type Declaracion = {
@@ -96,12 +97,18 @@ export function ClienteResumen({ empresaId }: { empresaId: string }) {
       <article className="card span-6">
         <span className="card-eyebrow">Atención requerida</span>
         <ul style={{ margin: "12px 0 0", paddingLeft: 0, listStyle: "none", display: "grid", gap: 8 }}>
-          <li style={{ display: "flex", justifyContent: "space-between", padding: "8px 12px", borderRadius: 8, background: data.ocr_pendientes > 0 ? "color-mix(in srgb, var(--warn) 14%, transparent)" : "var(--accent-soft)" }}>
-            <span>📄 Facturas en OCR sin revisar</span>
+          <li style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 12px", borderRadius: 8, background: data.ocr_pendientes > 0 ? "color-mix(in srgb, var(--warn) 14%, transparent)" : "var(--accent-soft)" }}>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+              <ScanLine size={15} strokeWidth={1.8} aria-hidden="true" style={{ color: "var(--muted)" }} />
+              Facturas en OCR sin revisar
+            </span>
             <span className="pill warn">{data.ocr_pendientes}</span>
           </li>
-          <li style={{ display: "flex", justifyContent: "space-between", padding: "8px 12px", borderRadius: 8, background: data.tareas_pendientes > 0 ? "color-mix(in srgb, var(--accent) 8%, transparent)" : "var(--accent-soft)" }}>
-            <span>✅ Tareas pendientes</span>
+          <li style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 12px", borderRadius: 8, background: data.tareas_pendientes > 0 ? "color-mix(in srgb, var(--accent) 8%, transparent)" : "var(--accent-soft)" }}>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+              <ListChecks size={15} strokeWidth={1.8} aria-hidden="true" style={{ color: "var(--muted)" }} />
+              Tareas pendientes
+            </span>
             <span className="pill accent">{data.tareas_pendientes}</span>
           </li>
         </ul>

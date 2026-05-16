@@ -20,6 +20,7 @@ import {
 import { StorageBadge } from "@/components/storage/storage-badge";
 import { NotificationsBell } from "@/components/notifications/notifications-bell";
 import { UserAvatarButton } from "@/components/user/user-avatar-button";
+import { CommandPalette } from "@/components/command-palette";
 
 type NavItem = {
   href: string;
@@ -73,6 +74,7 @@ export function AppShell({
   const allNav = [...gestorNav, ...accountNav, ...(showSuperAdmin ? adminExtras : [])];
   return (
     <div className={rightRail ? "shell with-copilot" : "shell"}>
+      <CommandPalette />
       <aside className="sidebar" aria-label="Navegación principal">
         <Link href="/dashboard" className="sb-brand" aria-label="Inicio">
           <span className="sb-brand-mark m26-mark">M26</span>
@@ -132,14 +134,26 @@ export function AppShell({
         {!hideTopbar ? (
           topbar ?? (
             <div className="topbar">
-              <label className="topbar-search" aria-label="Buscador">
+              <button
+                type="button"
+                className="topbar-search"
+                aria-label="Abrir buscador (⌘K)"
+                onClick={() => {
+                  // Dispara el atajo ⌘K para abrir la paleta sin lógica extra.
+                  const evt = new KeyboardEvent("keydown", { key: "k", metaKey: true, ctrlKey: true, bubbles: true });
+                  window.dispatchEvent(evt);
+                }}
+                style={{ cursor: "pointer", textAlign: "left" }}
+              >
                 <span className="kbd">⌘K</span>
-                <input placeholder="Pide a M26 algo… ej. «presenta el IVA 2T de Innova»" />
+                <span style={{ flex: 1, color: "var(--muted)" }}>
+                  Buscar cliente, página o modelo AEAT…
+                </span>
                 <span style={{ display: "inline-flex", alignItems: "center", gap: 4, color: "var(--muted)" }}>
                   <span className="pulse-dot" aria-hidden="true" />
                   <Mic size={13} aria-hidden="true" /> voz
                 </span>
-              </label>
+              </button>
               <div className="topbar-meta">
                 <time suppressHydrationWarning>
                   {new Date().toLocaleString("es-ES", { weekday: "short", day: "2-digit", hour: "2-digit", minute: "2-digit" })}

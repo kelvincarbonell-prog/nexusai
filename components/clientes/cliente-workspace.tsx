@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import {
   ArrowLeft,
@@ -154,7 +155,7 @@ const SECTIONS: Section[] = [
   // Ocasional
   { key: "bancos", label: "Bancos", icon: Landmark },
   { key: "firmas", label: "Cl@ve & firmas", icon: PenLine },
-  { key: "auditoria", label: "Auditoría", icon: History },
+  { key: "auditoria", label: "Historial", icon: History },
 
   // Configuración
   {
@@ -183,7 +184,15 @@ const SECTIONS: Section[] = [
 ];
 
 export function ClienteWorkspace({ empresa }: { empresa: Empresa }) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
   const [section, setSection] = useState<SectionKey>("inicio");
+
+  function volverAlGestor() {
+    startTransition(() => {
+      router.push("/clientes");
+    });
+  }
   const [subTab, setSubTab] = useState<Record<SectionKey, string>>({
     inicio: "",
     lector_ingresos: "",
@@ -217,9 +226,10 @@ export function ClienteWorkspace({ empresa }: { empresa: Empresa }) {
     <div className="shell">
       {/* Sidebar lateral del cliente */}
       <aside className="sidebar" aria-label={`Menú del cliente ${empresa.nombre}`}>
-        <Link
-          href="/clientes"
-          className="button ghost compact"
+        <button
+          onClick={volverAlGestor}
+          disabled={isPending}
+          className="button ghost compact volver-gestor"
           style={{
             display: "inline-flex",
             alignItems: "center",
@@ -230,11 +240,49 @@ export function ClienteWorkspace({ empresa }: { empresa: Empresa }) {
             padding: "8px 10px",
             borderRadius: 8,
             marginBottom: 4,
+            cursor: isPending ? "wait" : "pointer",
+            position: "relative",
+            overflow: "hidden",
           }}
         >
-          <ArrowLeft size={14} aria-hidden="true" />
-          Volver al panel gestor
-        </Link>
+          {isPending ? (
+            <>
+              <span
+                aria-hidden="true"
+                style={{
+                  width: 14,
+                  height: 14,
+                  borderRadius: "50%",
+                  border: "2px solid color-mix(in srgb, var(--accent) 30%, transparent)",
+                  borderTopColor: "var(--accent)",
+                  animation: "volver-spin 0.8s linear infinite",
+                }}
+              />
+              Volviendo…
+              <span className="volver-shimmer" aria-hidden="true" />
+            </>
+          ) : (
+            <>
+              <ArrowLeft size={14} aria-hidden="true" />
+              Volver al panel gestor
+            </>
+          )}
+        </button>
+
+        <style jsx global>{`
+          @keyframes volver-spin { from { transform: rotate(0); } to { transform: rotate(360deg); } }
+          @keyframes volver-shimmer-anim { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+          .volver-shimmer {
+            position: absolute; inset: 0;
+            background: linear-gradient(105deg, transparent 30%, color-mix(in srgb, var(--accent) 18%, transparent) 50%, transparent 70%);
+            animation: volver-shimmer-anim 1.2s linear infinite;
+            pointer-events: none;
+          }
+          @media (prefers-reduced-motion: reduce) {
+            .volver-gestor [style*="volver-spin"] { animation: none; }
+            .volver-shimmer { animation: none; }
+          }
+        `}</style>
 
         <div className="sb-section">
           <span className="sb-eyebrow">Cliente activo</span>
