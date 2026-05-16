@@ -10,8 +10,8 @@ type LLMResult = {
   error?: string;
 };
 
-const FAST_MODEL = "gemini-2.5-flash";
-const PRO_MODEL = "gemini-2.5-pro";
+const FAST_MODEL = process.env.GEMINI_FAST_MODEL ?? "gemini-2.5-flash";
+const PRO_MODEL = process.env.GEMINI_PRO_MODEL ?? "gemini-2.5-pro";
 
 export async function geminiGenerate(
   parts: GeminiPart[],
@@ -168,42 +168,79 @@ export async function bestAvailableJSON(
   options: { system?: string; images?: { mimeType: string; data: string }[]; preferVision?: boolean } = {},
 ): Promise<LLMResult> {
   const hasImages = (options.images?.length ?? 0) > 0;
-  const order: Array<() => Promise<LLMResult>> = [];
+  const order: Array<{ name: string; run: () => Promise<LLMResult> }> = [];
 
   if (process.env.OPENAI_API_KEY) {
-    order.push(() => openaiChat(prompt, { model: "pro", system: options.system, json: true, images: options.images }));
+    order.push({
+      name: "openai-pro",
+      run: () => openaiChat(prompt, { model: "pro", system: options.system, json: true, images: options.images }),
+    });
   }
   if (process.env.ANTHROPIC_API_KEY) {
-    order.push(() =>
-      anthropicChat(prompt + "\n\nResponde ÚNICAMENTE con JSON válido, sin texto adicional.", {
-        model: "pro",
-        system: options.system,
-        images: options.images,
-      }),
-    );
+    order.push({
+      name: "anthropic-pro",
+      run: () =>
+        anthropicChat(prompt + "\n\nResponde ÚNICAMENTE con JSON válido, sin texto adicional.", {
+          model: "pro",
+          system: options.system,
+          images: options.images,
+        }),
+    });
   }
   if (process.env.GEMINI_API_KEY) {
-    order.push(() =>
+    // Para visión: probar PRIMERO flash (más disponible, más barato) y caer a pro
+    // solo si flash falla. Para texto: pro primero.
+    const buildGemini = (model: "fast" | "pro") => () =>
       geminiGenerate(
         [
           ...(options.images ?? []).map((img) => ({ inlineData: { mimeType: img.mimeType, data: img.data } })),
           { text: prompt },
         ],
-        { model: "pro", json: true, system: options.system },
-      ),
-    );
+        { model, json: true, system: options.system },
+      );
+    if (hasImages) {
+      order.push({ name: "gemini-flash", run: buildGemini("fast") });
+      order.push({ name: "gemini-pro", run: buildGemini("pro") });
+    } else {
+      order.push({ name: "gemini-pro", run: buildGemini("pro") });
+      order.push({ name: "gemini-flash", run: buildGemini("fast") });
+    }
   }
   if (!hasImages && process.env.GROQ_API_KEY) {
-    order.push(() => groqChat(prompt, { model: "pro", system: options.system, json: true }));
+    order.push({
+      name: "groq-pro",
+      run: () => groqChat(prompt, { model: "pro", system: options.system, json: true }),
+    });
+    order.push({
+      name: "groq-fast",
+      run: () => groqChat(prompt, { model: "fast", system: options.system, json: true }),
+    });
   }
 
-  let lastErr: LLMResult | null = null;
-  for (const run of order) {
-    const result = await run();
-    if (result.ok && result.text) return result;
-    lastErr = result;
+  if (order.length === 0) {
+    return { ok: false, provider: "none", text: "", error: "No hay proveedor IA configurado (configura GEMINI_API_KEY o GROQ_API_KEY)" };
   }
-  return lastErr ?? { ok: false, provider: "none", text: "", error: "No hay proveedor IA configurado" };
+
+  const errors: string[] = [];
+  for (const step of order) {
+    const result = await step.run();
+    if (result.ok && result.text) {
+      // Log para depuración en producción (solo en server).
+      if (process.env.NODE_ENV !== "production") {
+        // eslint-disable-next-line no-console
+        console.log(`[llm] OK via ${step.name}`);
+      }
+      return result;
+    }
+    errors.push(`${step.name}: ${result.error ?? "respuesta vacía"}`);
+  }
+
+  return {
+    ok: false,
+    provider: "none",
+    text: "",
+    error: `Todos los proveedores fallaron — ${errors.join(" | ").slice(0, 600)}`,
+  };
 }
 
 export function safeJSON<T = unknown>(text: string): T | null {
