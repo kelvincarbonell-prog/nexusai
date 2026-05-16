@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 import { PayrollPanel } from "@/components/laboral/payroll-panel";
+import { CalendarioLaboral } from "@/components/laboral/calendario-laboral";
 
 type Empresa = { id: string; nombre: string; nif?: string };
 type Trabajador = {
@@ -30,7 +31,7 @@ const TIPO_AUSENCIA = ["vacaciones", "it", "permiso", "maternidad", "paternidad"
 export function WorkerManager({ empresas }: { empresas: Empresa[] }) {
   const supabase = useMemo(() => createBrowserSupabase(), []);
   const [empresaId, setEmpresaId] = useState(empresas[0]?.id ?? "");
-  const [tab, setTab] = useState<"trabajadores" | "ausencias" | "horario" | "nominas">("trabajadores");
+  const [tab, setTab] = useState<"trabajadores" | "ausencias" | "horario" | "nominas" | "calendario">("trabajadores");
   const [trabajadores, setTrabajadores] = useState<Trabajador[]>([]);
   const [ausencias, setAusencias] = useState<Ausencia[]>([]);
   const [fichajes, setFichajes] = useState<Fichaje[]>([]);
@@ -199,7 +200,7 @@ export function WorkerManager({ empresas }: { empresas: Empresa[] }) {
       </div>
 
       <div role="tablist" style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
-        {(["trabajadores", "ausencias", "horario", "nominas"] as const).map((t) => (
+        {(["trabajadores", "ausencias", "horario", "nominas", "calendario"] as const).map((t) => (
           <button
             key={t}
             role="tab"
@@ -207,7 +208,7 @@ export function WorkerManager({ empresas }: { empresas: Empresa[] }) {
             className={`button ${tab === t ? "" : "secondary"} compact`}
             onClick={() => setTab(t)}
           >
-            {t === "trabajadores" ? "Trabajadores" : t === "ausencias" ? "Ausencias" : t === "horario" ? "Fichajes" : "Nóminas"}
+            {t === "trabajadores" ? "Trabajadores" : t === "ausencias" ? "Ausencias" : t === "horario" ? "Fichajes" : t === "nominas" ? "Nóminas" : "Calendario"}
           </button>
         ))}
       </div>
@@ -358,6 +359,8 @@ export function WorkerManager({ empresas }: { empresas: Empresa[] }) {
       {tab === "nominas" ? (
         <PayrollPanel empresaId={empresaId} trabajadores={trabajadores} />
       ) : null}
+
+      {tab === "calendario" ? <CalendarioLaboral /> : null}
     </section>
   );
 }
