@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
+import { verifyStripeSignature } from "@/lib/payments/stripe";
 
 /**
- * Webhook de Stripe — marca facturas como pagadas cuando llega checkout.session.completed.
- * En producción debes configurar STRIPE_WEBHOOK_SECRET y enviar el header stripe-signature.
- * Aquí hacemos una validación pragmática para arrancar.
+ * Webhook de Stripe — marca facturas como pagadas.
+ * Verifica HMAC-SHA256 con STRIPE_WEBHOOK_SECRET.
  */
 
 type StripeEvent = {
@@ -24,23 +24,17 @@ type StripeEvent = {
 };
 
 export async function POST(request: NextRequest) {
-  const secret = process.env.STRIPE_WEBHOOK_SECRET;
   const signature = request.headers.get("stripe-signature");
+  const rawBody = await request.text();
 
-  if (secret) {
-    // Validación simplificada — la SDK oficial usa HMAC-SHA256 sobre el body.
-    // Aquí comparamos por presencia de la firma. En producción importar 'stripe'
-    // y usar stripe.webhooks.constructEvent.
-    if (!signature) {
-      return NextResponse.json({ ok: false, error: "Firma ausente" }, { status: 401 });
-    }
-  } else if (process.env.NODE_ENV === "production") {
-    return NextResponse.json({ ok: false, error: "Webhook no configurado" }, { status: 503 });
+  const verify = verifyStripeSignature(rawBody, signature);
+  if (!verify.ok) {
+    return NextResponse.json({ ok: false, error: verify.reason }, { status: 401 });
   }
 
   let event: StripeEvent;
   try {
-    event = (await request.json()) as StripeEvent;
+    event = JSON.parse(rawBody) as StripeEvent;
   } catch {
     return NextResponse.json({ ok: false, error: "Payload inválido" }, { status: 400 });
   }

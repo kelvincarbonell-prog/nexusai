@@ -65,14 +65,50 @@ export async function createCheckoutSession(input: {
 }
 
 /**
- * Validación del webhook de Stripe.
- * Implementación simplificada: compara el header con un secret compartido.
- * Para verificación criptográfica completa usa la SDK oficial.
+ * Verificación criptográfica del webhook Stripe usando HMAC-SHA256.
+ * Stripe envía un header 'stripe-signature' con formato:
+ *   t=<timestamp>,v1=<signature>[,v0=<sig>]
+ * La firma es HMAC-SHA256 de "<timestamp>.<body>" usando STRIPE_WEBHOOK_SECRET.
  */
+import { createHmac, timingSafeEqual } from "crypto";
+
+const TOLERANCE_MS = 5 * 60 * 1000;
+
+export type StripeVerifyResult = { ok: true } | { ok: false; reason: string };
+
+export function verifyStripeSignature(rawBody: string, signatureHeader: string | null): StripeVerifyResult {
+  const secret = process.env.STRIPE_WEBHOOK_SECRET;
+  if (!secret) {
+    if (process.env.NODE_ENV !== "production") return { ok: true };
+    return { ok: false, reason: "STRIPE_WEBHOOK_SECRET no configurado" };
+  }
+  if (!signatureHeader) return { ok: false, reason: "Falta header stripe-signature" };
+
+  const parts: Record<string, string> = {};
+  for (const seg of signatureHeader.split(",")) {
+    const [k, v] = seg.split("=");
+    if (k && v) parts[k.trim()] = v.trim();
+  }
+  const t = parts["t"];
+  const v1 = parts["v1"];
+  if (!t || !v1) return { ok: false, reason: "Header con formato inválido" };
+
+  const tsMs = Number(t) * 1000;
+  if (Number.isNaN(tsMs)) return { ok: false, reason: "Timestamp inválido" };
+  if (Math.abs(Date.now() - tsMs) > TOLERANCE_MS) return { ok: false, reason: "Timestamp fuera de ventana" };
+
+  const expected = createHmac("sha256", secret).update(`${t}.${rawBody}`, "utf8").digest("hex");
+  const expectedBuf = Buffer.from(expected, "utf8");
+  const providedBuf = Buffer.from(v1, "utf8");
+  if (expectedBuf.length !== providedBuf.length) return { ok: false, reason: "Firma inválida" };
+  if (!timingSafeEqual(expectedBuf, providedBuf)) return { ok: false, reason: "Firma inválida" };
+  return { ok: true };
+}
+
+// Compatibilidad con el wrapper antiguo
 export function isWebhookAuthorized(signature: string | null): boolean {
   const secret = process.env.STRIPE_WEBHOOK_SECRET;
   if (!secret) return process.env.NODE_ENV !== "production";
   if (!signature) return false;
-  // En producción se debería implementar HMAC-SHA256 sobre el body.
   return signature.includes(secret) || signature === secret;
 }
