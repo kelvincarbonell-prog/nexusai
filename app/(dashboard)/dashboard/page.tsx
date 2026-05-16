@@ -1,5 +1,6 @@
 import { AppShell } from "@/components/app-shell";
 import { UpcomingObligations } from "@/components/dashboard/upcoming-obligations";
+import { TareasWidget } from "@/components/dashboard/tareas-widget";
 import { OnboardingWizard } from "@/components/dashboard/onboarding-wizard";
 import { SetupRequired } from "@/components/setup-required";
 import { hasSupabaseConfig } from "@/lib/env";
@@ -157,6 +158,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
 
       <section className="grid">
         <UpcomingObligations empresas={empresas} />
+        <TareasWidget />
 
         <article className="card span-5">
           <div className="topbar" style={{ border: 0, padding: 0, margin: 0 }}>
