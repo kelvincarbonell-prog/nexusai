@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 import { PayrollPanel } from "@/components/laboral/payroll-panel";
 import { CalendarioLaboral } from "@/components/laboral/calendario-laboral";
+import { FiniquitoModal } from "@/components/laboral/finiquito-modal";
 
 type Empresa = { id: string; nombre: string; nif?: string };
 type Trabajador = {
@@ -38,6 +39,7 @@ export function WorkerManager({ empresas }: { empresas: Empresa[] }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [finiquitoTrabajador, setFiniquitoTrabajador] = useState<Trabajador | null>(null);
 
   const [nuevo, setNuevo] = useState({
     nombre: "",
@@ -282,6 +284,11 @@ export function WorkerManager({ empresas }: { empresas: Empresa[] }) {
                       title="Descargar Modelo 145"
                       onClick={() => descargarPdf(`/api/laboral/modelo-145?trabajador_id=${t.id}`, `modelo-145-${t.dni ?? t.id.slice(0, 8)}.pdf`)}
                     >M-145</button>{" "}
+                    <button
+                      className="button secondary compact"
+                      title="Calcular finiquito"
+                      onClick={() => setFiniquitoTrabajador(t)}
+                    >Finiquito</button>
                   </td>
                   <td>
                     {t.activo ? <button className="button danger compact" onClick={() => bajaTrabajador(t.id)}>Dar de baja</button> : null}
@@ -389,6 +396,14 @@ export function WorkerManager({ empresas }: { empresas: Empresa[] }) {
       ) : null}
 
       {tab === "calendario" ? <CalendarioLaboral /> : null}
+
+      {finiquitoTrabajador ? (
+        <FiniquitoModal
+          empresaId={empresaId}
+          trabajador={finiquitoTrabajador}
+          onClose={() => setFiniquitoTrabajador(null)}
+        />
+      ) : null}
     </section>
   );
 }
