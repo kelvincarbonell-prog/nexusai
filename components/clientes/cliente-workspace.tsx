@@ -3,6 +3,25 @@
 import { useState } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
+import {
+  ArrowLeft,
+  Home,
+  FileText,
+  Receipt,
+  Package,
+  Users,
+  Calculator,
+  CalendarClock,
+  Folder,
+  Send,
+  MessageSquare,
+  Landmark,
+  PenLine,
+  History,
+  Settings,
+  Upload,
+  type LucideIcon,
+} from "lucide-react";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { NotificationsBell } from "@/components/notifications/notifications-bell";
 import { UserAvatarButton } from "@/components/user/user-avatar-button";
@@ -25,6 +44,7 @@ const ClienteAuditoria = dynamic(() => import("@/components/clientes/cliente-aud
 const ClienteSolicitudes = dynamic(() => import("@/components/clientes/cliente-solicitudes").then((m) => m.ClienteSolicitudes), { loading: () => <p className="muted">Cargando…</p>, ssr: false });
 const ClienteMensajes = dynamic(() => import("@/components/clientes/cliente-mensajes").then((m) => m.ClienteMensajes), { loading: () => <p className="muted">Cargando…</p>, ssr: false });
 const CalendarioFiscal = dynamic(() => import("@/components/aeat/calendario-fiscal").then((m) => m.CalendarioFiscal), { loading: () => <p className="muted">Cargando…</p>, ssr: false });
+const ImportacionEspecifica = dynamic(() => import("@/components/clientes/importacion-especifica").then((m) => m.ImportacionEspecifica), { loading: () => <p className="muted">Cargando…</p>, ssr: false });
 
 type Empresa = {
   id: string;
@@ -41,32 +61,35 @@ type SectionKey =
   | "inicio"
   | "facturas"
   | "gastos"
-  | "albaranes"
-  | "laboral"
+  | "mensajes"
+  | "solicitudes"
+  | "documentos"
   | "modelos"
   | "obligaciones"
-  | "documentos"
-  | "solicitudes"
-  | "mensajes"
+  | "laboral"
+  | "albaranes"
   | "bancos"
   | "firmas"
   | "auditoria"
-  | "config";
+  | "config"
+  | "importaciones";
 
 type SubTab = { key: string; label: string };
 type Section = {
   key: SectionKey;
   label: string;
-  emoji: string;
+  icon: LucideIcon;
   subTabs?: SubTab[];
 };
 
+// Ordenadas por frecuencia/importancia real de uso para un cliente.
 const SECTIONS: Section[] = [
-  { key: "inicio", label: "Inicio", emoji: "🏠" },
+  // Diario / muy frecuente
+  { key: "inicio", label: "Inicio", icon: Home },
   {
     key: "facturas",
     label: "Facturas",
-    emoji: "📄",
+    icon: FileText,
     subTabs: [
       { key: "listado", label: "Listado" },
       { key: "lector", label: "Lector ingresos (OCR)" },
@@ -77,36 +100,18 @@ const SECTIONS: Section[] = [
   {
     key: "gastos",
     label: "Gastos & OCR",
-    emoji: "🧾",
+    icon: Receipt,
     subTabs: [
       { key: "listado", label: "Listado" },
       { key: "lector", label: "Lector gastos (OCR)" },
-      { key: "importar", label: "Importar A3 / Quipu / CSV" },
     ],
   },
-  { key: "albaranes", label: "Albaranes", emoji: "📦" },
-  {
-    key: "laboral",
-    label: "Laboral",
-    emoji: "👥",
-    subTabs: [
-      { key: "trabajadores", label: "Plantilla" },
-      { key: "nominas", label: "Nóminas" },
-      { key: "ausencias", label: "Bajas e IT" },
-      { key: "horario", label: "Fichajes" },
-      { key: "calendario", label: "Calendario" },
-    ],
-  },
-  { key: "modelos", label: "IVA y modelos AEAT", emoji: "🧮" },
-  {
-    key: "obligaciones",
-    label: "Obligaciones",
-    emoji: "📅",
-  },
+  { key: "mensajes", label: "Mensajes", icon: MessageSquare },
+  { key: "solicitudes", label: "Solicitudes", icon: Send },
   {
     key: "documentos",
     label: "Documentos",
-    emoji: "📁",
+    icon: Folder,
     subTabs: [
       { key: "todos", label: "Todos" },
       { key: "impuesto", label: "Impuestos" },
@@ -115,18 +120,51 @@ const SECTIONS: Section[] = [
       { key: "nomina", label: "Nóminas" },
     ],
   },
-  { key: "solicitudes", label: "Solicitudes", emoji: "📤" },
-  { key: "mensajes", label: "Mensajes", emoji: "💬" },
-  { key: "bancos", label: "Bancos", emoji: "🏦" },
-  { key: "firmas", label: "Cl@ve & firmas", emoji: "✍️" },
-  { key: "auditoria", label: "Auditoría", emoji: "🕒" },
+
+  // Periódico / mensual o trimestral
+  { key: "modelos", label: "IVA y modelos AEAT", icon: Calculator },
+  { key: "obligaciones", label: "Obligaciones", icon: CalendarClock },
+  {
+    key: "laboral",
+    label: "Laboral",
+    icon: Users,
+    subTabs: [
+      { key: "trabajadores", label: "Plantilla" },
+      { key: "nominas", label: "Nóminas" },
+      { key: "ausencias", label: "Bajas e IT" },
+      { key: "horario", label: "Fichajes" },
+      { key: "calendario", label: "Calendario" },
+    ],
+  },
+
+  // Ocasional
+  { key: "albaranes", label: "Albaranes", icon: Package },
+  { key: "bancos", label: "Bancos", icon: Landmark },
+  { key: "firmas", label: "Cl@ve & firmas", icon: PenLine },
+  { key: "auditoria", label: "Auditoría", icon: History },
+
+  // Configuración
   {
     key: "config",
     label: "Configuración",
-    emoji: "⚙️",
+    icon: Settings,
     subTabs: [
       { key: "datos", label: "Datos empresa" },
       { key: "plantilla", label: "Plantilla facturas" },
+    ],
+  },
+
+  // Importación masiva (al final, suele ser one-shot al alta o migración)
+  {
+    key: "importaciones",
+    label: "Importaciones",
+    icon: Upload,
+    subTabs: [
+      { key: "facturas_csv", label: "Facturas y gastos (A3/Quipu/Contasol/SAGE)" },
+      { key: "modelos_aeat", label: "Modelos AEAT presentados (TXT/XML)" },
+      { key: "cuentas_anuales", label: "Cuentas anuales (XBRL/Excel)" },
+      { key: "pgc", label: "Plan General Contable (PGC)" },
+      { key: "banco", label: "Movimientos bancarios (Norma 43, CSV)" },
     ],
   },
 ];
@@ -137,17 +175,18 @@ export function ClienteWorkspace({ empresa }: { empresa: Empresa }) {
     inicio: "",
     facturas: "listado",
     gastos: "listado",
-    albaranes: "",
-    laboral: "trabajadores",
+    mensajes: "",
+    solicitudes: "",
+    documentos: "todos",
     modelos: "",
     obligaciones: "",
-    documentos: "todos",
-    solicitudes: "",
-    mensajes: "",
+    laboral: "trabajadores",
+    albaranes: "",
     bancos: "",
     firmas: "",
     auditoria: "",
     config: "datos",
+    importaciones: "facturas_csv",
   });
 
   const empresaSingleton = [{ id: empresa.id, nombre: empresa.nombre, nif: empresa.nif ?? undefined }];
@@ -167,6 +206,8 @@ export function ClienteWorkspace({ empresa }: { empresa: Empresa }) {
           href="/clientes"
           className="button ghost compact"
           style={{
+            display: "inline-flex",
+            alignItems: "center",
             justifyContent: "flex-start",
             gap: 8,
             fontSize: 12,
@@ -176,7 +217,8 @@ export function ClienteWorkspace({ empresa }: { empresa: Empresa }) {
             marginBottom: 4,
           }}
         >
-          ← Volver al panel gestor
+          <ArrowLeft size={14} aria-hidden="true" />
+          Volver al panel gestor
         </Link>
 
         <div className="sb-section">
@@ -209,6 +251,7 @@ export function ClienteWorkspace({ empresa }: { empresa: Empresa }) {
         <nav className="sb-nav" role="tablist" aria-label="Secciones del cliente" style={{ display: "grid", gap: 2 }}>
           {SECTIONS.map((s) => {
             const isActive = section === s.key;
+            const Icon = s.icon;
             return (
               <button
                 key={s.key}
@@ -231,7 +274,7 @@ export function ClienteWorkspace({ empresa }: { empresa: Empresa }) {
                   transition: "all 0.12s ease",
                 }}
               >
-                <span aria-hidden="true" style={{ width: 18, textAlign: "center" }}>{s.emoji}</span>
+                <Icon size={16} strokeWidth={1.8} aria-hidden="true" style={{ flexShrink: 0, color: isActive ? "var(--accent)" : "var(--muted)" }} />
                 <span>{s.label}</span>
               </button>
             );
@@ -243,10 +286,10 @@ export function ClienteWorkspace({ empresa }: { empresa: Empresa }) {
           <span style={{ fontSize: 12 }}>● Despacho asignado</span>
           <button
             className="button compact"
-            style={{ width: "100%", justifyContent: "center", marginTop: 6, fontSize: 12 }}
+            style={{ width: "100%", justifyContent: "center", marginTop: 6, fontSize: 12, display: "inline-flex", alignItems: "center", gap: 6 }}
             onClick={() => setSection("mensajes")}
           >
-            💬 Enviar mensaje
+            <MessageSquare size={13} aria-hidden="true" /> Enviar mensaje
           </button>
         </div>
       </aside>
@@ -302,7 +345,6 @@ export function ClienteWorkspace({ empresa }: { empresa: Empresa }) {
           {/* GASTOS & OCR */}
           {section === "gastos" && activeSub === "listado" ? <ClienteGastos empresaId={empresa.id} /> : null}
           {section === "gastos" && activeSub === "lector" ? <OcrUpload empresaId={empresa.id} modo="gasto" /> : null}
-          {section === "gastos" && activeSub === "importar" ? <ClienteImportar empresaId={empresa.id} /> : null}
 
           {/* ALBARANES */}
           {section === "albaranes" ? (
@@ -356,6 +398,12 @@ export function ClienteWorkspace({ empresa }: { empresa: Empresa }) {
           {/* CONFIGURACIÓN */}
           {section === "config" && activeSub === "datos" ? <ClienteConfigForm empresa={empresa} /> : null}
           {section === "config" && activeSub === "plantilla" ? <PlantillaFacturaForm empresaId={empresa.id} empresaNombre={empresa.nombre} /> : null}
+
+          {/* IMPORTACIONES */}
+          {section === "importaciones" && activeSub === "facturas_csv" ? <ClienteImportar empresaId={empresa.id} /> : null}
+          {section === "importaciones" && activeSub !== "facturas_csv" ? (
+            <ImportacionEspecifica empresaId={empresa.id} tipo={activeSub} />
+          ) : null}
         </div>
       </main>
 

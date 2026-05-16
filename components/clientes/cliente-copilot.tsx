@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 type Empresa = {
   id: string;
@@ -89,7 +90,7 @@ export function ClienteCopilot({ empresa }: { empresa: Empresa }) {
           boxShadow: "0 6px 24px -16px var(--accent-glow)",
         }}
       >
-        ◀
+        <ChevronLeft size={16} strokeWidth={2} aria-hidden="true" />
       </button>
     );
   }
@@ -128,9 +129,9 @@ export function ClienteCopilot({ empresa }: { empresa: Empresa }) {
           onClick={toggle}
           aria-label="Minimizar copilot"
           title="Minimizar"
-          style={{ padding: "4px 8px" }}
+          style={{ padding: "4px 8px", display: "inline-flex", alignItems: "center" }}
         >
-          ▶
+          <ChevronRight size={16} strokeWidth={2} aria-hidden="true" />
         </button>
       </header>
 

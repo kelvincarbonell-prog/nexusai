@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Sparkles, ReceiptText, FileImage, FilePlus2, Check, X } from "lucide-react";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 
 type ExtractedInvoice = {
@@ -52,6 +53,7 @@ export function OcrUpload({ empresaId, modo = "gasto" }: { empresaId: string; mo
   const [success, setSuccess] = useState<string | null>(null);
   const [recent, setRecent] = useState<LocalPreview[]>([]);
   const [filter, setFilter] = useState<"todas" | "pendientes" | "vinculadas" | "descartadas">("todas");
+  const [aiUnavailable, setAiUnavailable] = useState(false);
 
   async function token() {
     const { data } = await supabase.auth.getSession();
@@ -125,6 +127,9 @@ export function OcrUpload({ empresaId, modo = "gasto" }: { empresaId: string; mo
         const json = await res.json();
         if (!json.ok && !json.item) {
           setRecent((r) => r.map((it, idx) => (idx === i ? { ...it, status: "fail", error: json.error ?? "Error" } : it)));
+          if (typeof json.error === "string" && /proveedor IA|sin configurar|api[\s_-]?key|OPENAI|ANTHROPIC|GEMINI/i.test(json.error)) {
+            setAiUnavailable(true);
+          }
         } else {
           setRecent((r) => r.map((it, idx) => (idx === i ? { ...it, status: "ok" } : it)));
         }
@@ -196,6 +201,21 @@ export function OcrUpload({ empresaId, modo = "gasto" }: { empresaId: string; mo
 
   return (
     <section style={{ display: "grid", gap: 16 }}>
+      {aiUnavailable ? (
+        <article className="card" style={{ borderColor: "var(--bad)", background: "color-mix(in srgb, var(--bad) 6%, transparent)" }}>
+          <span className="card-eyebrow bad">Falta configurar la IA</span>
+          <p style={{ marginTop: 8, fontSize: 14 }}>
+            El lector OCR necesita una clave de IA con visión. Configura al menos una de estas variables en Vercel
+            (Settings → Environment Variables) y vuelve a desplegar:
+          </p>
+          <ul style={{ margin: "8px 0 0", paddingLeft: 20, fontSize: 13, fontFamily: "var(--mono)" }}>
+            <li><code>OPENAI_API_KEY</code> — GPT-4o (recomendado, mejor extracción)</li>
+            <li><code>ANTHROPIC_API_KEY</code> — Claude 3.5 Sonnet</li>
+            <li><code>GEMINI_API_KEY</code> — Gemini 1.5 Pro (más barato)</li>
+          </ul>
+        </article>
+      ) : null}
+
       {/* Dropzone hero */}
       <article
         className="ocr-dropzone"
@@ -236,11 +256,11 @@ export function OcrUpload({ empresaId, modo = "gasto" }: { empresaId: string; mo
             display: "grid",
             placeItems: "center",
             margin: "0 auto 12px",
-            fontSize: 32,
+            color: heroAccent,
             animation: busy ? "ocr-pulse 1.4s ease-in-out infinite" : dragOver ? "ocr-bob 0.9s ease-in-out infinite" : undefined,
           }}
         >
-          {busy ? "🤖" : modo === "ingreso" ? "💰" : "🧾"}
+          {busy ? <Sparkles size={28} strokeWidth={1.6} /> : modo === "ingreso" ? <ReceiptText size={28} strokeWidth={1.6} /> : <FileImage size={28} strokeWidth={1.6} />}
         </div>
         <span className="card-eyebrow">{modo === "ingreso" ? "Lector ingresos · OCR con IA" : "Lector gastos · OCR con IA"}</span>
         <p style={{ fontSize: 17, marginTop: 8, marginBottom: 4, fontWeight: 600 }}>
@@ -294,14 +314,20 @@ export function OcrUpload({ empresaId, modo = "gasto" }: { empresaId: string; mo
                       : "linear-gradient(135deg, color-mix(in srgb, var(--accent) 12%, transparent) 0%, color-mix(in srgb, var(--accent) 4%, transparent) 100%)",
                     display: "grid",
                     placeItems: "center",
-                    fontSize: 28,
                     position: "relative",
+                    color: "var(--muted)",
                   }}
                 >
-                  {!r.dataUrl ? "📄" : null}
+                  {!r.dataUrl ? <FilePlus2 size={28} strokeWidth={1.6} aria-hidden="true" /> : null}
                   {r.status === "uploading" ? <div className="ocr-shimmer" aria-hidden="true" style={{ position: "absolute", inset: 0 }} /> : null}
                   {r.status === "ok" ? (
-                    <div style={{ position: "absolute", top: 6, right: 6, width: 22, height: 22, borderRadius: "50%", background: "var(--good)", color: "white", display: "grid", placeItems: "center", fontSize: 13, animation: "ocr-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)" }}>✓</div>
+                    <div style={{ position: "absolute", top: 6, right: 6, width: 22, height: 22, borderRadius: "50%", background: "var(--good)", color: "white", display: "grid", placeItems: "center", animation: "ocr-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)" }}>
+                      <Check size={14} strokeWidth={2.5} aria-hidden="true" />
+                    </div>
+                  ) : r.status === "fail" ? (
+                    <div style={{ position: "absolute", top: 6, right: 6, width: 22, height: 22, borderRadius: "50%", background: "var(--bad)", color: "white", display: "grid", placeItems: "center" }}>
+                      <X size={14} strokeWidth={2.5} aria-hidden="true" />
+                    </div>
                   ) : null}
                 </div>
                 <div style={{ padding: "6px 8px" }}>

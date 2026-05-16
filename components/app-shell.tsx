@@ -1,6 +1,22 @@
 import Link from "next/link";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
-import { Mic } from "lucide-react";
+import {
+  Mic,
+  CalendarDays,
+  UserSquare,
+  FileText,
+  Calculator,
+  BookOpen,
+  Users,
+  Sparkles,
+  Smartphone,
+  ListChecks,
+  LineChart,
+  Target,
+  UserCircle,
+  ShieldCheck,
+  type LucideIcon,
+} from "lucide-react";
 import { StorageBadge } from "@/components/storage/storage-badge";
 import { NotificationsBell } from "@/components/notifications/notifications-bell";
 import { UserAvatarButton } from "@/components/user/user-avatar-button";
@@ -8,30 +24,31 @@ import { UserAvatarButton } from "@/components/user/user-avatar-button";
 type NavItem = {
   href: string;
   label: string;
+  icon: LucideIcon;
   count?: number | string;
   kbd?: string;
 };
 
 const gestorNav: NavItem[] = [
-  { href: "/dashboard", label: "Hoy", kbd: "⌘1" },
-  { href: "/clientes", label: "Clientes", kbd: "⌘2" },
-  { href: "/facturacion", label: "Facturación", kbd: "⌘3" },
-  { href: "/aeat", label: "Modelos AEAT", kbd: "⌘4" },
-  { href: "/contabilidad", label: "Contabilidad", kbd: "⌘5" },
-  { href: "/laboral", label: "Laboral", kbd: "⌘6" },
-  { href: "/agentes", label: "Agentes IA", kbd: "⌘7" },
-  { href: "/movil", label: "Móvil", kbd: "⌘8" },
+  { href: "/dashboard", label: "Hoy", icon: CalendarDays, kbd: "⌘1" },
+  { href: "/clientes", label: "Clientes", icon: UserSquare, kbd: "⌘2" },
+  { href: "/facturacion", label: "Facturación", icon: FileText, kbd: "⌘3" },
+  { href: "/aeat", label: "Modelos AEAT", icon: Calculator, kbd: "⌘4" },
+  { href: "/contabilidad", label: "Contabilidad", icon: BookOpen, kbd: "⌘5" },
+  { href: "/laboral", label: "Laboral", icon: Users, kbd: "⌘6" },
+  { href: "/agentes", label: "Agentes IA", icon: Sparkles, kbd: "⌘7" },
+  { href: "/movil", label: "Móvil", icon: Smartphone, kbd: "⌘8" },
 ];
 
 const accountNav: NavItem[] = [
-  { href: "/tareas", label: "Tareas" },
-  { href: "/inteligencia", label: "Inteligencia" },
-  { href: "/crm", label: "CRM" },
-  { href: "/perfil", label: "Mi perfil" },
+  { href: "/tareas", label: "Tareas", icon: ListChecks },
+  { href: "/inteligencia", label: "Inteligencia", icon: LineChart },
+  { href: "/crm", label: "CRM", icon: Target },
+  { href: "/perfil", label: "Mi perfil", icon: UserCircle },
 ];
 
 const adminExtras: NavItem[] = [
-  { href: "/super-admin", label: "Super Admin" },
+  { href: "/super-admin", label: "Super Admin", icon: ShieldCheck },
 ];
 
 export type AppShellProps = {
@@ -80,9 +97,18 @@ export function AppShell({
         <nav className="sb-nav">
           {allNav.map((item) => {
             const isActive = item.href === active;
+            const Icon = item.icon;
             return (
               <Link key={item.href} href={item.href} className={isActive ? "active" : undefined} aria-current={isActive ? "page" : undefined}>
-                <span>{item.label}</span>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+                  <Icon
+                    size={15}
+                    strokeWidth={1.8}
+                    aria-hidden="true"
+                    style={{ flexShrink: 0, color: isActive ? "var(--accent)" : "var(--muted)" }}
+                  />
+                  <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{item.label}</span>
+                </span>
                 <span style={{ display: "flex", gap: 8, alignItems: "center" }}>
                   {item.count != null ? <span className="count">{item.count}</span> : null}
                   {item.kbd ? <span className="kbd">{item.kbd}</span> : null}
