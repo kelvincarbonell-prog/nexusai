@@ -167,6 +167,27 @@ export function WorkerManager({ empresas }: { empresas: Empresa[] }) {
     else loadAll();
   }
 
+  async function descargarPdf(url: string, filename: string) {
+    const tk = await token();
+    setError(null);
+    try {
+      const res = await fetch(url, { headers: { Authorization: `Bearer ${tk}` } });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        throw new Error(j.error ?? `Error ${res.status}`);
+      }
+      const blob = await res.blob();
+      const objUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = objUrl;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(objUrl);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Error");
+    }
+  }
+
   async function fichar(trabajadorId: string, accion: "entrada" | "salida") {
     const tk = await token();
     const res = await fetch("/api/laboral/horario", {
@@ -243,10 +264,10 @@ export function WorkerManager({ empresas }: { empresas: Empresa[] }) {
 
           <table className="table">
             <thead>
-              <tr><th>Nombre</th><th>DNI</th><th>Puesto</th><th>Contrato</th><th>Salario</th><th>Estado</th><th></th></tr>
+              <tr><th>Nombre</th><th>DNI</th><th>Puesto</th><th>Contrato</th><th>Salario</th><th>Estado</th><th>Documentos</th><th></th></tr>
             </thead>
             <tbody>
-              {trabajadores.length === 0 ? <tr><td colSpan={7} className="muted">Sin trabajadores aún.</td></tr> : null}
+              {trabajadores.length === 0 ? <tr><td colSpan={8} className="muted">Sin trabajadores aún.</td></tr> : null}
               {trabajadores.map((t) => (
                 <tr key={t.id}>
                   <td>{t.nombre}</td>
@@ -255,6 +276,13 @@ export function WorkerManager({ empresas }: { empresas: Empresa[] }) {
                   <td>{t.tipo_contrato ?? "-"}</td>
                   <td>{t.salario_bruto_anual ? `${t.salario_bruto_anual} €` : "-"}</td>
                   <td><span className={`status ${t.activo ? "" : "warning"}`}>{t.activo ? "activo" : "baja"}</span></td>
+                  <td style={{ whiteSpace: "nowrap" }}>
+                    <button
+                      className="button secondary compact"
+                      title="Descargar Modelo 145"
+                      onClick={() => descargarPdf(`/api/laboral/modelo-145?trabajador_id=${t.id}`, `modelo-145-${t.dni ?? t.id.slice(0, 8)}.pdf`)}
+                    >M-145</button>{" "}
+                  </td>
                   <td>
                     {t.activo ? <button className="button danger compact" onClick={() => bajaTrabajador(t.id)}>Dar de baja</button> : null}
                   </td>
