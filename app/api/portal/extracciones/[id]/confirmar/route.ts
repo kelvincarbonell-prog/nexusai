@@ -7,6 +7,7 @@ import { canAccessLaborCompany } from "@/lib/laboral/access";
 
 const Schema = z.object({
   tipo: z.enum(["factura", "gasto"]),
+  factura_tipo: z.enum(["emitida", "recibida"]).optional(),
 });
 
 type Datos = {
@@ -44,14 +45,16 @@ export async function POST(request: NextRequest, ctx: { params: Promise<{ id: st
   const datos = (extr.datos_extraidos ?? {}) as Datos;
 
   if (parsed.data.tipo === "factura") {
+    const facturaTipo = parsed.data.factura_tipo ?? "recibida";
+    const contactoLabel = facturaTipo === "emitida" ? "Cliente" : "Proveedor";
     const { data: factura, error } = await admin
       .from("facturas")
       .insert({
         empresa_id: extr.empresa_id,
         gestor_id: user.id,
-        tipo: "recibida",
+        tipo: facturaTipo,
         numero: datos.invoice_number ?? null,
-        contacto_nombre: datos.vendor_name ?? "Proveedor",
+        contacto_nombre: datos.vendor_name ?? contactoLabel,
         fecha_emision: datos.issue_date ?? null,
         fecha_vencimiento: datos.due_date ?? null,
         base: Number(datos.base ?? 0),

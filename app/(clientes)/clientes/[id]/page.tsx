@@ -1,4 +1,3 @@
-import { AppShell } from "@/components/app-shell";
 import { ClienteWorkspace } from "@/components/clientes/cliente-workspace";
 import { TimeTracker } from "@/components/tracking/time-tracker";
 import { createServerSupabase } from "@/lib/supabase/server";
@@ -19,14 +18,13 @@ export default async function ClienteDetailPage({ params }: Props) {
     .maybeSingle();
   if (!empresa) notFound();
 
-  const { data: profile } = await supabase.from("perfiles").select("rol,nombre").eq("id", auth.user.id).maybeSingle();
+  const { data: profile } = await supabase.from("perfiles").select("rol").eq("id", auth.user.id).maybeSingle();
   const isAdmin = profile?.rol === "admin";
   const canAccess =
     isAdmin ||
     empresa.gestor_id === auth.user.id ||
     empresa.owner_user_id === auth.user.id;
   if (!canAccess) {
-    // Comprobar portal_accesos
     const { data: pa } = await supabase
       .from("portal_accesos")
       .select("id")
@@ -48,13 +46,9 @@ export default async function ClienteDetailPage({ params }: Props) {
   };
 
   return (
-    <AppShell
-      active="/clientes"
-      showSuperAdmin={isAdmin}
-      espacio={{ nombre: profile?.nombre ?? "Mi gestoría", tipo: "Cliente" }}
-    >
+    <>
       <TimeTracker empresaId={id} />
       <ClienteWorkspace empresa={workspaceEmpresa} />
-    </AppShell>
+    </>
   );
 }
