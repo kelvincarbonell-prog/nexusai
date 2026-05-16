@@ -41,7 +41,31 @@ const ACCEPT = "image/jpeg,image/png,image/webp,application/pdf";
 
 type Modo = "ingreso" | "gasto";
 
-type LocalPreview = { name: string; size: number; dataUrl: string | null; status: "uploading" | "ok" | "fail"; error?: string };
+type Stage = "reading" | "sending" | "thinking" | "extracting" | "validating" | "done";
+type LocalPreview = {
+  name: string;
+  size: number;
+  dataUrl: string | null;
+  status: "uploading" | "ok" | "fail";
+  stage?: Stage;
+  error?: string;
+  result?: {
+    vendor_name?: string;
+    vendor_nif?: string;
+    total?: number;
+    confidence?: number;
+    provider?: string;
+  };
+};
+
+const STAGE_LABELS: Record<Stage, string> = {
+  reading: "Leyendo archivo…",
+  sending: "Enviando a IA con visión…",
+  thinking: "IA analizando documento…",
+  extracting: "Extrayendo proveedor, NIF, IVA…",
+  validating: "Validando importes…",
+  done: "Completado",
+};
 
 export function OcrUpload({ empresaId, modo = "gasto" }: { empresaId: string; modo?: Modo }) {
   const supabase = useMemo(() => createBrowserSupabase(), []);
@@ -78,6 +102,10 @@ export function OcrUpload({ empresaId, modo = "gasto" }: { empresaId: string; mo
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [empresaId]);
 
+  function updateStage(idx: number, stage: Stage) {
+    setRecent((r) => r.map((it, i) => (i === idx ? { ...it, stage } : it)));
+  }
+
   async function procesar(files: FileList | File[]) {
     setError(null);
     setSuccess(null);
@@ -85,7 +113,7 @@ export function OcrUpload({ empresaId, modo = "gasto" }: { empresaId: string; mo
     if (list.length === 0) return;
     setBusy(true);
 
-    const local: LocalPreview[] = list.map((f) => ({ name: f.name, size: f.size, dataUrl: null, status: "uploading" as const }));
+    const local: LocalPreview[] = list.map((f) => ({ name: f.name, size: f.size, dataUrl: null, status: "uploading" as const, stage: "reading" as const }));
     setRecent(local);
 
     try {
@@ -100,6 +128,7 @@ export function OcrUpload({ empresaId, modo = "gasto" }: { empresaId: string; mo
           continue;
         }
 
+        updateStage(i, "reading");
         const base64 = await new Promise<string>((res, rej) => {
           const r = new FileReader();
           r.onload = () => res(String(r.result ?? "").split(",")[1] ?? "");
@@ -112,7 +141,15 @@ export function OcrUpload({ empresaId, modo = "gasto" }: { empresaId: string; mo
           setRecent((r) => r.map((it, idx) => (idx === i ? { ...it, dataUrl: `data:${file.type};base64,${base64}` } : it)));
         }
 
+        updateStage(i, "sending");
         const tk = await token();
+        const startedAt = Date.now();
+        // Rotamos fases mientras esperamos la respuesta: 1.2s sending, 1.5s thinking, 2.5s extracting, validating al final.
+        const stageTimers: ReturnType<typeof setTimeout>[] = [];
+        stageTimers.push(setTimeout(() => updateStage(i, "thinking"), 800));
+        stageTimers.push(setTimeout(() => updateStage(i, "extracting"), 2200));
+        stageTimers.push(setTimeout(() => updateStage(i, "validating"), 5000));
+
         const res = await fetch("/api/agents/extract-invoice", {
           method: "POST",
           headers: { Authorization: `Bearer ${tk}`, "Content-Type": "application/json" },
@@ -124,14 +161,36 @@ export function OcrUpload({ empresaId, modo = "gasto" }: { empresaId: string; mo
             base64,
           }),
         });
+        stageTimers.forEach(clearTimeout);
         const json = await res.json();
+        const elapsed = Date.now() - startedAt;
+        void elapsed;
+
         if (!json.ok && !json.item) {
           setRecent((r) => r.map((it, idx) => (idx === i ? { ...it, status: "fail", error: json.error ?? "Error" } : it)));
-          if (typeof json.error === "string" && /proveedor IA|sin configurar|api[\s_-]?key|OPENAI|ANTHROPIC|GEMINI/i.test(json.error)) {
+          if (typeof json.error === "string" && /proveedor IA|sin configurar|api[\s_-]?key|OPENAI|ANTHROPIC|GEMINI|visión/i.test(json.error)) {
             setAiUnavailable(true);
           }
         } else {
-          setRecent((r) => r.map((it, idx) => (idx === i ? { ...it, status: "ok" } : it)));
+          const datos = (json.item?.datos_extraidos ?? {}) as Record<string, unknown>;
+          setRecent((r) =>
+            r.map((it, idx) =>
+              idx === i
+                ? {
+                    ...it,
+                    status: "ok",
+                    stage: "done",
+                    result: {
+                      vendor_name: datos.vendor_name as string | undefined,
+                      vendor_nif: datos.vendor_nif as string | undefined,
+                      total: typeof datos.total === "number" ? (datos.total as number) : undefined,
+                      confidence: typeof json.confidence === "number" ? json.confidence : undefined,
+                      provider: typeof json.provider === "string" ? json.provider : undefined,
+                    },
+                  }
+                : it,
+            ),
+          );
         }
       }
       setSuccess(`Procesado${list.length > 1 ? `s ${list.length} archivos` : ""}. Revisa abajo los datos extraídos.`);
@@ -289,56 +348,178 @@ export function OcrUpload({ empresaId, modo = "gasto" }: { empresaId: string; mo
         </div>
       </article>
 
-      {/* Miniaturas de archivos recién subidos */}
+      {/* Panel de extracción con efectos premium */}
       {recent.length > 0 ? (
         <article className="card">
-          <span className="card-eyebrow">Subida en curso</span>
-          <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 10 }}>
-            {recent.map((r, i) => (
-              <div
-                key={i}
-                style={{
-                  width: 110,
-                  borderRadius: 10,
-                  border: `1px solid ${r.status === "fail" ? "var(--bad)" : r.status === "ok" ? "var(--good)" : "var(--line)"}`,
-                  background: "var(--bg-soft, var(--bg, transparent))",
-                  overflow: "hidden",
-                }}
-              >
+          <span className="card-eyebrow">
+            {recent.every((r) => r.status === "ok") ? "Listo · resultado del OCR" : recent.some((r) => r.status === "uploading") ? "Procesando con IA…" : "Subida"}
+          </span>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(230px, 1fr))", gap: 14, marginTop: 12 }}>
+            {recent.map((r, i) => {
+              const isWorking = r.status === "uploading";
+              const isDone = r.status === "ok";
+              const isFail = r.status === "fail";
+              return (
                 <div
+                  key={i}
+                  className="ocr-tile"
+                  data-state={r.status}
                   style={{
-                    height: 80,
-                    background: r.dataUrl
-                      ? `center / cover no-repeat url("${r.dataUrl}")`
-                      : "linear-gradient(135deg, color-mix(in srgb, var(--accent) 12%, transparent) 0%, color-mix(in srgb, var(--accent) 4%, transparent) 100%)",
-                    display: "grid",
-                    placeItems: "center",
+                    borderRadius: 12,
+                    border: `1px solid ${isFail ? "var(--bad)" : isDone ? "var(--good)" : "var(--line)"}`,
+                    background: "var(--bg-soft, var(--bg, transparent))",
+                    overflow: "hidden",
                     position: "relative",
-                    color: "var(--muted)",
+                    transition: "border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease",
+                    boxShadow: isDone
+                      ? "0 8px 26px -16px color-mix(in srgb, var(--good) 60%, transparent)"
+                      : isWorking
+                      ? "0 8px 26px -16px color-mix(in srgb, var(--accent) 60%, transparent)"
+                      : undefined,
                   }}
                 >
-                  {!r.dataUrl ? <FilePlus2 size={28} strokeWidth={1.6} aria-hidden="true" /> : null}
-                  {r.status === "uploading" ? <div className="ocr-shimmer" aria-hidden="true" style={{ position: "absolute", inset: 0 }} /> : null}
-                  {r.status === "ok" ? (
-                    <div style={{ position: "absolute", top: 6, right: 6, width: 22, height: 22, borderRadius: "50%", background: "var(--good)", color: "white", display: "grid", placeItems: "center", animation: "ocr-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)" }}>
-                      <Check size={14} strokeWidth={2.5} aria-hidden="true" />
-                    </div>
-                  ) : r.status === "fail" ? (
-                    <div style={{ position: "absolute", top: 6, right: 6, width: 22, height: 22, borderRadius: "50%", background: "var(--bad)", color: "white", display: "grid", placeItems: "center" }}>
-                      <X size={14} strokeWidth={2.5} aria-hidden="true" />
-                    </div>
-                  ) : null}
-                </div>
-                <div style={{ padding: "6px 8px" }}>
-                  <div style={{ fontFamily: "var(--mono)", fontSize: 11, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                    {r.name}
+                  {/* Preview con barrido de escáner */}
+                  <div
+                    style={{
+                      height: 130,
+                      background: r.dataUrl
+                        ? `center / cover no-repeat url("${r.dataUrl}")`
+                        : "linear-gradient(135deg, color-mix(in srgb, var(--accent) 16%, transparent) 0%, color-mix(in srgb, var(--accent) 4%, transparent) 100%)",
+                      display: "grid",
+                      placeItems: "center",
+                      position: "relative",
+                      color: "var(--muted)",
+                      overflow: "hidden",
+                    }}
+                  >
+                    {!r.dataUrl ? <FilePlus2 size={34} strokeWidth={1.5} aria-hidden="true" /> : null}
+
+                    {/* Barrido de escáner durante el procesamiento */}
+                    {isWorking ? (
+                      <>
+                        <div className="ocr-scanline" aria-hidden="true" />
+                        <div className="ocr-grid-overlay" aria-hidden="true" />
+                      </>
+                    ) : null}
+
+                    {/* Badge de éxito con animación pop */}
+                    {isDone ? (
+                      <div
+                        style={{
+                          position: "absolute",
+                          top: 8,
+                          right: 8,
+                          width: 26,
+                          height: 26,
+                          borderRadius: "50%",
+                          background: "var(--good)",
+                          color: "white",
+                          display: "grid",
+                          placeItems: "center",
+                          animation: "ocr-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)",
+                          boxShadow: "0 4px 12px -2px color-mix(in srgb, var(--good) 50%, transparent)",
+                        }}
+                      >
+                        <Check size={15} strokeWidth={2.8} aria-hidden="true" />
+                      </div>
+                    ) : isFail ? (
+                      <div
+                        style={{
+                          position: "absolute",
+                          top: 8,
+                          right: 8,
+                          width: 26,
+                          height: 26,
+                          borderRadius: "50%",
+                          background: "var(--bad)",
+                          color: "white",
+                          display: "grid",
+                          placeItems: "center",
+                        }}
+                      >
+                        <X size={15} strokeWidth={2.8} aria-hidden="true" />
+                      </div>
+                    ) : null}
+
+                    {/* Indicador de fase (centro, sobre la imagen) */}
+                    {isWorking && r.stage ? (
+                      <div
+                        style={{
+                          position: "absolute",
+                          bottom: 0,
+                          left: 0,
+                          right: 0,
+                          padding: "8px 10px",
+                          background: "linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 100%)",
+                          color: "white",
+                          fontSize: 11,
+                          fontFamily: "var(--mono)",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 6,
+                        }}
+                      >
+                        <span className="ocr-dot" aria-hidden="true" />
+                        <span>{STAGE_LABELS[r.stage]}</span>
+                      </div>
+                    ) : null}
                   </div>
-                  <small className="muted" style={{ fontSize: 10 }}>
-                    {(r.size / 1024).toFixed(0)} KB{r.error ? ` · ${r.error}` : ""}
-                  </small>
+
+                  {/* Datos del archivo */}
+                  <div style={{ padding: "10px 12px" }}>
+                    <div style={{ fontFamily: "var(--mono)", fontSize: 12, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {r.name}
+                    </div>
+                    <small className="muted" style={{ fontSize: 10, fontFamily: "var(--mono)" }}>
+                      {(r.size / 1024).toFixed(0)} KB
+                      {r.result?.provider ? ` · ${r.result.provider}` : ""}
+                    </small>
+
+                    {/* Resultado revelado con animación */}
+                    {isDone && r.result ? (
+                      <div className="ocr-reveal" style={{ marginTop: 10, display: "grid", gap: 4 }}>
+                        {r.result.vendor_name ? (
+                          <div style={{ fontSize: 12, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            {r.result.vendor_name}
+                          </div>
+                        ) : null}
+                        <div style={{ display: "flex", justifyContent: "space-between", gap: 6, fontSize: 11 }}>
+                          {r.result.vendor_nif ? (
+                            <span style={{ fontFamily: "var(--mono)", color: "var(--muted)" }}>{r.result.vendor_nif}</span>
+                          ) : <span />}
+                          {typeof r.result.total === "number" ? (
+                            <span style={{ fontWeight: 700 }}>{EUR(r.result.total)}</span>
+                          ) : null}
+                        </div>
+                        {typeof r.result.confidence === "number" ? (
+                          <div style={{ display: "grid", gap: 3, marginTop: 4 }}>
+                            <div style={{ height: 4, borderRadius: 2, background: "color-mix(in srgb, var(--line) 60%, transparent)", overflow: "hidden" }}>
+                              <div
+                                style={{
+                                  width: `${r.result.confidence}%`,
+                                  height: "100%",
+                                  background: r.result.confidence >= 80 ? "var(--good)" : r.result.confidence >= 50 ? "var(--warn)" : "var(--bad)",
+                                  transition: "width 0.8s cubic-bezier(0.16, 1, 0.3, 1)",
+                                }}
+                              />
+                            </div>
+                            <small style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--muted)" }}>
+                              {r.result.confidence.toFixed(0)}% confianza
+                            </small>
+                          </div>
+                        ) : null}
+                      </div>
+                    ) : null}
+
+                    {isFail && r.error ? (
+                      <small style={{ fontSize: 10, color: "var(--bad)", marginTop: 6, display: "block" }}>
+                        {r.error}
+                      </small>
+                    ) : null}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </article>
       ) : null}
@@ -495,6 +676,93 @@ export function OcrUpload({ empresaId, modo = "gasto" }: { empresaId: string; mo
           animation: ocr-shimmer-anim 1.4s linear infinite;
         }
         .ocr-dropzone[data-drag="yes"] { transform: scale(1.005); }
+
+        /* Barrido de escáner sobre la imagen mientras procesa */
+        @keyframes ocr-scan-anim {
+          0% { transform: translateY(-20%); opacity: 0; }
+          10% { opacity: 1; }
+          90% { opacity: 1; }
+          100% { transform: translateY(120%); opacity: 0; }
+        }
+        .ocr-scanline {
+          position: absolute;
+          left: -2%;
+          right: -2%;
+          top: 0;
+          height: 22%;
+          background: linear-gradient(
+            to bottom,
+            transparent 0%,
+            color-mix(in srgb, var(--accent) 35%, transparent) 30%,
+            color-mix(in srgb, var(--accent) 75%, transparent) 50%,
+            color-mix(in srgb, var(--accent) 35%, transparent) 70%,
+            transparent 100%
+          );
+          filter: blur(2px);
+          mix-blend-mode: screen;
+          animation: ocr-scan-anim 2.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+          pointer-events: none;
+        }
+
+        /* Cuadrícula tenue sobre la imagen para efecto "analizando" */
+        @keyframes ocr-grid-anim {
+          0%, 100% { opacity: 0.25; }
+          50% { opacity: 0.5; }
+        }
+        .ocr-grid-overlay {
+          position: absolute;
+          inset: 0;
+          background-image:
+            linear-gradient(to right, color-mix(in srgb, var(--accent) 22%, transparent) 1px, transparent 1px),
+            linear-gradient(to bottom, color-mix(in srgb, var(--accent) 22%, transparent) 1px, transparent 1px);
+          background-size: 18px 18px;
+          mix-blend-mode: overlay;
+          animation: ocr-grid-anim 2.4s ease-in-out infinite;
+          pointer-events: none;
+        }
+
+        /* Punto pulsante junto al texto de fase */
+        @keyframes ocr-dot-anim {
+          0%, 100% { transform: scale(1); opacity: 0.6; }
+          50% { transform: scale(1.4); opacity: 1; }
+        }
+        .ocr-dot {
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          background: var(--accent);
+          flex-shrink: 0;
+          animation: ocr-dot-anim 0.9s ease-in-out infinite;
+        }
+
+        /* Reveal del resultado extraído (entrada suave con stagger) */
+        @keyframes ocr-reveal-anim {
+          from { opacity: 0; transform: translateY(6px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .ocr-reveal {
+          animation: ocr-reveal-anim 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+        .ocr-reveal > * {
+          animation: ocr-reveal-anim 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+        .ocr-reveal > *:nth-child(2) { animation-delay: 0.08s; }
+        .ocr-reveal > *:nth-child(3) { animation-delay: 0.16s; }
+
+        /* Glow del tile mientras procesa */
+        .ocr-tile[data-state="uploading"] {
+          animation: ocr-tile-glow 1.8s ease-in-out infinite;
+        }
+        @keyframes ocr-tile-glow {
+          0%, 100% { box-shadow: 0 8px 26px -16px color-mix(in srgb, var(--accent) 40%, transparent); }
+          50% { box-shadow: 0 12px 36px -16px color-mix(in srgb, var(--accent) 80%, transparent); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .ocr-scanline, .ocr-grid-overlay, .ocr-shimmer, .ocr-dot { animation: none; display: none; }
+          .ocr-reveal, .ocr-reveal > * { animation: none; }
+          .ocr-tile[data-state="uploading"] { animation: none; }
+        }
       `}</style>
     </section>
   );
