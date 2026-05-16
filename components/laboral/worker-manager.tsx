@@ -3,6 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 import { PayrollPanel } from "@/components/laboral/payroll-panel";
+import { CalendarioLaboral } from "@/components/laboral/calendario-laboral";
+import { FiniquitoModal } from "@/components/laboral/finiquito-modal";
+import { BonificacionesModal } from "@/components/laboral/bonificaciones-modal";
 
 type Empresa = { id: string; nombre: string; nif?: string };
 type Trabajador = {
@@ -27,16 +30,20 @@ type Fichaje = { id: string; trabajador_id: string; fecha: string; hora_entrada?
 const TIPO_CONTRATO = ["indefinido", "temporal", "obra y servicio", "formacion", "practicas", "fijo discontinuo"];
 const TIPO_AUSENCIA = ["vacaciones", "it", "permiso", "maternidad", "paternidad", "excedencia", "otro"];
 
-export function WorkerManager({ empresas }: { empresas: Empresa[] }) {
+type LaboralTab = "trabajadores" | "ausencias" | "horario" | "nominas" | "calendario";
+
+export function WorkerManager({ empresas, initialTab = "trabajadores" }: { empresas: Empresa[]; initialTab?: LaboralTab }) {
   const supabase = useMemo(() => createBrowserSupabase(), []);
   const [empresaId, setEmpresaId] = useState(empresas[0]?.id ?? "");
-  const [tab, setTab] = useState<"trabajadores" | "ausencias" | "horario" | "nominas">("trabajadores");
+  const [tab, setTab] = useState<LaboralTab>(initialTab);
   const [trabajadores, setTrabajadores] = useState<Trabajador[]>([]);
   const [ausencias, setAusencias] = useState<Ausencia[]>([]);
   const [fichajes, setFichajes] = useState<Fichaje[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [finiquitoTrabajador, setFiniquitoTrabajador] = useState<Trabajador | null>(null);
+  const [bonisTrabajador, setBonisTrabajador] = useState<Trabajador | null>(null);
 
   const [nuevo, setNuevo] = useState({
     nombre: "",
@@ -166,6 +173,27 @@ export function WorkerManager({ empresas }: { empresas: Empresa[] }) {
     else loadAll();
   }
 
+  async function descargarPdf(url: string, filename: string) {
+    const tk = await token();
+    setError(null);
+    try {
+      const res = await fetch(url, { headers: { Authorization: `Bearer ${tk}` } });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        throw new Error(j.error ?? `Error ${res.status}`);
+      }
+      const blob = await res.blob();
+      const objUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = objUrl;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(objUrl);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Error");
+    }
+  }
+
   async function fichar(trabajadorId: string, accion: "entrada" | "salida") {
     const tk = await token();
     const res = await fetch("/api/laboral/horario", {
@@ -199,7 +227,7 @@ export function WorkerManager({ empresas }: { empresas: Empresa[] }) {
       </div>
 
       <div role="tablist" style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
-        {(["trabajadores", "ausencias", "horario", "nominas"] as const).map((t) => (
+        {(["trabajadores", "ausencias", "horario", "nominas", "calendario"] as const).map((t) => (
           <button
             key={t}
             role="tab"
@@ -207,7 +235,7 @@ export function WorkerManager({ empresas }: { empresas: Empresa[] }) {
             className={`button ${tab === t ? "" : "secondary"} compact`}
             onClick={() => setTab(t)}
           >
-            {t === "trabajadores" ? "Trabajadores" : t === "ausencias" ? "Ausencias" : t === "horario" ? "Fichajes" : "Nóminas"}
+            {t === "trabajadores" ? "Trabajadores" : t === "ausencias" ? "Ausencias" : t === "horario" ? "Fichajes" : t === "nominas" ? "Nóminas" : "Calendario"}
           </button>
         ))}
       </div>
@@ -242,10 +270,10 @@ export function WorkerManager({ empresas }: { empresas: Empresa[] }) {
 
           <table className="table">
             <thead>
-              <tr><th>Nombre</th><th>DNI</th><th>Puesto</th><th>Contrato</th><th>Salario</th><th>Estado</th><th></th></tr>
+              <tr><th>Nombre</th><th>DNI</th><th>Puesto</th><th>Contrato</th><th>Salario</th><th>Estado</th><th>Documentos</th><th></th></tr>
             </thead>
             <tbody>
-              {trabajadores.length === 0 ? <tr><td colSpan={7} className="muted">Sin trabajadores aún.</td></tr> : null}
+              {trabajadores.length === 0 ? <tr><td colSpan={8} className="muted">Sin trabajadores aún.</td></tr> : null}
               {trabajadores.map((t) => (
                 <tr key={t.id}>
                   <td>{t.nombre}</td>
@@ -254,6 +282,23 @@ export function WorkerManager({ empresas }: { empresas: Empresa[] }) {
                   <td>{t.tipo_contrato ?? "-"}</td>
                   <td>{t.salario_bruto_anual ? `${t.salario_bruto_anual} €` : "-"}</td>
                   <td><span className={`status ${t.activo ? "" : "warning"}`}>{t.activo ? "activo" : "baja"}</span></td>
+                  <td style={{ whiteSpace: "nowrap" }}>
+                    <button
+                      className="button secondary compact"
+                      title="Descargar Modelo 145"
+                      onClick={() => descargarPdf(`/api/laboral/modelo-145?trabajador_id=${t.id}`, `modelo-145-${t.dni ?? t.id.slice(0, 8)}.pdf`)}
+                    >M-145</button>{" "}
+                    <button
+                      className="button secondary compact"
+                      title="Calcular finiquito"
+                      onClick={() => setFiniquitoTrabajador(t)}
+                    >Finiquito</button>{" "}
+                    <button
+                      className="button secondary compact"
+                      title="Bonificaciones SS"
+                      onClick={() => setBonisTrabajador(t)}
+                    >Bonis</button>
+                  </td>
                   <td>
                     {t.activo ? <button className="button danger compact" onClick={() => bajaTrabajador(t.id)}>Dar de baja</button> : null}
                   </td>
@@ -357,6 +402,23 @@ export function WorkerManager({ empresas }: { empresas: Empresa[] }) {
 
       {tab === "nominas" ? (
         <PayrollPanel empresaId={empresaId} trabajadores={trabajadores} />
+      ) : null}
+
+      {tab === "calendario" ? <CalendarioLaboral /> : null}
+
+      {finiquitoTrabajador ? (
+        <FiniquitoModal
+          empresaId={empresaId}
+          trabajador={finiquitoTrabajador}
+          onClose={() => setFiniquitoTrabajador(null)}
+        />
+      ) : null}
+
+      {bonisTrabajador ? (
+        <BonificacionesModal
+          trabajador={bonisTrabajador}
+          onClose={() => setBonisTrabajador(null)}
+        />
       ) : null}
     </section>
   );

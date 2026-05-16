@@ -16,7 +16,7 @@ type ProfileRow = {
 
 type CompanyRow = {
   id: string;
-  razon_social: string;
+  nombre: string;
   nif: string | null;
   estado: string;
   account_type: string | null;
@@ -146,8 +146,8 @@ export function DirectoryManager({
             ) : companyRows.map((company) => (
               <tr key={company.id}>
                 <td>
-                  <strong>{company.cliente_slug || company.id.slice(0, 8)}</strong>
-                  <div className="muted">Código cliente</div>
+                  <strong>{company.nombre || company.cliente_slug || company.id.slice(0, 8)}</strong>
+                  <div className="muted">{company.nif ?? "Sin NIF"}{company.cliente_slug ? ` · ${company.cliente_slug}` : ""}</div>
                 </td>
                 <td>
                   <select

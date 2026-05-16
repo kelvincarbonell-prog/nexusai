@@ -3,7 +3,7 @@ import { createSupabaseAdmin } from "@/lib/supabase/admin";
 type AccountingCompany = {
   id: string;
   cliente_slug: string | null;
-  razon_social: string | null;
+  nombre: string | null;
   account_type: string | null;
   onboarding_source: string | null;
 };
@@ -13,13 +13,13 @@ export async function getAccountingOverview(userId: string) {
   const [{ data: ownedCompanies }, { data: portalAccess }] = await Promise.all([
     admin
       .from("empresas")
-      .select("id,cliente_slug,razon_social,account_type,onboarding_source")
+      .select("id,cliente_slug,nombre,account_type,onboarding_source")
       .or(`gestor_id.eq.${userId},owner_user_id.eq.${userId}`)
       .order("created_at", { ascending: false })
       .limit(20),
     admin
       .from("portal_accesos")
-      .select("empresa:empresas(id,cliente_slug,razon_social,account_type,onboarding_source)")
+      .select("empresa:empresas(id,cliente_slug,nombre,account_type,onboarding_source)")
       .eq("user_id", userId)
       .eq("estado", "activo")
       .limit(20),

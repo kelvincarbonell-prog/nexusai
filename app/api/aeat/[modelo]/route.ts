@@ -15,6 +15,7 @@ import { calcular180 } from "@/lib/aeat/calc/m180";
 import { calcular190 } from "@/lib/aeat/calc/m190";
 import { calcular232 } from "@/lib/aeat/calc/m232";
 import { calcular200, type Modelo200Input } from "@/lib/aeat/calc/m200";
+import { calcular202, type Modelo202Input } from "@/lib/aeat/calc/m202";
 import { calcular100, type Modelo100Input } from "@/lib/aeat/calc/m100";
 import { calcular184, type Modelo184Input } from "@/lib/aeat/calc/m184";
 import { calcular720, type BienExtranjero } from "@/lib/aeat/calc/m720";
@@ -28,7 +29,7 @@ import type { Casillas303 } from "@/lib/aeat/calc/m303";
 import { fetchDatos111, fetchDatos115, fetchDatos130 } from "@/lib/aeat/queries-extra";
 import { validateNif } from "@/lib/aeat/validators";
 
-const SUPPORTED = ["100", "111", "115", "123", "130", "180", "184", "190", "193", "200", "210", "232", "296", "309", "347", "349", "390", "720"] as const;
+const SUPPORTED = ["100", "111", "115", "123", "130", "180", "184", "190", "193", "200", "202", "210", "232", "296", "309", "347", "349", "390", "720"] as const;
 type Modelo = (typeof SUPPORTED)[number];
 
 const QuerySchema = z.object({
@@ -56,6 +57,16 @@ const M200InputSchema = z.object({
   cifra_negocios: z.number().min(0).optional(),
 });
 
+const M202InputSchema = z.object({
+  modalidad: z.enum(["A", "B"]),
+  periodo: z.enum(["1P", "2P", "3P"]),
+  cuota_is_ejercicio_anterior: z.number().min(0).optional(),
+  base_imponible_acumulada: z.number().optional(),
+  retenciones_acumuladas: z.number().min(0).optional(),
+  pagos_fraccionados_anteriores: z.number().min(0).optional(),
+  cifra_negocios: z.number().min(0).optional(),
+});
+
 const SaveSchema = z.object({
   empresa_id: z.string().uuid(),
   ejercicio: z.number().int().min(2020).max(2099),
@@ -63,10 +74,19 @@ const SaveSchema = z.object({
   status: z.enum(["borrador", "revisado", "presentado"]).default("borrador"),
   notas: z.string().max(2000).optional(),
   inputs_200: M200InputSchema.optional(),
+  inputs_202: M202InputSchema.optional(),
   inputs_100: z.record(z.unknown()).optional(),
   inputs_184: z.record(z.unknown()).optional(),
   inputs_720: z.record(z.unknown()).optional(),
 });
+
+function trimestreToPago202(periodo: "1T" | "2T" | "3T" | "4T" | "ANUAL"): "1P" | "2P" | "3P" {
+  // 1P = abril → datos del 1T, 2P = octubre → datos hasta sep, 3P = diciembre → datos hasta nov.
+  // El Modelo 202 NO usa 4T. Mapeamos 1T→1P, 2T/3T→2P, 4T→3P.
+  if (periodo === "1T") return "1P";
+  if (periodo === "4T") return "3P";
+  return "2P";
+}
 
 async function autoResultadoContable(
   admin: ReturnType<typeof createSupabaseAdmin>,
@@ -345,6 +365,116 @@ async function compute(
   throw new Error("Modelo no soportado");
 }
 
+async function compute202(
+  admin: ReturnType<typeof createSupabaseAdmin>,
+  empresaId: string,
+  ejercicio: number,
+  periodoTrim: "1T" | "2T" | "3T" | "4T" | "ANUAL",
+  inputs: Modelo202Input,
+): Promise<{ casillas: Record<string, number>; warnings: string[]; resumen: Record<string, unknown> }> {
+  const pagoPeriodo: "1P" | "2P" | "3P" = inputs.periodo ?? trimestreToPago202(periodoTrim);
+
+  // Auto-completar cifra de negocios desde facturas emitidas del ejercicio anterior
+  let cifra = inputs.cifra_negocios;
+  if (cifra == null) {
+    const prevYear = ejercicio - 1;
+    const { data: emit } = await admin
+      .from("facturas")
+      .select("base")
+      .eq("empresa_id", empresaId)
+      .in("tipo", ["emitida", "simplificada"])
+      .gte("fecha_emision", `${prevYear}-01-01`)
+      .lte("fecha_emision", `${prevYear}-12-31`);
+    cifra = (emit ?? []).reduce((s, f) => s + Number(f.base ?? 0), 0);
+  }
+
+  let cuotaIsAnterior = inputs.cuota_is_ejercicio_anterior;
+  if (inputs.modalidad === "A" && cuotaIsAnterior == null) {
+    const { data: m200 } = await admin
+      .from("aeat_declaraciones")
+      .select("casillas")
+      .eq("empresa_id", empresaId)
+      .eq("modelo", "200")
+      .eq("ejercicio", ejercicio - 1)
+      .maybeSingle();
+    const c599 = (m200?.casillas as { c599?: number } | undefined)?.c599 ?? 0;
+    cuotaIsAnterior = Math.max(0, Number(c599));
+  }
+
+  // Para modalidad B: BI acumulada y pagos fraccionados anteriores (1P/2P ya presentados)
+  let biAcumulada = inputs.base_imponible_acumulada;
+  if (inputs.modalidad === "B" && biAcumulada == null) {
+    const hastaMes = pagoPeriodo === "1P" ? 3 : pagoPeriodo === "2P" ? 9 : 11;
+    const from = `${ejercicio}-01-01`;
+    const to = `${ejercicio}-${String(hastaMes).padStart(2, "0")}-${hastaMes === 9 ? 30 : hastaMes === 11 ? 30 : 31}`;
+    // Aproximación: resultado contable acumulado del periodo. Usa journal entries del año.
+    const [{ data: entries }, { data: lines }] = await Promise.all([
+      admin.from("journal_entries").select("id,entry_date,status").eq("empresa_id", empresaId).gte("entry_date", from).lte("entry_date", to).neq("status", "draft"),
+      admin.from("journal_lines").select("debit,credit,account_id,entry_id").eq("empresa_id", empresaId),
+    ]);
+    const validIds = new Set((entries ?? []).map((e) => e.id));
+    const accountIds = Array.from(new Set((lines ?? []).map((l) => l.account_id)));
+    const { data: accounts } = await admin.from("pgc_accounts").select("id,code").in("id", accountIds);
+    const codeMap = new Map((accounts ?? []).map((a) => [a.id, a.code]));
+    let ingresos = 0;
+    let gastos = 0;
+    for (const l of lines ?? []) {
+      if (!validIds.has(l.entry_id)) continue;
+      const code = codeMap.get(l.account_id);
+      if (!code) continue;
+      const g = Number(code.charAt(0));
+      const debit = Number(l.debit ?? 0);
+      const credit = Number(l.credit ?? 0);
+      if (g === 7) ingresos += credit - debit;
+      if (g === 6) gastos += debit - credit;
+    }
+    biAcumulada = Math.round((ingresos - gastos) * 100) / 100;
+  }
+
+  let pagosAnteriores = inputs.pagos_fraccionados_anteriores;
+  if (inputs.modalidad === "B" && pagosAnteriores == null && pagoPeriodo !== "1P") {
+    const previos = pagoPeriodo === "2P" ? ["1P"] : ["1P", "2P"];
+    const trimMap: Record<string, "1T" | "2T" | "4T"> = { "1P": "1T", "2P": "2T", "3P": "4T" };
+    const trimPrevios = previos.map((p) => trimMap[p]);
+    const { data: m202prev } = await admin
+      .from("aeat_declaraciones")
+      .select("casillas")
+      .eq("empresa_id", empresaId)
+      .eq("modelo", "202")
+      .eq("ejercicio", ejercicio)
+      .in("periodo", trimPrevios);
+    pagosAnteriores = (m202prev ?? []).reduce((s, d) => s + Math.max(0, Number((d.casillas as { c14?: number } | undefined)?.c14 ?? 0)), 0);
+  }
+
+  const r = calcular202({
+    modalidad: inputs.modalidad,
+    periodo: pagoPeriodo,
+    cuota_is_ejercicio_anterior: cuotaIsAnterior,
+    base_imponible_acumulada: biAcumulada,
+    retenciones_acumuladas: inputs.retenciones_acumuladas,
+    pagos_fraccionados_anteriores: pagosAnteriores,
+    cifra_negocios: cifra,
+  });
+
+  return {
+    casillas: r.casillas as unknown as Record<string, number>,
+    warnings: r.warnings,
+    resumen: {
+      modalidad: r.modalidad,
+      pago_periodo: pagoPeriodo,
+      inputs_aplicados: {
+        modalidad: inputs.modalidad,
+        periodo: pagoPeriodo,
+        cuota_is_ejercicio_anterior: cuotaIsAnterior,
+        base_imponible_acumulada: biAcumulada,
+        retenciones_acumuladas: inputs.retenciones_acumuladas ?? 0,
+        pagos_fraccionados_anteriores: pagosAnteriores ?? 0,
+        cifra_negocios: cifra,
+      },
+    },
+  };
+}
+
 async function compute200(
   admin: ReturnType<typeof createSupabaseAdmin>,
   empresaId: string,
@@ -450,6 +580,26 @@ export async function GET(request: NextRequest, ctx: { params: Promise<{ modelo:
       .maybeSingle();
     const prevInputs = ((prev?.resumen as Record<string, unknown> | undefined)?.inputs_aplicados ?? {}) as Modelo200Input;
     result = await compute200(admin, parsed.data.empresa_id, ejercicio, prevInputs);
+  } else if (modelo === "202") {
+    const { data: prev } = await admin
+      .from("aeat_declaraciones")
+      .select("resumen")
+      .eq("empresa_id", parsed.data.empresa_id)
+      .eq("modelo", "202")
+      .eq("ejercicio", ejercicio)
+      .eq("periodo", periodo)
+      .maybeSingle();
+    const prevInputs = ((prev?.resumen as Record<string, unknown> | undefined)?.inputs_aplicados ?? {}) as Partial<Modelo202Input>;
+    const inputs: Modelo202Input = {
+      modalidad: (prevInputs.modalidad as "A" | "B") ?? "A",
+      periodo: (prevInputs.periodo as "1P" | "2P" | "3P") ?? trimestreToPago202(periodo as "1T" | "2T" | "3T" | "4T" | "ANUAL"),
+      cuota_is_ejercicio_anterior: prevInputs.cuota_is_ejercicio_anterior,
+      base_imponible_acumulada: prevInputs.base_imponible_acumulada,
+      retenciones_acumuladas: prevInputs.retenciones_acumuladas,
+      pagos_fraccionados_anteriores: prevInputs.pagos_fraccionados_anteriores,
+      cifra_negocios: prevInputs.cifra_negocios,
+    };
+    result = await compute202(admin, parsed.data.empresa_id, ejercicio, periodo as "1T" | "2T" | "3T" | "4T" | "ANUAL", inputs);
   } else {
     result = await compute(modelo as Modelo, admin, parsed.data.empresa_id, ejercicio, periodo);
   }
@@ -493,6 +643,12 @@ export async function POST(request: NextRequest, ctx: { params: Promise<{ modelo
   let result;
   if (modelo === "200") {
     result = await compute200(admin, parsed.data.empresa_id, parsed.data.ejercicio, parsed.data.inputs_200 ?? {});
+  } else if (modelo === "202") {
+    const inputs: Modelo202Input = parsed.data.inputs_202 ?? {
+      modalidad: "A",
+      periodo: trimestreToPago202(parsed.data.periodo),
+    };
+    result = await compute202(admin, parsed.data.empresa_id, parsed.data.ejercicio, parsed.data.periodo, inputs);
   } else if (modelo === "100" && parsed.data.inputs_100) {
     const r = calcular100(parsed.data.inputs_100 as unknown as Modelo100Input);
     result = { casillas: r.casillas as unknown as Record<string, number>, warnings: r.warnings, resumen: { ...r.resumen, inputs_aplicados: parsed.data.inputs_100 } };
@@ -508,6 +664,7 @@ export async function POST(request: NextRequest, ctx: { params: Promise<{ modelo
   }
   const resultado =
     modelo === "200" ? (result.casillas as { c599?: number }).c599 ?? 0
+    : modelo === "202" ? (result.casillas as { c14?: number }).c14 ?? 0
     : modelo === "100" ? (result.casillas as { c0670?: number }).c0670 ?? 0
     : modelo === "184" ? 0
     : modelo === "720" ? 0

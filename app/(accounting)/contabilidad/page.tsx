@@ -1,10 +1,11 @@
 import { redirect } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { JournalEntryForm } from "@/components/accounting/journal-entry-form";
+import { CierreAperturaPanel } from "@/components/accounting/cierre-apertura-panel";
 import { StatCard } from "@/components/stat-card";
 import { getAccountingOverview } from "@/lib/accounting/queries";
 import { getCurrentProfile, isSuperAdmin } from "@/lib/supabase/profile";
-import { BookOpen, Landmark, ListChecks, Scale } from "lucide-react";
+import { BookOpen, Landmark, Scale } from "lucide-react";
 
 function eur(value: number) {
   return value.toLocaleString("es-ES", { style: "currency", currency: "EUR" });
@@ -115,11 +116,7 @@ export default async function AccountingPage() {
               <h2>Conciliación bancaria</h2>
               <p className="muted">Base preparada para importar Norma 43, CAMT.053 o CSV y casar movimientos con asientos.</p>
             </article>
-            <article className="card span-4">
-              <ListChecks size={26} color="#145c4a" aria-hidden="true" />
-              <h2>Cierres y periodos</h2>
-              <p className="muted">Periodos contables con estados abierto, bloqueado y cerrado para controlar cambios.</p>
-            </article>
+            <CierreAperturaPanel empresaId={data.selectedCompany.id} defaultEjercicio={new Date().getUTCFullYear() - 1} />
             <article className="card span-4">
               <BookOpen size={26} color="#145c4a" aria-hidden="true" />
               <h2>Libros de IVA</h2>
