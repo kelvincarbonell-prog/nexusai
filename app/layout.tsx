@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { PWARegister } from "@/components/mobile/pwa-register";
+import { ToastProvider } from "@/components/toast/toaster";
 
 const themeScript = `(() => {
   try {
@@ -56,7 +57,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body>
-        {children}
+        <ToastProvider>
+          {children}
+        </ToastProvider>
         <PWARegister />
       </body>
     </html>
