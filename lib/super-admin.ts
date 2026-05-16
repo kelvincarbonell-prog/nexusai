@@ -63,7 +63,7 @@ export async function getSuperAdminDirectory() {
       .limit(50),
     admin
       .from("empresas")
-      .select("id,razon_social,nif,estado,account_type,onboarding_source,plan,cliente_slug,gestor_id,owner_user_id,created_at")
+      .select("id,nombre,nif,estado,account_type,onboarding_source,plan,cliente_slug,gestor_id,owner_user_id,created_at")
       .order("created_at", { ascending: false })
       .limit(50),
     admin
