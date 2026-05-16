@@ -1,7 +1,5 @@
 import Link from "next/link";
-import { ThemeToggle } from "@/components/theme/theme-toggle";
 import {
-  Mic,
   CalendarDays,
   UserSquare,
   FileText,
@@ -18,9 +16,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { StorageBadge } from "@/components/storage/storage-badge";
-import { NotificationsBell } from "@/components/notifications/notifications-bell";
-import { UserAvatarButton } from "@/components/user/user-avatar-button";
 import { CommandPalette } from "@/components/command-palette";
+import { AppTopbar } from "@/components/app-topbar";
 
 type NavItem = {
   href: string;
@@ -131,40 +128,7 @@ export function AppShell({
       </aside>
 
       <main className="main">
-        {!hideTopbar ? (
-          topbar ?? (
-            <div className="topbar">
-              <button
-                type="button"
-                className="topbar-search"
-                aria-label="Abrir buscador (⌘K)"
-                onClick={() => {
-                  // Dispara el atajo ⌘K para abrir la paleta sin lógica extra.
-                  const evt = new KeyboardEvent("keydown", { key: "k", metaKey: true, ctrlKey: true, bubbles: true });
-                  window.dispatchEvent(evt);
-                }}
-                style={{ cursor: "pointer", textAlign: "left" }}
-              >
-                <span className="kbd">⌘K</span>
-                <span style={{ flex: 1, color: "var(--muted)" }}>
-                  Buscar cliente, página o modelo AEAT…
-                </span>
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 4, color: "var(--muted)" }}>
-                  <span className="pulse-dot" aria-hidden="true" />
-                  <Mic size={13} aria-hidden="true" /> voz
-                </span>
-              </button>
-              <div className="topbar-meta">
-                <time suppressHydrationWarning>
-                  {new Date().toLocaleString("es-ES", { weekday: "short", day: "2-digit", hour: "2-digit", minute: "2-digit" })}
-                </time>
-                <NotificationsBell />
-                <ThemeToggle compact />
-                <UserAvatarButton />
-              </div>
-            </div>
-          )
-        ) : null}
+        {!hideTopbar ? (topbar ?? <AppTopbar />) : null}
         {children}
       </main>
 
