@@ -297,13 +297,15 @@ export function OcrUpload({ empresaId, modo = "gasto" }: { empresaId: string; mo
         <article className="card" style={{ borderColor: "var(--bad)", background: "color-mix(in srgb, var(--bad) 6%, transparent)" }}>
           <span className="card-eyebrow bad">Falta configurar la IA con visión</span>
           <p style={{ marginTop: 8, fontSize: 14 }}>
-            El lector OCR necesita un proveedor que soporte imágenes. Groq solo procesa texto. Configura en
-            Vercel <code style={{ fontFamily: "var(--mono)" }}>GEMINI_API_KEY</code> (gratuito, recomendado) y vuelve a desplegar.
+            Configura en Vercel cualquiera de estas keys (todas tienen tier gratuito) y vuelve a desplegar.
+            El sistema usa la primera disponible y va cayendo a las siguientes si falla:
           </p>
-          <p style={{ marginTop: 8, fontSize: 12, color: "var(--muted)" }}>
-            Si tu key Gemini solo tiene acceso a <code>flash</code>, deja <code>GEMINI_PRO_MODEL=gemini-2.5-flash</code> también.
-            Para OCR ya está configurado por defecto a flash.
-          </p>
+          <ul style={{ margin: "8px 0 0", paddingLeft: 20, fontSize: 13, lineHeight: 1.7 }}>
+            <li><code style={{ fontFamily: "var(--mono)" }}>GEMINI_API_KEY</code> — Gemini flash (recomendado). <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" style={{ color: "var(--accent)" }}>Sacar clave →</a></li>
+            <li><code style={{ fontFamily: "var(--mono)" }}>MISTRAL_API_KEY</code> — Pixtral 12B vision free. <a href="https://console.mistral.ai/api-keys" target="_blank" rel="noreferrer" style={{ color: "var(--accent)" }}>Sacar clave →</a></li>
+            <li><code style={{ fontFamily: "var(--mono)" }}>OPENROUTER_API_KEY</code> — Llama 3.2 Vision free. <a href="https://openrouter.ai/keys" target="_blank" rel="noreferrer" style={{ color: "var(--accent)" }}>Sacar clave →</a></li>
+            <li><code style={{ fontFamily: "var(--mono)" }}>OCRSPACE_API_KEY</code> — 25k req/mes gratis, extrae texto y lo pasa a Groq. <a href="https://ocr.space/ocrapi/freekey" target="_blank" rel="noreferrer" style={{ color: "var(--accent)" }}>Sacar clave →</a></li>
+          </ul>
         </article>
       ) : null}
 

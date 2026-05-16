@@ -4,7 +4,7 @@ type GeminiPart =
 
 type LLMResult = {
   ok: boolean;
-  provider: "gemini" | "groq" | "openai" | "anthropic" | "none";
+  provider: "gemini" | "groq" | "openai" | "anthropic" | "mistral" | "openrouter" | "ocrspace" | "none";
   text: string;
   raw?: unknown;
   error?: string;
@@ -167,6 +167,128 @@ export async function anthropicChat(
 }
 
 /**
+ * Mistral (Pixtral vision · tier gratuito en La Plateforme).
+ * https://docs.mistral.ai/capabilities/vision/
+ */
+export async function mistralChat(
+  prompt: string,
+  options: { model?: "fast" | "pro"; system?: string; json?: boolean; temperature?: number; images?: { mimeType: string; data: string }[] } = {},
+): Promise<LLMResult> {
+  const key = process.env.MISTRAL_API_KEY;
+  if (!key) return { ok: false, provider: "none", text: "", error: "Mistral key missing" };
+
+  // pixtral-12b-2409 es el modelo de visión gratuito en La Plateforme.
+  const model =
+    options.model === "pro"
+      ? process.env.MISTRAL_PRO_MODEL ?? "pixtral-large-latest"
+      : process.env.MISTRAL_FAST_MODEL ?? "pixtral-12b-2409";
+
+  const content: Array<{ type: string; text?: string; image_url?: string }> = [{ type: "text", text: prompt }];
+  for (const img of options.images ?? []) {
+    content.push({ type: "image_url", image_url: `data:${img.mimeType};base64,${img.data}` });
+  }
+
+  const res = await fetch("https://api.mistral.ai/v1/chat/completions", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model,
+      messages: [
+        ...(options.system ? [{ role: "system", content: options.system }] : []),
+        { role: "user", content },
+      ],
+      temperature: options.temperature ?? 0.1,
+      max_tokens: 4000,
+      ...(options.json ? { response_format: { type: "json_object" } } : {}),
+    }),
+  });
+  if (!res.ok) {
+    const errText = await res.text().catch(() => "");
+    return { ok: false, provider: "mistral", text: "", error: `Mistral ${res.status}: ${errText.slice(0, 240)}` };
+  }
+  const data = await res.json();
+  return { ok: true, provider: "mistral", text: data?.choices?.[0]?.message?.content ?? "", raw: data };
+}
+
+/**
+ * OpenRouter — proxy a muchos modelos. Hay modelos con tier ":free" como
+ * meta-llama/llama-3.2-11b-vision-instruct:free y google/gemini-2.0-flash-exp:free.
+ * https://openrouter.ai/docs
+ */
+export async function openRouterChat(
+  prompt: string,
+  options: { model?: string; system?: string; json?: boolean; temperature?: number; images?: { mimeType: string; data: string }[] } = {},
+): Promise<LLMResult> {
+  const key = process.env.OPENROUTER_API_KEY;
+  if (!key) return { ok: false, provider: "none", text: "", error: "OpenRouter key missing" };
+
+  const model = options.model ?? process.env.OPENROUTER_MODEL ?? "meta-llama/llama-3.2-11b-vision-instruct:free";
+
+  const content: Array<{ type: string; text?: string; image_url?: { url: string } }> = [{ type: "text", text: prompt }];
+  for (const img of options.images ?? []) {
+    content.push({ type: "image_url", image_url: { url: `data:${img.mimeType};base64,${img.data}` } });
+  }
+
+  const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${key}`,
+      "Content-Type": "application/json",
+      "HTTP-Referer": process.env.NEXT_PUBLIC_APP_URL ?? "https://modelo26.app",
+      "X-Title": "Modelo 26",
+    },
+    body: JSON.stringify({
+      model,
+      messages: [
+        ...(options.system ? [{ role: "system", content: options.system }] : []),
+        { role: "user", content },
+      ],
+      temperature: options.temperature ?? 0.1,
+      max_tokens: 4000,
+      ...(options.json ? { response_format: { type: "json_object" } } : {}),
+    }),
+  });
+  if (!res.ok) {
+    const errText = await res.text().catch(() => "");
+    return { ok: false, provider: "openrouter", text: "", error: `OpenRouter ${res.status}: ${errText.slice(0, 240)}` };
+  }
+  const data = await res.json();
+  return { ok: true, provider: "openrouter", text: data?.choices?.[0]?.message?.content ?? "", raw: data };
+}
+
+/**
+ * OCR.space — extracción pura de texto (sin LLM). Tier gratuito 25k req/mes
+ * con API key gratuita "helloworld" (anónima) o registrarte para una propia.
+ * Útil como puente: extrae texto del PDF/imagen, luego se pasa a Groq/Gemini
+ * para que devuelva el JSON estructurado de la factura.
+ * https://ocr.space/ocrapi
+ */
+export async function ocrSpaceExtract(
+  mimeType: string,
+  base64: string,
+  options: { language?: string } = {},
+): Promise<LLMResult> {
+  const key = process.env.OCRSPACE_API_KEY ?? "helloworld";
+  const form = new FormData();
+  form.append("apikey", key);
+  form.append("language", options.language ?? "spa");
+  form.append("isOverlayRequired", "false");
+  form.append("OCREngine", "2");
+  form.append("base64Image", `data:${mimeType};base64,${base64}`);
+
+  const res = await fetch("https://api.ocr.space/parse/image", { method: "POST", body: form });
+  if (!res.ok) {
+    return { ok: false, provider: "ocrspace", text: "", error: `OCR.space ${res.status}` };
+  }
+  const data = await res.json();
+  if (data?.IsErroredOnProcessing) {
+    return { ok: false, provider: "ocrspace", text: "", error: (data?.ErrorMessage ?? []).join(" ").slice(0, 240) };
+  }
+  const text = (data?.ParsedResults ?? []).map((p: { ParsedText?: string }) => p.ParsedText ?? "").join("\n");
+  return { ok: true, provider: "ocrspace", text, raw: data };
+}
+
+/**
  * Orden de proveedores:
  * - OCR / visión: Gemini (flash, único que soporta imágenes con tus claves
  *   actuales) → si Gemini falla y tienes Anthropic/OpenAI, prueba esos.
@@ -181,7 +303,7 @@ export async function bestAvailableJSON(
   const hasImages = (options.images?.length ?? 0) > 0;
   const order: Array<{ name: string; run: () => Promise<LLMResult> }> = [];
 
-  // 1) Gemini PRIMERO siempre (cubre visión y texto, y es lo que tienes).
+  // 1) Gemini flash primero (gratuito, visión incluida).
   if (process.env.GEMINI_API_KEY) {
     const buildGemini = (model: "fast" | "pro") => () =>
       geminiGenerate(
@@ -191,16 +313,68 @@ export async function bestAvailableJSON(
         ],
         { model, json: true, system: options.system },
       );
-    // Flash primero porque la mayoría de claves solo dan acceso a flash.
     order.push({ name: "gemini-flash", run: buildGemini("fast") });
-    // Solo intentamos pro si el usuario explícitamente configura un modelo
-    // distinto de flash en GEMINI_PRO_MODEL.
     if ((process.env.GEMINI_PRO_MODEL ?? "gemini-2.5-flash") !== "gemini-2.5-flash") {
       order.push({ name: "gemini-pro", run: buildGemini("pro") });
     }
   }
 
-  // 2) Groq como fallback de texto (no soporta visión).
+  // 2) Mistral Pixtral (gratuito con visión en La Plateforme).
+  if (process.env.MISTRAL_API_KEY) {
+    order.push({
+      name: "mistral-pixtral-12b",
+      run: () => mistralChat(prompt, { model: "fast", system: options.system, json: true, images: options.images }),
+    });
+    if (process.env.MISTRAL_PRO_MODEL) {
+      order.push({
+        name: "mistral-pixtral-large",
+        run: () => mistralChat(prompt, { model: "pro", system: options.system, json: true, images: options.images }),
+      });
+    }
+  }
+
+  // 3) OpenRouter con modelo free (Llama 3.2 Vision o Gemini Flash free).
+  if (process.env.OPENROUTER_API_KEY) {
+    order.push({
+      name: "openrouter-llama-vision-free",
+      run: () =>
+        openRouterChat(prompt, {
+          model: "meta-llama/llama-3.2-11b-vision-instruct:free",
+          system: options.system,
+          json: true,
+          images: options.images,
+        }),
+    });
+    if (hasImages) {
+      order.push({
+        name: "openrouter-gemini-free",
+        run: () =>
+          openRouterChat(prompt, {
+            model: "google/gemini-2.0-flash-exp:free",
+            system: options.system,
+            json: true,
+            images: options.images,
+          }),
+      });
+    }
+  }
+
+  // 4) OCR.space → Groq: extrae texto del documento y luego pide JSON a Groq.
+  //    Solo se intenta si: hay imagen, y tenemos Groq (o cualquier text-only LLM).
+  if (hasImages && options.images && options.images.length > 0 && process.env.GROQ_API_KEY) {
+    order.push({
+      name: "ocrspace-then-groq",
+      run: async () => {
+        const img = options.images![0];
+        const ocr = await ocrSpaceExtract(img.mimeType, img.data);
+        if (!ocr.ok || !ocr.text.trim()) return { ok: false, provider: "ocrspace", text: "", error: ocr.error ?? "OCR.space vacío" };
+        const enriched = `${prompt}\n\nTexto extraído del documento (OCR):\n---\n${ocr.text.slice(0, 12000)}\n---\n\nResponde SOLO con el JSON pedido.`;
+        return await groqChat(enriched, { model: "pro", system: options.system, json: true });
+      },
+    });
+  }
+
+  // 5) Groq texto puro (cuando no hay imagen).
   if (!hasImages && process.env.GROQ_API_KEY) {
     order.push({
       name: "groq-llama-70b",
@@ -212,7 +386,7 @@ export async function bestAvailableJSON(
     });
   }
 
-  // 3) OpenAI / Anthropic — solo si están configurados (no es tu caso).
+  // 6) OpenAI / Anthropic — solo si están configurados.
   if (process.env.OPENAI_API_KEY) {
     order.push({
       name: "openai",
@@ -236,15 +410,10 @@ export async function bestAvailableJSON(
       ok: false,
       provider: "none",
       text: "",
-      error: "No hay proveedor IA configurado. Define GEMINI_API_KEY (recomendado para OCR) o GROQ_API_KEY en Vercel.",
-    };
-  }
-  if (hasImages && !process.env.GEMINI_API_KEY && !process.env.OPENAI_API_KEY && !process.env.ANTHROPIC_API_KEY) {
-    return {
-      ok: false,
-      provider: "none",
-      text: "",
-      error: "El OCR necesita un proveedor con visión. Configura GEMINI_API_KEY (gratuito) en Vercel. Groq solo soporta texto.",
+      error:
+        "No hay proveedor IA configurado. Para OCR (visión) configura una de estas keys en Vercel (todas tienen tier gratuito): " +
+        "GEMINI_API_KEY · MISTRAL_API_KEY (Pixtral) · OPENROUTER_API_KEY (Llama Vision free) · OCRSPACE_API_KEY. " +
+        "Para texto basta GROQ_API_KEY.",
     };
   }
 
