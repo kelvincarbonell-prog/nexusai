@@ -8,6 +8,8 @@ import {
   Home,
   FileText,
   Receipt,
+  ReceiptText,
+  ScanLine,
   Package,
   Users,
   Calculator,
@@ -46,6 +48,7 @@ const ClienteSolicitudes = dynamic(() => import("@/components/clientes/cliente-s
 const ClienteMensajes = dynamic(() => import("@/components/clientes/cliente-mensajes").then((m) => m.ClienteMensajes), { loading: () => <p className="muted">Cargando…</p>, ssr: false });
 const CalendarioFiscal = dynamic(() => import("@/components/aeat/calendario-fiscal").then((m) => m.CalendarioFiscal), { loading: () => <p className="muted">Cargando…</p>, ssr: false });
 const ImportacionEspecifica = dynamic(() => import("@/components/clientes/importacion-especifica").then((m) => m.ImportacionEspecifica), { loading: () => <p className="muted">Cargando…</p>, ssr: false });
+const CrearFactura = dynamic(() => import("@/components/clientes/crear-factura").then((m) => m.CrearFactura), { loading: () => <p className="muted">Cargando…</p>, ssr: false });
 
 type Empresa = {
   id: string;
@@ -60,15 +63,17 @@ type Empresa = {
 // Estructura inspirada en el legacy Nexus portal.
 type SectionKey =
   | "inicio"
-  | "facturas"
+  | "lector_ingresos"
+  | "ingresos"
+  | "lector_gastos"
   | "gastos"
+  | "comerciales"
   | "mensajes"
   | "solicitudes"
   | "documentos"
   | "modelos"
   | "obligaciones"
   | "laboral"
-  | "albaranes"
   | "bancos"
   | "firmas"
   | "auditoria"
@@ -85,26 +90,34 @@ type Section = {
 
 // Ordenadas por frecuencia/importancia real de uso para un cliente.
 const SECTIONS: Section[] = [
-  // Diario / muy frecuente
   { key: "inicio", label: "Inicio", icon: Home },
+
+  // INGRESOS: lector OCR y gestión de facturas emitidas
+  { key: "lector_ingresos", label: "Lector ingresos", icon: ReceiptText },
   {
-    key: "facturas",
-    label: "Facturas",
+    key: "ingresos",
+    label: "Ingresos",
     icon: FileText,
     subTabs: [
-      { key: "listado", label: "Listado" },
-      { key: "lector", label: "Lector ingresos (OCR)" },
+      { key: "crear", label: "Crear factura" },
+      { key: "listado", label: "Listado de facturas" },
       { key: "presupuestos", label: "Presupuestos" },
       { key: "recurrentes", label: "Recurrentes" },
     ],
   },
+
+  // GASTOS: lector OCR y listado
+  { key: "lector_gastos", label: "Lector gastos", icon: ScanLine },
+  { key: "gastos", label: "Gastos", icon: Receipt },
+
+  // Documentos comerciales (antes "Albaranes")
   {
-    key: "gastos",
-    label: "Gastos & OCR",
-    icon: Receipt,
+    key: "comerciales",
+    label: "Documentos comerciales",
+    icon: Package,
     subTabs: [
-      { key: "listado", label: "Listado" },
-      { key: "lector", label: "Lector gastos (OCR)" },
+      { key: "albaranes", label: "Albaranes" },
+      { key: "presupuestos", label: "Presupuestos" },
     ],
   },
   { key: "mensajes", label: "Mensajes", icon: MessageSquare },
@@ -139,7 +152,6 @@ const SECTIONS: Section[] = [
   },
 
   // Ocasional
-  { key: "albaranes", label: "Albaranes", icon: Package },
   { key: "bancos", label: "Bancos", icon: Landmark },
   { key: "firmas", label: "Cl@ve & firmas", icon: PenLine },
   { key: "auditoria", label: "Auditoría", icon: History },
@@ -174,15 +186,17 @@ export function ClienteWorkspace({ empresa }: { empresa: Empresa }) {
   const [section, setSection] = useState<SectionKey>("inicio");
   const [subTab, setSubTab] = useState<Record<SectionKey, string>>({
     inicio: "",
-    facturas: "listado",
-    gastos: "listado",
+    lector_ingresos: "",
+    ingresos: "crear",
+    lector_gastos: "",
+    gastos: "",
+    comerciales: "albaranes",
     mensajes: "",
     solicitudes: "",
     documentos: "todos",
     modelos: "",
     obligaciones: "",
     laboral: "trabajadores",
-    albaranes: "",
     bancos: "",
     firmas: "",
     auditoria: "",
@@ -339,33 +353,39 @@ export function ClienteWorkspace({ empresa }: { empresa: Empresa }) {
           {/* INICIO */}
           {section === "inicio" ? <ClienteResumen empresaId={empresa.id} /> : null}
 
-          {/* FACTURAS · ingresos */}
-          {section === "facturas" && activeSub === "listado" ? <BillingWorkspace empresas={empresaSingleton} initial="facturas" /> : null}
-          {section === "facturas" && activeSub === "lector" ? <OcrUpload empresaId={empresa.id} modo="ingreso" /> : null}
-          {section === "facturas" && activeSub === "presupuestos" ? <BillingWorkspace empresas={empresaSingleton} initial="presupuestos" /> : null}
-          {section === "facturas" && activeSub === "recurrentes" ? <BillingWorkspace empresas={empresaSingleton} initial="recurrentes" /> : null}
+          {/* LECTOR INGRESOS — su propia sección */}
+          {section === "lector_ingresos" ? <OcrUpload empresaId={empresa.id} modo="ingreso" /> : null}
 
-          {/* GASTOS & OCR */}
-          {section === "gastos" && activeSub === "listado" ? <ClienteGastos empresaId={empresa.id} /> : null}
-          {section === "gastos" && activeSub === "lector" ? <OcrUpload empresaId={empresa.id} modo="gasto" /> : null}
+          {/* INGRESOS — facturas emitidas, crear, presupuestos, recurrentes */}
+          {section === "ingresos" && activeSub === "crear" ? <CrearFactura empresaId={empresa.id} /> : null}
+          {section === "ingresos" && activeSub === "listado" ? <BillingWorkspace empresas={empresaSingleton} initial="facturas" /> : null}
+          {section === "ingresos" && activeSub === "presupuestos" ? <BillingWorkspace empresas={empresaSingleton} initial="presupuestos" /> : null}
+          {section === "ingresos" && activeSub === "recurrentes" ? <BillingWorkspace empresas={empresaSingleton} initial="recurrentes" /> : null}
 
-          {/* ALBARANES */}
-          {section === "albaranes" ? (
+          {/* LECTOR GASTOS — su propia sección */}
+          {section === "lector_gastos" ? <OcrUpload empresaId={empresa.id} modo="gasto" /> : null}
+
+          {/* GASTOS — listado de gastos + facturas recibidas */}
+          {section === "gastos" ? <ClienteGastos empresaId={empresa.id} /> : null}
+
+          {/* DOCUMENTOS COMERCIALES (Albaranes + presupuestos comerciales) */}
+          {section === "comerciales" && activeSub === "albaranes" ? (
             <section className="grid">
               <article className="card span-12" style={{ textAlign: "center", padding: 32 }}>
                 <span className="card-eyebrow">Albaranes</span>
                 <p style={{ marginTop: 12, fontSize: 14, maxWidth: 520, marginInline: "auto" }}>
-                  Los albaranes se gestionan desde Facturación → Presupuestos. Genera el albarán, conviértelo en
-                  factura o recurrente.
+                  Los albaranes se generan desde un presupuesto firmado. Crea el presupuesto en la pestaña
+                  siguiente y conviértelo en albarán o factura.
                 </p>
                 <div className="button-row" style={{ justifyContent: "center", marginTop: 16 }}>
-                  <button className="button" onClick={() => { setSection("facturas"); setSub("facturas", "presupuestos"); }}>
+                  <button className="button" onClick={() => { setSection("comerciales"); setSub("comerciales", "presupuestos"); }}>
                     → Ir a Presupuestos / Albaranes
                   </button>
                 </div>
               </article>
             </section>
           ) : null}
+          {section === "comerciales" && activeSub === "presupuestos" ? <BillingWorkspace empresas={empresaSingleton} initial="presupuestos" /> : null}
 
           {/* LABORAL con sub-tabs */}
           {section === "laboral" && activeSub === "trabajadores" ? <WorkerManager empresas={empresaSingleton} initialTab="trabajadores" /> : null}
