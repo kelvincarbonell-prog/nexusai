@@ -30,10 +30,12 @@ type Fichaje = { id: string; trabajador_id: string; fecha: string; hora_entrada?
 const TIPO_CONTRATO = ["indefinido", "temporal", "obra y servicio", "formacion", "practicas", "fijo discontinuo"];
 const TIPO_AUSENCIA = ["vacaciones", "it", "permiso", "maternidad", "paternidad", "excedencia", "otro"];
 
-export function WorkerManager({ empresas }: { empresas: Empresa[] }) {
+type LaboralTab = "trabajadores" | "ausencias" | "horario" | "nominas" | "calendario";
+
+export function WorkerManager({ empresas, initialTab = "trabajadores" }: { empresas: Empresa[]; initialTab?: LaboralTab }) {
   const supabase = useMemo(() => createBrowserSupabase(), []);
   const [empresaId, setEmpresaId] = useState(empresas[0]?.id ?? "");
-  const [tab, setTab] = useState<"trabajadores" | "ausencias" | "horario" | "nominas" | "calendario">("trabajadores");
+  const [tab, setTab] = useState<LaboralTab>(initialTab);
   const [trabajadores, setTrabajadores] = useState<Trabajador[]>([]);
   const [ausencias, setAusencias] = useState<Ausencia[]>([]);
   const [fichajes, setFichajes] = useState<Fichaje[]>([]);

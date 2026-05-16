@@ -25,16 +25,57 @@ export type GastoImport = {
   total: number;
 };
 
+/**
+ * Aliases conocidos para columnas de CSV/Excel/TXT.
+ * Cubre formatos genéricos + A3 ECO, A3 CON, Contasol, Quipu, SAGE 50,
+ * Holded, FacturaScripts y exportaciones bancarias.
+ */
 const HEADERS_MAP: Record<string, string[]> = {
-  numero: ["numero", "número", "num", "nº", "factura", "n.factura", "invoice"],
-  contacto_nombre: ["cliente", "proveedor", "razon social", "razón social", "nombre", "contacto", "company"],
-  contacto_nif: ["nif", "cif", "vat", "tax id", "dni"],
-  fecha_emision: ["fecha", "fecha emisión", "fecha emision", "f.emision", "issue date", "date"],
-  fecha_vencimiento: ["vencimiento", "fecha vencimiento", "due date"],
-  base: ["base", "base imponible", "subtotal", "neto", "amount"],
-  iva: ["iva", "vat", "impuesto", "tax"],
-  total: ["total", "importe", "total factura", "amount due"],
-  concepto: ["concepto", "descripcion", "descripción", "detalle"],
+  numero: [
+    "numero", "número", "num", "nº", "n.º", "factura", "n.factura", "n_factura",
+    "invoice", "invoice_no", "doc", "documento", "n_documento", "ref", "referencia",
+    "asiento", // A3/Contasol journal entry
+    "serie_numero", "n_doc",
+  ],
+  contacto_nombre: [
+    "cliente", "proveedor", "razon social", "razón social", "razonsocial",
+    "nombre", "contacto", "company", "tercero", "denominacion", "denominación",
+    "nombre_cliente", "nombre_proveedor", "cliente_nombre", "client",
+  ],
+  contacto_nif: [
+    "nif", "cif", "nif/cif", "cif/nif", "vat", "tax id", "tax_id", "dni",
+    "nif_tercero", "documento_identidad", "identificacion", "identificación",
+    "vat_number",
+  ],
+  fecha_emision: [
+    "fecha", "fecha emisión", "fecha emision", "fecha_emision", "f.emision",
+    "issue date", "issue_date", "date", "fecha_factura", "fecha_doc",
+    "fecha asiento", "fecha_asiento",
+  ],
+  fecha_vencimiento: [
+    "vencimiento", "fecha vencimiento", "fecha_vencimiento", "fecha_venc",
+    "due date", "due_date", "fec_vto", "f_vencimiento",
+  ],
+  base: [
+    "base", "base imponible", "base_imponible", "subtotal", "neto", "amount",
+    "importe_base", "importeneto", "imponible", "net", "net_amount",
+    "subtotal_factura",
+  ],
+  iva: [
+    "iva", "vat", "impuesto", "tax", "iva_repercutido", "iva_soportado",
+    "cuota_iva", "tax_amount", "iva_importe",
+  ],
+  total: [
+    "total", "importe", "total factura", "total_factura", "amount due", "amount_due",
+    "total_documento", "importe_total", "total a pagar", "totalfactura",
+    "haber", // Contasol
+    "debe",  // A3/Contasol cuando el documento es gasto
+    "gross", "gross_amount",
+  ],
+  concepto: [
+    "concepto", "descripcion", "descripción", "detalle", "asunto", "subject",
+    "description", "linea", "line_description", "memo",
+  ],
 };
 
 export function parseCsv(content: string): { headers: string[]; rows: FilaCSV[]; separator: string } {
