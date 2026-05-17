@@ -116,7 +116,9 @@ export const metadata: Metadata = {
     telephone: false,
   },
   verification: {
-    google: "5U4MuDx0OXbLoyCz6L5JcTXKBq76pxJLWBKVxXrgRVU",
+    // El token de Google Search Console va aquí solo si elegiste verificación
+    // "URL prefix" + "HTML tag". Si verificas por DNS TXT, déjalo vacío.
+    // google: "...",
     // yandex: "...",
     // other: { "msvalidate.01": "..." },
   },
