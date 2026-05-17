@@ -3,6 +3,8 @@ import { AppShell } from "@/components/app-shell";
 import { JournalEntryForm } from "@/components/accounting/journal-entry-form";
 import { CierreAperturaPanel } from "@/components/accounting/cierre-apertura-panel";
 import { AutoAsientosPanel } from "@/components/accounting/auto-asientos-panel";
+import { LibroIvaPanel } from "@/components/accounting/libro-iva-panel";
+import { PyGBalancePanel } from "@/components/accounting/pyg-balance-panel";
 import { StatCard } from "@/components/stat-card";
 import { getAccountingOverview } from "@/lib/accounting/queries";
 import { getCurrentProfile, isSuperAdmin } from "@/lib/supabase/profile";
@@ -118,6 +120,8 @@ export default async function AccountingPage() {
               <p className="muted">Base preparada para importar Norma 43, CAMT.053 o CSV y casar movimientos con asientos.</p>
             </article>
             <AutoAsientosPanel empresaId={data.selectedCompany.id} />
+            <PyGBalancePanel empresaId={data.selectedCompany.id} />
+            <LibroIvaPanel empresaId={data.selectedCompany.id} />
             <CierreAperturaPanel empresaId={data.selectedCompany.id} defaultEjercicio={new Date().getUTCFullYear() - 1} />
             <article className="card span-4">
               <BookOpen size={26} color="#145c4a" aria-hidden="true" />
