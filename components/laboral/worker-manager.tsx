@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 import { PayrollPanel } from "@/components/laboral/payroll-panel";
 import { NominasMasivasPanel } from "@/components/laboral/nominas-masivas-panel";
+import { SiltraFanPanel } from "@/components/laboral/siltra-fan-panel";
 import { CalendarioLaboral } from "@/components/laboral/calendario-laboral";
 import { FiniquitoModal } from "@/components/laboral/finiquito-modal";
 import { BonificacionesModal } from "@/components/laboral/bonificaciones-modal";
@@ -404,6 +405,7 @@ export function WorkerManager({ empresas, initialTab = "trabajadores" }: { empre
       {tab === "nominas" ? (
         <div style={{ display: "grid", gap: 18 }}>
           <NominasMasivasPanel empresaId={empresaId} />
+          <SiltraFanPanel empresaId={empresaId} />
           <PayrollPanel empresaId={empresaId} trabajadores={trabajadores} />
         </div>
       ) : null}

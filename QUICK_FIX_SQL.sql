@@ -500,6 +500,19 @@ create index if not exists idx_notificaciones_empresa on public.notificaciones(e
 alter table public.notificaciones enable row level security;
 
 -- =========================================================================
+-- SPRINT 12: SILTRA FAN + convenios colectivos
+-- =========================================================================
+-- Datos del trabajador necesarios para SILTRA
+alter table public.trabajadores add column if not exists apellidos text;
+alter table public.trabajadores add column if not exists sexo text;                 -- "1" hombre, "6" mujer (códigos TGSS)
+alter table public.trabajadores add column if not exists grupo_cotizacion integer;  -- 1..11
+alter table public.trabajadores add column if not exists convenio_codigo text;      -- código BOE del convenio
+alter table public.trabajadores add column if not exists categoria_convenio text;   -- ej. "OF1", "AUX"
+
+-- Empresa: Código Cuenta Cotización
+alter table public.empresas add column if not exists ccc text;
+
+-- =========================================================================
 -- ÚLTIMO PASO: refresca el cache de PostgREST sin reiniciar
 -- =========================================================================
 notify pgrst, 'reload schema';
