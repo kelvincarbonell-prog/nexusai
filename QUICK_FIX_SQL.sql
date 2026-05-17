@@ -478,6 +478,28 @@ create index if not exists idx_bot_scans_fecha on public.bot_scans(fecha desc);
 alter table public.bot_scans enable row level security;
 
 -- =========================================================================
+-- SPRINT 10: NOTIFICACIONES gestor (mensajes, solicitudes, OCR, …)
+-- =========================================================================
+create table if not exists public.notificaciones (
+  id uuid primary key default gen_random_uuid(),
+  destinatario_id uuid not null references auth.users(id) on delete cascade,
+  empresa_id uuid references public.empresas(id) on delete cascade,
+  tipo text not null,                       -- mensaje_cliente | solicitud_cliente | ocr_pendiente | documento_subido | factura_vencida | sistema
+  titulo text not null,
+  detalle text,
+  url text,
+  severidad text not null default 'info',   -- info | warn | bad | good
+  leida boolean not null default false,
+  leida_at timestamptz,
+  metadata jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+create index if not exists idx_notificaciones_destinatario_leida on public.notificaciones(destinatario_id, leida, created_at desc);
+create index if not exists idx_notificaciones_empresa on public.notificaciones(empresa_id, created_at desc);
+
+alter table public.notificaciones enable row level security;
+
+-- =========================================================================
 -- ÚLTIMO PASO: refresca el cache de PostgREST sin reiniciar
 -- =========================================================================
 notify pgrst, 'reload schema';

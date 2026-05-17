@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
+import { CATALOGO_SOLICITUDES, getSolicitudByKey } from "@/lib/solicitudes/catalogo";
 
 type Solicitud = {
   id: string;
@@ -13,23 +14,27 @@ type Solicitud = {
 };
 
 type SubTab = "todas" | "pendiente" | "en_proceso" | "completada";
-
-const TIPOS = [
-  { key: "general", label: "Consulta general" },
-  { key: "alta_ss", label: "Alta SS trabajador" },
-  { key: "baja_ss", label: "Baja SS trabajador" },
-  { key: "it_baja", label: "Parte de baja IT" },
-  { key: "vacaciones", label: "Solicitud de vacaciones" },
-  { key: "presupuesto", label: "Solicitar presupuesto" },
-  { key: "documento", label: "Pedir documento" },
-];
+type Grupo = "laboral" | "fiscal" | "general";
 
 export function ClienteSolicitudes({ empresaId }: { empresaId: string }) {
   const supabase = useMemo(() => createBrowserSupabase(), []);
   const [items, setItems] = useState<Solicitud[]>([]);
   const [tab, setTab] = useState<SubTab>("todas");
   const [showForm, setShowForm] = useState(false);
+  const [grupoActivo, setGrupoActivo] = useState<Grupo>("laboral");
   const [draft, setDraft] = useState({ tipo: "general", descripcion: "", prioridad: "normal" as "normal" | "alta" | "urgente" });
+
+  function seleccionarTipo(key: string) {
+    const cat = getSolicitudByKey(key);
+    setDraft((d) => ({
+      ...d,
+      tipo: key,
+      prioridad: cat?.prioridad_default ?? "normal",
+    }));
+  }
+
+  const grupos: Grupo[] = ["laboral", "fiscal", "general"];
+  const tiposGrupo = CATALOGO_SOLICITUDES.filter((s) => s.grupo === grupoActivo);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -112,34 +117,75 @@ export function ClienteSolicitudes({ empresaId }: { empresaId: string }) {
         </div>
 
         {showForm ? (
-          <div className="form two-cols" style={{ marginTop: 16, padding: 16, background: "color-mix(in srgb, var(--accent) 5%, transparent)", borderRadius: 10 }}>
-            <label className="label">
-              Tipo
-              <select className="input" value={draft.tipo} onChange={(e) => setDraft({ ...draft, tipo: e.target.value })}>
-                {TIPOS.map((t) => <option key={t.key} value={t.key}>{t.label}</option>)}
-              </select>
-            </label>
-            <label className="label">
-              Prioridad
-              <select className="input" value={draft.prioridad} onChange={(e) => setDraft({ ...draft, prioridad: e.target.value as typeof draft.prioridad })}>
-                <option value="normal">Normal</option>
-                <option value="alta">Alta</option>
-                <option value="urgente">⚡ Urgente</option>
-              </select>
-            </label>
-            <label className="label span-form">
-              Descripción
-              <textarea
-                className="input textarea"
-                value={draft.descripcion}
-                onChange={(e) => setDraft({ ...draft, descripcion: e.target.value })}
-                placeholder="Describe con detalle qué necesitas…"
-                style={{ minHeight: 100 }}
-              />
-            </label>
-            <div className="span-form" style={{ display: "flex", justifyContent: "flex-end" }}>
+          <div style={{ marginTop: 16, padding: 16, background: "color-mix(in srgb, var(--accent) 5%, transparent)", borderRadius: 10, display: "grid", gap: 12 }}>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+              {grupos.map((g) => (
+                <button
+                  key={g}
+                  type="button"
+                  onClick={() => setGrupoActivo(g)}
+                  className={`button compact ${grupoActivo === g ? "" : "ghost"}`}
+                  style={{ textTransform: "capitalize" }}
+                >
+                  {g}
+                </button>
+              ))}
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 8 }}>
+              {tiposGrupo.map((cat) => {
+                const active = draft.tipo === cat.key;
+                return (
+                  <button
+                    key={cat.key}
+                    type="button"
+                    onClick={() => seleccionarTipo(cat.key)}
+                    style={{
+                      textAlign: "left",
+                      padding: 10,
+                      borderRadius: 10,
+                      border: `1px solid ${active ? "var(--accent)" : "var(--border, #e5e7eb)"}`,
+                      background: active ? "color-mix(in srgb, var(--accent) 14%, transparent)" : "var(--card, #fff)",
+                      cursor: "pointer",
+                      display: "grid",
+                      gap: 4,
+                    }}
+                  >
+                    <strong style={{ fontSize: 13 }}>{cat.label}</strong>
+                    <span style={{ fontSize: 11, opacity: 0.7, lineHeight: 1.35 }}>{cat.descripcion}</span>
+                    {cat.requiere_documento ? (
+                      <span style={{ fontSize: 10, color: "var(--accent)", fontWeight: 600 }}>requiere adjuntar documento</span>
+                    ) : null}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 200px", gap: 12, alignItems: "end" }}>
+              <label className="label">
+                Detalles
+                <textarea
+                  className="input textarea"
+                  value={draft.descripcion}
+                  onChange={(e) => setDraft({ ...draft, descripcion: e.target.value })}
+                  placeholder="Describe con detalle qué necesitas, fechas, nombres, importes…"
+                  style={{ minHeight: 90 }}
+                />
+              </label>
+              <label className="label">
+                Prioridad
+                <select className="input" value={draft.prioridad} onChange={(e) => setDraft({ ...draft, prioridad: e.target.value as typeof draft.prioridad })}>
+                  <option value="normal">Normal</option>
+                  <option value="alta">Alta</option>
+                  <option value="urgente">Urgente</option>
+                </select>
+              </label>
+            </div>
+
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+              <button className="button ghost compact" onClick={() => setShowForm(false)}>Cancelar</button>
               <button className="button" onClick={enviar} disabled={busy}>
-                {busy ? "Enviando…" : "Enviar solicitud"}
+                {busy ? "Enviando…" : "Enviar al gestor"}
               </button>
             </div>
           </div>
@@ -174,11 +220,11 @@ export function ClienteSolicitudes({ empresaId }: { empresaId: string }) {
                 const prio = (s.metadata?.prioridad as string | undefined) ?? "normal";
                 return (
                   <tr key={s.id}>
-                    <td><strong>{TIPOS.find((t) => t.key === s.tipo)?.label ?? s.tipo}</strong></td>
+                    <td><strong>{getSolicitudByKey(s.tipo)?.label ?? s.tipo}</strong></td>
                     <td style={{ fontSize: 13, maxWidth: 380 }}>{s.descripcion ?? "—"}</td>
                     <td>
                       <span className={`pill ${prio === "urgente" ? "bad" : prio === "alta" ? "warn" : "plain"}`} style={{ fontSize: 11 }}>
-                        {prio === "urgente" ? "⚡ urgente" : prio}
+                        {prio}
                       </span>
                     </td>
                     <td>

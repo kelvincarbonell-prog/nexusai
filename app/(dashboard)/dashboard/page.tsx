@@ -3,6 +3,7 @@ import { UpcomingObligations } from "@/components/dashboard/upcoming-obligations
 import { TareasWidget } from "@/components/dashboard/tareas-widget";
 import { OnboardingWizard } from "@/components/dashboard/onboarding-wizard";
 import { CarteraClientes } from "@/components/dashboard/cartera-clientes";
+import { SolicitudesGestorPanel } from "@/components/dashboard/solicitudes-gestor-panel";
 import { SetupRequired } from "@/components/setup-required";
 import { hasSupabaseConfig } from "@/lib/env";
 import { createServerSupabase } from "@/lib/supabase/server";
@@ -194,6 +195,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
           </div>
         </article>
 
+        <SolicitudesGestorPanel />
         <CarteraClientes initialCount={companyCount ?? empresas.length} />
         {activeView !== "panel" ? (
           <p className="muted span-12" style={{ marginTop: 0, fontSize: 13 }}>

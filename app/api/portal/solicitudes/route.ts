@@ -48,5 +48,35 @@ export async function POST(request: NextRequest) {
     .select("*")
     .single();
   if (error || !data) return jsonError(error?.message ?? "No se pudo crear", 500);
+
+  // Notifica al gestor si el remitente no es él mismo
+  const { data: empresa } = await admin
+    .from("empresas")
+    .select("gestor_id,nombre")
+    .eq("id", parsed.data.empresa_id)
+    .maybeSingle();
+  if (empresa && empresa.gestor_id && empresa.gestor_id !== user.id) {
+    const [{ crearNotificacionGestor }, { getSolicitudByKey }] = await Promise.all([
+      import("@/lib/notificaciones/crear"),
+      import("@/lib/solicitudes/catalogo"),
+    ]);
+    const cat = getSolicitudByKey(parsed.data.tipo);
+    const titulo = `Nueva solicitud · ${empresa.nombre ?? "Cliente"}`;
+    const detalle = cat
+      ? `${cat.label}${parsed.data.descripcion ? ` — ${parsed.data.descripcion.slice(0, 120)}` : ""}`
+      : (parsed.data.descripcion ?? parsed.data.tipo).slice(0, 160);
+    const sev =
+      parsed.data.prioridad === "urgente" ? "bad" : parsed.data.prioridad === "alta" ? "warn" : "info";
+    await crearNotificacionGestor(admin, {
+      empresa_id: parsed.data.empresa_id,
+      tipo: "solicitud_cliente",
+      titulo,
+      detalle,
+      url: `/laboral?empresa=${parsed.data.empresa_id}&tab=solicitudes`,
+      severidad: sev,
+      metadata: { solicitud_id: data.id, tipo_solicitud: parsed.data.tipo, prioridad: parsed.data.prioridad },
+    });
+  }
+
   return NextResponse.json({ ok: true, item: data });
 }

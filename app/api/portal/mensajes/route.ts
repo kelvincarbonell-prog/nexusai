@@ -57,5 +57,26 @@ export async function POST(request: NextRequest) {
     .select("*")
     .single();
   if (error || !data) return jsonError(error?.message ?? "No se pudo enviar", 500);
+
+  // Si el remitente NO es el gestor, notifica al gestor.
+  const { data: empresa } = await admin
+    .from("empresas")
+    .select("gestor_id,nombre")
+    .eq("id", parsed.data.empresa_id)
+    .maybeSingle();
+  if (empresa && empresa.gestor_id && empresa.gestor_id !== user.id) {
+    const { crearNotificacionGestor } = await import("@/lib/notificaciones/crear");
+    const preview = parsed.data.contenido.slice(0, 140);
+    await crearNotificacionGestor(admin, {
+      empresa_id: parsed.data.empresa_id,
+      tipo: "mensaje_cliente",
+      titulo: `Nuevo mensaje · ${empresa.nombre ?? "Cliente"}`,
+      detalle: preview,
+      url: `/mensajes?empresa=${parsed.data.empresa_id}`,
+      severidad: "info",
+      metadata: { mensaje_id: data.id },
+    });
+  }
+
   return NextResponse.json({ ok: true, item: data });
 }
