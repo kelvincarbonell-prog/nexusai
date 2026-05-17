@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
+import { ChatAssistant } from "@/components/clientes/chat-assistant";
 
 type Mensaje = {
   id: string;
@@ -133,7 +134,27 @@ export function ClienteMensajes({ empresaId }: { empresaId: string }) {
 
         {error ? <p role="alert" style={{ color: "var(--bad)", margin: 0 }}>{error}</p> : null}
 
-        <div style={{ display: "flex", gap: 8, paddingTop: 12, borderTop: "1px solid var(--line)" }}>
+        <div style={{ paddingTop: 12, borderTop: "1px solid var(--line)" }}>
+          <ChatAssistant
+            empresaId={empresaId}
+            draft={draft}
+            onDraftChange={setDraft}
+            onSeleccionarSolicitud={(key) => {
+              // Redirige al cliente a la pestaña Solicitudes con el tipo pre-seleccionado.
+              if (typeof window !== "undefined") {
+                window.location.href = `?tab=solicitudes&tipo=${encodeURIComponent(key)}`;
+              }
+            }}
+            onPedirAsesor={() => {
+              // Marca el mensaje como solicitud explícita de hablar con humano
+              if (!draft.includes("[Hablar con asesor]")) {
+                setDraft((prev) => `[Hablar con asesor]\n${prev || "Necesito hablar con un asesor."}`);
+              }
+            }}
+          />
+        </div>
+
+        <div style={{ display: "flex", gap: 8, paddingTop: 8 }}>
           <input
             className="input"
             value={draft}
