@@ -214,7 +214,7 @@ export default function LandingPage() {
         </Reveal>
         <Reveal delay={60}>
           <h2 className="title" style={{ fontSize: 48, maxWidth: 880 }}>
-            Atiende <em className="gradient-text">3× más clientes</em> con el mismo equipo.
+            Atiende <em className="gradient-text">×10 más clientes</em> con el mismo equipo.
           </h2>
         </Reveal>
         <Reveal delay={120}>
