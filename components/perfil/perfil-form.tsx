@@ -20,16 +20,38 @@ export function PerfilForm({ initial }: { initial: Perfil }) {
   const fileInput = useRef<HTMLInputElement | null>(null);
 
   const [perfil, setPerfil] = useState(initial);
+  const initialMeta = (initial.metadata ?? {}) as Record<string, string | undefined>;
   const [draft, setDraft] = useState({
     nombre: initial.nombre ?? "",
     apellidos: initial.apellidos ?? "",
     nombre_gestoria: initial.nombre_gestoria ?? "",
+  });
+  const [fiscal, setFiscal] = useState({
+    nif_gestoria: initialMeta.nif_gestoria ?? "",
+    direccion: initialMeta.direccion ?? "",
+    codigo_postal: initialMeta.codigo_postal ?? "",
+    localidad: initialMeta.localidad ?? "",
+    provincia: initialMeta.provincia ?? "",
+    pais: initialMeta.pais ?? "España",
+    telefono: initialMeta.telefono ?? "",
+    email_facturacion: initialMeta.email_facturacion ?? "",
+    iban_cobros: initialMeta.iban_cobros ?? "",
+    colegio_profesional: initialMeta.colegio_profesional ?? "",
+    n_colegiado: initialMeta.n_colegiado ?? "",
+    web: initialMeta.web ?? "",
+    cnae: initialMeta.cnae ?? "",
+    epigrafe_iae: initialMeta.epigrafe_iae ?? "",
+    regimen_fiscal: initialMeta.regimen_fiscal ?? "general",
   });
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
   const [newPassword, setNewPassword] = useState("");
+
+  function setF<K extends keyof typeof fiscal>(k: K, v: string) {
+    setFiscal((p) => ({ ...p, [k]: v }));
+  }
 
   async function token() {
     const { data } = await supabase.auth.getSession();
@@ -42,15 +64,19 @@ export function PerfilForm({ initial }: { initial: Perfil }) {
     setSuccess(null);
     try {
       const tk = await token();
+      const metadata_patch = Object.fromEntries(
+        Object.entries(fiscal).map(([k, v]) => [k, v?.trim() ?? ""]),
+      );
       const res = await fetch("/api/perfil", {
         method: "PATCH",
         headers: { Authorization: `Bearer ${tk}`, "Content-Type": "application/json" },
-        body: JSON.stringify(draft),
+        body: JSON.stringify({ ...draft, metadata_patch }),
       });
       const json = await res.json();
       if (!json.ok) throw new Error(json.error ?? "Error");
       setPerfil(json.perfil);
-      setSuccess("Perfil actualizado.");
+      setSuccess("Perfil y datos fiscales guardados.");
+      setTimeout(() => setSuccess(null), 4000);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Error");
     } finally {
@@ -186,7 +212,7 @@ export function PerfilForm({ initial }: { initial: Perfil }) {
         </div>
       </article>
 
-      <article className="card span-8" style={{ display: "grid", gap: 12 }}>
+      <article className="card span-8" style={{ display: "grid", gap: 16 }}>
         <span className="card-eyebrow">Datos personales</span>
         <div className="form two-cols">
           <label className="label">
@@ -202,9 +228,91 @@ export function PerfilForm({ initial }: { initial: Perfil }) {
             <input className="input" value={draft.nombre_gestoria} onChange={(e) => setDraft({ ...draft, nombre_gestoria: e.target.value })} placeholder="Gabinete Sánchez" />
           </label>
         </div>
+
+        <span className="card-eyebrow" style={{ marginTop: 8 }}>Datos fiscales de la gestoría</span>
+        <small className="muted" style={{ fontSize: 12, marginTop: -8 }}>
+          Aparecerán en tus facturas emitidas, en la firma de modelos AEAT y en los PDF que envíes a clientes.
+        </small>
+        <div className="form two-cols">
+          <label className="label">
+            NIF / CIF de la gestoría
+            <input className="input" value={fiscal.nif_gestoria} onChange={(e) => setF("nif_gestoria", e.target.value.toUpperCase())} style={{ fontFamily: "var(--mono)" }} placeholder="B12345678" />
+          </label>
+          <label className="label">
+            CNAE / actividad
+            <input className="input" value={fiscal.cnae} onChange={(e) => setF("cnae", e.target.value)} placeholder="6920 · Actividades de contabilidad" />
+          </label>
+          <label className="label">
+            Epígrafe IAE
+            <input className="input" value={fiscal.epigrafe_iae} onChange={(e) => setF("epigrafe_iae", e.target.value)} placeholder="842 · Servicios financieros y contables" />
+          </label>
+          <label className="label">
+            Régimen fiscal
+            <select className="input" value={fiscal.regimen_fiscal} onChange={(e) => setF("regimen_fiscal", e.target.value)}>
+              <option value="general">Régimen general</option>
+              <option value="simplificado">Régimen simplificado IVA</option>
+              <option value="recargo_equivalencia">Recargo de equivalencia</option>
+              <option value="modulos">Estimación objetiva (módulos)</option>
+              <option value="autonomo">Autónomo · estimación directa</option>
+            </select>
+          </label>
+          <label className="label span-form">
+            Dirección fiscal
+            <input className="input" value={fiscal.direccion} onChange={(e) => setF("direccion", e.target.value)} placeholder="Calle Mayor, 10, 3º A" />
+          </label>
+          <label className="label">
+            Código postal
+            <input className="input" value={fiscal.codigo_postal} onChange={(e) => setF("codigo_postal", e.target.value)} placeholder="28013" style={{ fontFamily: "var(--mono)" }} />
+          </label>
+          <label className="label">
+            Localidad
+            <input className="input" value={fiscal.localidad} onChange={(e) => setF("localidad", e.target.value)} placeholder="Madrid" />
+          </label>
+          <label className="label">
+            Provincia
+            <input className="input" value={fiscal.provincia} onChange={(e) => setF("provincia", e.target.value)} placeholder="Madrid" />
+          </label>
+          <label className="label">
+            País
+            <input className="input" value={fiscal.pais} onChange={(e) => setF("pais", e.target.value)} placeholder="España" />
+          </label>
+        </div>
+
+        <span className="card-eyebrow" style={{ marginTop: 8 }}>Contacto y cobros</span>
+        <div className="form two-cols">
+          <label className="label">
+            Teléfono
+            <input type="tel" className="input" value={fiscal.telefono} onChange={(e) => setF("telefono", e.target.value)} placeholder="+34 600 000 000" />
+          </label>
+          <label className="label">
+            Email facturación
+            <input type="email" className="input" value={fiscal.email_facturacion} onChange={(e) => setF("email_facturacion", e.target.value)} placeholder="facturacion@gestoria.com" />
+          </label>
+          <label className="label">
+            Web
+            <input className="input" value={fiscal.web} onChange={(e) => setF("web", e.target.value)} placeholder="https://gestoria.com" />
+          </label>
+          <label className="label">
+            IBAN para cobros
+            <input className="input" value={fiscal.iban_cobros} onChange={(e) => setF("iban_cobros", e.target.value.toUpperCase().replace(/\s/g, ""))} style={{ fontFamily: "var(--mono)" }} placeholder="ESxx xxxx xxxx xxxx xxxx xxxx" />
+          </label>
+        </div>
+
+        <span className="card-eyebrow" style={{ marginTop: 8 }}>Colegiación profesional (opcional)</span>
+        <div className="form two-cols">
+          <label className="label">
+            Colegio profesional
+            <input className="input" value={fiscal.colegio_profesional} onChange={(e) => setF("colegio_profesional", e.target.value)} placeholder="Colegio de Economistas de Madrid" />
+          </label>
+          <label className="label">
+            Nº de colegiado
+            <input className="input" value={fiscal.n_colegiado} onChange={(e) => setF("n_colegiado", e.target.value)} placeholder="12345" />
+          </label>
+        </div>
+
         <div className="button-row" style={{ justifyContent: "flex-end" }}>
           <button className="button" onClick={guardarDatos} disabled={busy === "perfil"}>
-            {busy === "perfil" ? "Guardando…" : "Guardar cambios"}
+            {busy === "perfil" ? "Guardando…" : "Guardar perfil y datos fiscales"}
           </button>
         </div>
       </article>

@@ -333,6 +333,24 @@ insert into storage.buckets (id, name, public) values ('payroll-receipts', 'payr
 insert into storage.buckets (id, name, public) values ('avatars', 'avatars', true) on conflict (id) do nothing;
 
 -- =========================================================================
+-- PERFILES — para que el upsert de /api/perfil funcione siempre
+-- =========================================================================
+alter table public.perfiles add column if not exists email text not null default '';
+alter table public.perfiles add column if not exists nombre text;
+alter table public.perfiles add column if not exists apellidos text;
+alter table public.perfiles add column if not exists rol text not null default 'gestor';
+alter table public.perfiles add column if not exists nombre_gestoria text;
+alter table public.perfiles add column if not exists gestoria_slug text;
+alter table public.perfiles add column if not exists foto_url text;
+alter table public.perfiles add column if not exists metadata jsonb not null default '{}'::jsonb;
+alter table public.perfiles add column if not exists created_at timestamptz not null default now();
+alter table public.perfiles add column if not exists updated_at timestamptz not null default now();
+
+drop trigger if exists set_updated_at_perfiles on public.perfiles;
+create trigger set_updated_at_perfiles before update on public.perfiles
+  for each row execute function public.set_updated_at();
+
+-- =========================================================================
 -- updated_at + created_at defensivos + triggers (arregla
 -- "column documentos.updated_at does not exist")
 -- =========================================================================

@@ -6,8 +6,8 @@ import { createSupabaseAdmin } from "@/lib/supabase/admin";
 
 const UpdateSchema = z.object({
   nombre: z.string().min(1).max(180).optional(),
-  apellidos: z.string().max(180).optional(),
-  nombre_gestoria: z.string().max(180).optional(),
+  apellidos: z.string().max(180).optional().nullable(),
+  nombre_gestoria: z.string().max(180).optional().nullable(),
   foto_url: z.string().url().optional().nullable(),
   metadata_patch: z.record(z.unknown()).optional(),
 });
@@ -34,15 +34,30 @@ export async function PATCH(request: NextRequest) {
 
   const admin = createSupabaseAdmin();
   const { metadata_patch, ...rest } = parsed.data;
-  const update: Record<string, unknown> = { ...rest };
 
-  if (metadata_patch) {
-    const { data: existing } = await admin.from("perfiles").select("metadata").eq("id", user.id).maybeSingle();
-    const prevMeta = (existing?.metadata ?? {}) as Record<string, unknown>;
-    update.metadata = { ...prevMeta, ...metadata_patch };
-  }
+  // Lee el perfil actual (puede no existir aún si es la primera vez)
+  const { data: existing } = await admin
+    .from("perfiles")
+    .select("metadata")
+    .eq("id", user.id)
+    .maybeSingle();
+  const prevMeta = (existing?.metadata ?? {}) as Record<string, unknown>;
+  const newMetadata = metadata_patch ? { ...prevMeta, ...metadata_patch } : prevMeta;
 
-  const { data, error } = await admin.from("perfiles").update(update).eq("id", user.id).select("*").single();
-  if (error || !data) return jsonError(error?.message ?? "No se pudo actualizar", 500);
+  // UPSERT: crea si no existe, actualiza si existe.
+  const { data, error } = await admin
+    .from("perfiles")
+    .upsert(
+      {
+        id: user.id,
+        email: user.email ?? "",
+        ...rest,
+        ...(metadata_patch ? { metadata: newMetadata } : {}),
+      },
+      { onConflict: "id" },
+    )
+    .select("*")
+    .single();
+  if (error || !data) return jsonError(error?.message ?? "No se pudo guardar el perfil", 500);
   return NextResponse.json({ ok: true, perfil: data });
 }
