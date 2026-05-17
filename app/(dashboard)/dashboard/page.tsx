@@ -64,9 +64,11 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   const params = searchParams ? await searchParams : {};
   const activeView = params.view ?? "panel";
 
-  const [{ data: profile }, { count: companyCount }] = await Promise.all([
+  // Paralelo: perfil + count empresas + 12 primeras empresas (todo en una sola tanda).
+  const [{ data: profile }, { count: companyCount }, empresasRes] = await Promise.all([
     supabase.from("perfiles").select("rol,nombre,metadata").eq("id", auth.user.id).maybeSingle(),
     supabase.from("empresas").select("*", { count: "exact", head: true }),
+    supabase.from("empresas").select("id,nombre,nif,plan,account_type").order("nombre").limit(12),
   ]);
 
   const onboardingDone = Boolean((profile?.metadata as Record<string, unknown> | null)?.onboarding_done);
@@ -75,11 +77,6 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   // Clientes finales (rol portal_cliente) ven directamente su portal.
   if (profile?.rol === "portal_cliente") redirect("/portal");
 
-  const empresasRes = await supabase
-    .from("empresas")
-    .select("id,nombre,nif,plan,account_type")
-    .order("nombre")
-    .limit(12);
   const empresas = empresasRes.data ?? [];
   const isAdmin = profile?.rol === "admin";
   const firstName = profile?.nombre?.split(" ")[0];

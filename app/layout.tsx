@@ -196,13 +196,17 @@ const softwareJsonLd = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   return (
     <html lang="es" data-theme="dark" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        {/* Preconnects críticos: navegador inicia el TLS handshake antes de necesitarlo */}
+        {supabaseUrl ? <link rel="preconnect" href={supabaseUrl} crossOrigin="anonymous" /> : null}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://generativelanguage.googleapis.com" />
+        <link rel="preconnect" href="https://generativelanguage.googleapis.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://api.resend.com" />
+        <link rel="dns-prefetch" href="https://api.groq.com" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}

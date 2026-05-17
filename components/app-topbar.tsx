@@ -1,10 +1,25 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Mic, ArrowLeft } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { NotificationsBell } from "@/components/notifications/notifications-bell";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { UserAvatarButton } from "@/components/user/user-avatar-button";
+
+function useNow(intervalMs = 30_000): string {
+  // Empieza vacío para evitar hydration mismatch.
+  const [s, setS] = useState("");
+  useEffect(() => {
+    function update() {
+      setS(new Date().toLocaleString("es-ES", { weekday: "short", day: "2-digit", hour: "2-digit", minute: "2-digit" }));
+    }
+    update();
+    const t = window.setInterval(update, intervalMs);
+    return () => window.clearInterval(t);
+  }, [intervalMs]);
+  return s;
+}
 
 /**
  * Topbar global con buscador, campana y avatar.
@@ -18,6 +33,7 @@ export function AppTopbar() {
   const segments = pathname.split("/").filter(Boolean);
   const showBack = segments.length > 1;
   const parent = "/" + segments[0];
+  const now = useNow();
 
   function openPalette() {
     const evt = new KeyboardEvent("keydown", { key: "k", metaKey: true, ctrlKey: true, bubbles: true });
@@ -71,9 +87,7 @@ export function AppTopbar() {
         </span>
       </button>
       <div className="topbar-meta">
-        <time suppressHydrationWarning>
-          {new Date().toLocaleString("es-ES", { weekday: "short", day: "2-digit", hour: "2-digit", minute: "2-digit" })}
-        </time>
+        <time suppressHydrationWarning>{now}</time>
         <NotificationsBell />
         <ThemeToggle compact />
         <UserAvatarButton />

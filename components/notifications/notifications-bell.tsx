@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Bell } from "lucide-react";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
@@ -16,7 +16,7 @@ type Item = {
   created_at: string;
 };
 
-export function NotificationsBell() {
+export const NotificationsBell = memo(function NotificationsBell() {
   const supabase = useMemo(() => createBrowserSupabase(), []);
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<Item[]>([]);
@@ -188,4 +188,4 @@ export function NotificationsBell() {
       ) : null}
     </div>
   );
-}
+});
