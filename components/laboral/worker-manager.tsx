@@ -5,6 +5,7 @@ import { createBrowserSupabase } from "@/lib/supabase/browser";
 import { PayrollPanel } from "@/components/laboral/payroll-panel";
 import { NominasMasivasPanel } from "@/components/laboral/nominas-masivas-panel";
 import { SiltraFanPanel } from "@/components/laboral/siltra-fan-panel";
+import { WorkerActionsModal } from "@/components/laboral/worker-actions-modal";
 import { CalendarioLaboral } from "@/components/laboral/calendario-laboral";
 import { FiniquitoModal } from "@/components/laboral/finiquito-modal";
 import { BonificacionesModal } from "@/components/laboral/bonificaciones-modal";
@@ -50,6 +51,7 @@ export function WorkerManager({ empresas, initialTab = "trabajadores" }: { empre
   const [success, setSuccess] = useState<string | null>(null);
   const [finiquitoTrabajador, setFiniquitoTrabajador] = useState<Trabajador | null>(null);
   const [bonisTrabajador, setBonisTrabajador] = useState<Trabajador | null>(null);
+  const [accionRapida, setAccionRapida] = useState<{ trabajador: Trabajador; accion: "contrata" | "parte-it" | "anticipo" | "embargo" } | null>(null);
 
   const [nuevo, setNuevo] = useState({
     nombre: "",
@@ -350,7 +352,27 @@ export function WorkerManager({ empresas, initialTab = "trabajadores" }: { empre
                       className="button secondary compact"
                       title="Bonificaciones SS"
                       onClick={() => setBonisTrabajador(t)}
-                    >Bonis</button>
+                    >Bonis</button>{" "}
+                    <button
+                      className="button secondary compact"
+                      title="Generar XML Contrat@ (SEPE)"
+                      onClick={() => setAccionRapida({ trabajador: t, accion: "contrata" })}
+                    >Contrat@</button>{" "}
+                    <button
+                      className="button secondary compact"
+                      title="Comunicar parte IT (Delt@)"
+                      onClick={() => setAccionRapida({ trabajador: t, accion: "parte-it" })}
+                    >Parte IT</button>{" "}
+                    <button
+                      className="button secondary compact"
+                      title="Anticipo de nómina"
+                      onClick={() => setAccionRapida({ trabajador: t, accion: "anticipo" })}
+                    >Anticipo</button>{" "}
+                    <button
+                      className="button secondary compact"
+                      title="Registrar embargo judicial"
+                      onClick={() => setAccionRapida({ trabajador: t, accion: "embargo" })}
+                    >Embargo</button>
                   </td>
                   <td>
                     {t.activo ? <button className="button danger compact" onClick={() => bajaTrabajador(t.id)}>Dar de baja</button> : null}
@@ -468,6 +490,15 @@ export function WorkerManager({ empresas, initialTab = "trabajadores" }: { empre
           empresaId={empresaId}
           trabajador={finiquitoTrabajador}
           onClose={() => setFiniquitoTrabajador(null)}
+        />
+      ) : null}
+
+      {accionRapida ? (
+        <WorkerActionsModal
+          empresaId={empresaId}
+          trabajador={accionRapida.trabajador}
+          accion={accionRapida.accion}
+          onClose={() => setAccionRapida(null)}
         />
       ) : null}
 

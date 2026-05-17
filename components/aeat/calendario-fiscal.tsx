@@ -85,8 +85,11 @@ export function CalendarioFiscal({ empresas }: { empresas: Empresa[] }) {
             <h2 className="title" style={{ fontSize: 24, marginTop: 4 }}>Obligaciones fiscales por mes</h2>
           </div>
           <div className="button-row">
-            <span className="pill bad">{criticas.length} críticas</span>
-            <span className="pill warn">{pendientes.length} pendientes</span>
+            {criticas.length > 0 && <span className="pill bad">{criticas.length} críticas</span>}
+            {pendientes.length > 0 && <span className="pill warn">{pendientes.length} pendientes</span>}
+            {criticas.length === 0 && pendientes.length === 0 && (
+              <span className="pill good">al día</span>
+            )}
           </div>
         </div>
 

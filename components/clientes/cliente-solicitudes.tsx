@@ -142,17 +142,22 @@ export function ClienteSolicitudes({ empresaId }: { empresaId: string }) {
                     onClick={() => seleccionarTipo(cat.key)}
                     style={{
                       textAlign: "left",
-                      padding: 10,
+                      padding: 12,
                       borderRadius: 10,
-                      border: `1px solid ${active ? "var(--accent)" : "var(--border, #e5e7eb)"}`,
-                      background: active ? "color-mix(in srgb, var(--accent) 14%, transparent)" : "var(--card, #fff)",
+                      border: `1px solid ${active ? "var(--accent)" : "color-mix(in srgb, currentColor 18%, transparent)"}`,
+                      background: active
+                        ? "color-mix(in srgb, var(--accent) 14%, transparent)"
+                        : "color-mix(in srgb, currentColor 5%, transparent)",
+                      color: "inherit",
                       cursor: "pointer",
                       display: "grid",
                       gap: 4,
+                      boxShadow: active ? "0 2px 10px -4px color-mix(in srgb, var(--accent) 50%, transparent)" : "none",
+                      transition: "border-color 0.15s, background 0.15s, transform 0.08s",
                     }}
                   >
-                    <strong style={{ fontSize: 13 }}>{cat.label}</strong>
-                    <span style={{ fontSize: 11, opacity: 0.7, lineHeight: 1.35 }}>{cat.descripcion}</span>
+                    <strong style={{ fontSize: 13, color: "inherit" }}>{cat.label}</strong>
+                    <span style={{ fontSize: 11, opacity: 0.78, lineHeight: 1.4, color: "inherit" }}>{cat.descripcion}</span>
                     {cat.requiere_documento ? (
                       <span style={{ fontSize: 10, color: "var(--accent)", fontWeight: 600 }}>requiere adjuntar documento</span>
                     ) : null}
