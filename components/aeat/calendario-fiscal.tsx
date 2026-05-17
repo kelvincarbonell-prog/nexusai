@@ -31,7 +31,7 @@ export function CalendarioFiscal({ empresas }: { empresas: Empresa[] }) {
   const supabase = useMemo(() => createBrowserSupabase(), []);
   const [empresaId, setEmpresaId] = useState(empresas[0]?.id ?? "");
   const [obligaciones, setObligaciones] = useState<Obligacion[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   async function load() {
