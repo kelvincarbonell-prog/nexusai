@@ -83,12 +83,13 @@ export async function POST(request: NextRequest) {
   // que tengas configurado en Auth → SMTP Settings).
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? request.nextUrl.origin;
   const { data: invited, error: inviteErr } = await admin.auth.admin.inviteUserByEmail(parsed.data.email, {
-    redirectTo: `${baseUrl}/login?invited=1`,
+    redirectTo: `${baseUrl}/bienvenida`,
     data: {
       nombre: parsed.data.nombre,
       nombre_gestoria: self.nombre_gestoria,
       rol: parsed.data.rol,
       invitado_por: user.id,
+      password_set: false,
     },
   });
 
