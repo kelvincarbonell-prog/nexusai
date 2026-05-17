@@ -10,6 +10,7 @@ import { ConciliacionPanel } from "@/components/accounting/conciliacion-panel";
 import { AsientosPredefinidosPanel } from "@/components/accounting/asientos-predefinidos-panel";
 import { ComparativaPanel } from "@/components/accounting/comparativa-panel";
 import { BotFiscalPanel } from "@/components/dashboard/bot-fiscal-panel";
+import { M347Panel } from "@/components/accounting/m347-panel";
 
 type Empresa = { id: string; nombre: string | null; nif?: string | null };
 
@@ -37,6 +38,7 @@ export function ContabilidadMulti({
       <AsientosPredefinidosPanel key={`ap-${empresaId}`} empresaId={empresaId} />
       <PyGBalancePanel key={`pyg-${empresaId}`} empresaId={empresaId} />
       <LibroIvaPanel key={`liva-${empresaId}`} empresaId={empresaId} />
+      <M347Panel key={`m347-${empresaId}`} empresaId={empresaId} />
       <ConciliacionPanel key={`con-${empresaId}`} empresaId={empresaId} />
       <CierreAperturaPanel
         key={`ca-${empresaId}`}

@@ -237,6 +237,8 @@ alter table public.trabajadores add column if not exists tipo_contrato text;
 alter table public.trabajadores add column if not exists jornada_horas numeric(5, 2);
 alter table public.trabajadores add column if not exists salario_bruto_anual numeric(14, 2);
 alter table public.trabajadores add column if not exists irpf_pct numeric(5, 2);
+alter table public.trabajadores add column if not exists hijos integer default 0;
+alter table public.trabajadores add column if not exists irpf_pct numeric(5, 2);
 alter table public.trabajadores add column if not exists activo boolean not null default true;
 alter table public.trabajadores add column if not exists metadata jsonb not null default '{}'::jsonb;
 alter table public.trabajadores add column if not exists empresa_id uuid references public.empresas(id) on delete cascade;
