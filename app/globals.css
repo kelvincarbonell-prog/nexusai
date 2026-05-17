@@ -3292,3 +3292,75 @@ code {
 .table tbody tr:hover {
   background: color-mix(in srgb, var(--accent) 6%, transparent);
 }
+
+/* ============================================================
+   Landing premium effects (#5 #8 #9)
+   ============================================================ */
+
+/* #5 — Shimmer gradient en .brand-text */
+.brand-text {
+  background: linear-gradient(
+    100deg,
+    var(--accent) 0%,
+    color-mix(in srgb, var(--accent) 60%, var(--good)) 35%,
+    var(--accent) 70%,
+    color-mix(in srgb, var(--accent) 60%, var(--good)) 100%
+  );
+  background-size: 200% auto;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  animation: brand-shimmer 6s linear infinite;
+}
+@keyframes brand-shimmer {
+  from { background-position: 0% center; }
+  to { background-position: 200% center; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .brand-text { animation: none; }
+}
+
+/* #8 — Animated mesh gradient para el hero */
+.mesh-gradient {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.7;
+  background:
+    radial-gradient(at 22% 28%, color-mix(in srgb, var(--accent) 35%, transparent) 0px, transparent 50%),
+    radial-gradient(at 78% 18%, color-mix(in srgb, var(--good) 28%, transparent) 0px, transparent 50%),
+    radial-gradient(at 50% 80%, color-mix(in srgb, var(--accent) 25%, transparent) 0px, transparent 55%),
+    radial-gradient(at 85% 70%, color-mix(in srgb, var(--warn) 18%, transparent) 0px, transparent 45%);
+  filter: blur(40px);
+  animation: mesh-move 22s ease-in-out infinite alternate;
+}
+@keyframes mesh-move {
+  0% {
+    background-position: 0% 0%, 100% 0%, 50% 100%, 100% 100%;
+  }
+  50% {
+    background-position: 18% 12%, 80% 8%, 40% 88%, 88% 92%;
+  }
+  100% {
+    background-position: 5% 8%, 95% 4%, 55% 95%, 92% 100%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mesh-gradient { animation: none; }
+}
+
+/* #9 — Glassmorphism cards */
+.glass-card {
+  background: color-mix(in srgb, var(--bg-soft, var(--bg)) 60%, transparent);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  border: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
+  box-shadow: 0 10px 40px -20px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+/* Tilt card (#4) — base */
+.tilt-card {
+  transform-style: preserve-3d;
+  border-radius: 14px;
+}

@@ -8,6 +8,12 @@ import { LiveDemoVoice } from "@/components/effects/live-demo-voice";
 import { LiveDemoFichaje } from "@/components/effects/live-demo-fichaje";
 import { LiveDemoModelo } from "@/components/effects/live-demo-modelo";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
+import { TypingHeadline } from "@/components/effects/typing-headline";
+import { Magnetic } from "@/components/effects/magnetic";
+import { TiltCard } from "@/components/effects/tilt-card";
+import { LogoMarquee } from "@/components/effects/logo-marquee";
+import { LetterReveal } from "@/components/effects/letter-reveal";
+import { Particles } from "@/components/effects/particles";
 
 export const metadata = {
   title: "Modelo 26 · Tecnología fiscal y laboral del futuro",
@@ -54,8 +60,10 @@ export default function LandingPage() {
         </div>
       </header>
 
-      <section className="landing-hero" style={{ position: "relative" }}>
+      <section className="landing-hero" style={{ position: "relative", overflow: "hidden" }}>
+        <div className="mesh-gradient" aria-hidden="true" />
         <Aurora />
+        <Particles count={26} />
         <Reveal>
           <span className="ticker">
             <span className="pulse-dot" aria-hidden="true" />
@@ -66,7 +74,7 @@ export default function LandingPage() {
           <h1 className="display" style={{ fontSize: "clamp(48px, 7.4vw, 104px)", marginTop: 14 }}>
             <span className="brand-text">Modelo 26.</span>
             <br />
-            <em>El futuro</em> de la fiscalidad y la nómina,
+            <em>El futuro</em> de la <TypingHeadline base="" words={["fiscalidad", "contabilidad", "facturación", "nómina"]} />,
             <br />
             ya está aquí.
           </h1>
@@ -79,12 +87,16 @@ export default function LandingPage() {
         </Reveal>
         <Reveal delay={220}>
           <div className="landing-hero-cta">
-            <Link href="/autonomos-empresas/registro" className="button" style={{ padding: "14px 18px", fontSize: 14 }}>
-              Empezar gratis · 14 días <span className="kbd">↵</span>
-            </Link>
-            <Link href="#demo" className="button secondary" style={{ padding: "14px 18px", fontSize: 14 }}>
-              Ver demo de 2 min →
-            </Link>
+            <Magnetic>
+              <Link href="/autonomos-empresas/registro" className="button" style={{ padding: "14px 18px", fontSize: 14 }}>
+                Empezar gratis · 14 días <span className="kbd">↵</span>
+              </Link>
+            </Magnetic>
+            <Magnetic strength={0.2}>
+              <Link href="#demo" className="button secondary" style={{ padding: "14px 18px", fontSize: 14 }}>
+                Ver demo de 2 min →
+              </Link>
+            </Magnetic>
           </div>
         </Reveal>
         <Reveal delay={280}>
@@ -116,8 +128,17 @@ export default function LandingPage() {
           </div>
         </Reveal>
 
-        <Reveal delay={400}>
-          <div style={{ marginTop: 56 }}>
+        <Reveal delay={380}>
+          <div style={{ marginTop: 36 }}>
+            <small className="muted" style={{ fontSize: 11, fontFamily: "var(--mono)", letterSpacing: "0.08em", textTransform: "uppercase", display: "block", marginBottom: 6, textAlign: "center" }}>
+              Confían en M26
+            </small>
+            <LogoMarquee />
+          </div>
+        </Reveal>
+
+        <Reveal delay={420}>
+          <div style={{ marginTop: 40 }}>
             <LiveDemoHero />
           </div>
         </Reveal>
@@ -242,11 +263,9 @@ export default function LandingPage() {
         <Reveal>
           <span className="eyebrow">Para autónomos</span>
         </Reveal>
-        <Reveal delay={60}>
-          <h2 className="title" style={{ fontSize: 48, maxWidth: 880 }}>
-            Factura, cobra y declara. <em>Desde el móvil.</em>
-          </h2>
-        </Reveal>
+        <LetterReveal as="h2" className="title" style={{ fontSize: 48, maxWidth: 880 }}>
+          Factura, cobra y declara. Desde el móvil.
+        </LetterReveal>
         <div className="features-grid three">
           {([
             { Icon: Camera, title: "Foto = gasto", body: "Foto al ticket y M26 monta el gasto, lo categoriza y lo guarda para tu IRPF." },
@@ -257,7 +276,7 @@ export default function LandingPage() {
             { Icon: Building2, title: "Banco conectado", body: "Tus ingresos y gastos entran solos vía PSD2. Nada de subir extractos a mano." },
           ] as { Icon: LucideIcon; title: string; body: string }[]).map((f, i) => (
             <Reveal key={f.title} delay={i * 60}>
-              <article className="feature tilt">
+              <TiltCard className="feature glass-card">
                 <strong style={{ fontSize: 20, display: "inline-flex", alignItems: "center", gap: 10 }}>
                   <span
                     aria-hidden="true"
@@ -277,7 +296,7 @@ export default function LandingPage() {
                   {f.title}
                 </strong>
                 <p>{f.body}</p>
-              </article>
+              </TiltCard>
             </Reveal>
           ))}
         </div>

@@ -41,7 +41,7 @@ const ACCEPT = "image/jpeg,image/png,image/webp,application/pdf";
 
 type Modo = "ingreso" | "gasto";
 
-type Stage = "reading" | "sending" | "thinking" | "extracting" | "validating" | "done";
+type Stage = "loading" | "extracting" | "encrypting" | "done";
 type LocalPreview = {
   name: string;
   size: number;
@@ -59,12 +59,10 @@ type LocalPreview = {
 };
 
 const STAGE_LABELS: Record<Stage, string> = {
-  reading: "Leyendo archivo…",
-  sending: "Enviando a IA con visión…",
-  thinking: "IA analizando documento…",
-  extracting: "Extrayendo proveedor, NIF, IVA…",
-  validating: "Validando importes…",
-  done: "Completado",
+  loading: "Cargando…",
+  extracting: "Extrayendo datos…",
+  encrypting: "Encriptando…",
+  done: "Cargado con éxito",
 };
 
 export function OcrUpload({ empresaId, modo = "gasto" }: { empresaId: string; modo?: Modo }) {
@@ -113,7 +111,7 @@ export function OcrUpload({ empresaId, modo = "gasto" }: { empresaId: string; mo
     if (list.length === 0) return;
     setBusy(true);
 
-    const local: LocalPreview[] = list.map((f) => ({ name: f.name, size: f.size, dataUrl: null, status: "uploading" as const, stage: "reading" as const }));
+    const local: LocalPreview[] = list.map((f) => ({ name: f.name, size: f.size, dataUrl: null, status: "uploading" as const, stage: "loading" as const }));
     setRecent(local);
 
     try {
@@ -128,7 +126,7 @@ export function OcrUpload({ empresaId, modo = "gasto" }: { empresaId: string; mo
           continue;
         }
 
-        updateStage(i, "reading");
+        updateStage(i, "loading");
         const base64 = await new Promise<string>((res, rej) => {
           const r = new FileReader();
           r.onload = () => res(String(r.result ?? "").split(",")[1] ?? "");
@@ -141,14 +139,12 @@ export function OcrUpload({ empresaId, modo = "gasto" }: { empresaId: string; mo
           setRecent((r) => r.map((it, idx) => (idx === i ? { ...it, dataUrl: `data:${file.type};base64,${base64}` } : it)));
         }
 
-        updateStage(i, "sending");
         const tk = await token();
         const startedAt = Date.now();
-        // Rotamos fases mientras esperamos la respuesta: 1.2s sending, 1.5s thinking, 2.5s extracting, validating al final.
+        // Fases mientras esperamos la respuesta de la IA.
         const stageTimers: ReturnType<typeof setTimeout>[] = [];
-        stageTimers.push(setTimeout(() => updateStage(i, "thinking"), 800));
-        stageTimers.push(setTimeout(() => updateStage(i, "extracting"), 2200));
-        stageTimers.push(setTimeout(() => updateStage(i, "validating"), 5000));
+        stageTimers.push(setTimeout(() => updateStage(i, "extracting"), 800));
+        stageTimers.push(setTimeout(() => updateStage(i, "encrypting"), 4500));
 
         const res = await fetch("/api/agents/extract-invoice", {
           method: "POST",
