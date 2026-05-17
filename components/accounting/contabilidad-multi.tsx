@@ -6,6 +6,9 @@ import { AutoAsientosPanel } from "@/components/accounting/auto-asientos-panel";
 import { PyGBalancePanel } from "@/components/accounting/pyg-balance-panel";
 import { LibroIvaPanel } from "@/components/accounting/libro-iva-panel";
 import { CierreAperturaPanel } from "@/components/accounting/cierre-apertura-panel";
+import { ConciliacionPanel } from "@/components/accounting/conciliacion-panel";
+import { AsientosPredefinidosPanel } from "@/components/accounting/asientos-predefinidos-panel";
+import { ComparativaPanel } from "@/components/accounting/comparativa-panel";
 
 type Empresa = { id: string; nombre: string | null; nif?: string | null };
 
@@ -27,9 +30,12 @@ export function ContabilidadMulti({
       <EmpresaSelector empresas={empresas} initialId={empresaId} onChange={setEmpresaId} />
 
       {/* Key forzada para remontar los paneles al cambiar de cliente */}
+      <ComparativaPanel key={`cmp-${empresaId}`} empresaId={empresaId} />
       <AutoAsientosPanel key={`aa-${empresaId}`} empresaId={empresaId} />
+      <AsientosPredefinidosPanel key={`ap-${empresaId}`} empresaId={empresaId} />
       <PyGBalancePanel key={`pyg-${empresaId}`} empresaId={empresaId} />
       <LibroIvaPanel key={`liva-${empresaId}`} empresaId={empresaId} />
+      <ConciliacionPanel key={`con-${empresaId}`} empresaId={empresaId} />
       <CierreAperturaPanel
         key={`ca-${empresaId}`}
         empresaId={empresaId}

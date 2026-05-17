@@ -3,6 +3,7 @@ import { z } from "zod";
 import { jsonError, refId } from "@/lib/http";
 import { getUserFromRequest } from "@/lib/supabase/auth";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
+import { canAccessLaborCompany } from "@/lib/laboral/access";
 
 const SignatureRequest = z.object({
   ref: z.string().regex(/^NX-[A-Z0-9-]+$/).optional(),
@@ -44,6 +45,12 @@ export async function POST(request: NextRequest) {
   if (!parsed.success) return jsonError("Body inválido");
 
   const data = parsed.data;
+  const admin0 = createSupabaseAdmin();
+  if (data.empresaId) {
+    if (!(await canAccessLaborCompany(admin0, user.id, data.empresaId))) {
+      return jsonError("Sin acceso a la empresa", 403);
+    }
+  }
   const ref = data.ref ?? refId();
   const signedBytes = Buffer.from(data.signedBase64, "base64");
   if (signedBytes.length > 10 * 1024 * 1024) return jsonError("Documento demasiado grande", 413);
@@ -51,7 +58,7 @@ export async function POST(request: NextRequest) {
   const ext = signedBytes.subarray(0, 4).toString() === "%PDF" ? "pdf" : "p7s";
   const filename = `${ref}.${ext}`;
   const storagePath = `${user.id}/${filename}`;
-  const admin = createSupabaseAdmin();
+  const admin = admin0;
 
   const { error: uploadError } = await admin.storage
     .from("signed-documents")
