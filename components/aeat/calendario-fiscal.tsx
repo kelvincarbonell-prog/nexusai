@@ -84,11 +84,17 @@ export function CalendarioFiscal({ empresas }: { empresas: Empresa[] }) {
             <span className="card-eyebrow">Próximos 60 días</span>
             <h2 className="title" style={{ fontSize: 24, marginTop: 4 }}>Obligaciones fiscales por mes</h2>
           </div>
-          <div className="button-row">
-            {criticas.length > 0 && <span className="pill bad">{criticas.length} críticas</span>}
-            {pendientes.length > 0 && <span className="pill warn">{pendientes.length} pendientes</span>}
-            {criticas.length === 0 && pendientes.length === 0 && (
-              <span className="pill good">al día</span>
+          <div className="button-row" suppressHydrationWarning>
+            {loading ? (
+              <span className="pill" style={{ opacity: 0.5 }}>cargando…</span>
+            ) : (
+              <>
+                {criticas.length > 0 && <span className="pill bad">{criticas.length} críticas</span>}
+                {pendientes.length > 0 && <span className="pill warn">{pendientes.length} pendientes</span>}
+                {criticas.length === 0 && pendientes.length === 0 && (
+                  <span className="pill good">al día</span>
+                )}
+              </>
             )}
           </div>
         </div>
