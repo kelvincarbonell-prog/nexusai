@@ -22,8 +22,8 @@ const LOGOS = [
 export function LogoMarquee() {
   return (
     <div className="lm-wrap" aria-hidden="true">
-      <div className="lm-track">
-        {[...LOGOS, ...LOGOS].map((name, i) => (
+      <div className="lm-row">
+        {LOGOS.map((name, i) => (
           <span key={i} className="lm-item">
             <span className="lm-dot" />
             {name}
@@ -33,42 +33,36 @@ export function LogoMarquee() {
       <style jsx global>{`
         .lm-wrap {
           width: 100%;
-          overflow: hidden;
-          mask-image: linear-gradient(90deg, transparent, black 8%, black 92%, transparent);
-          padding: 18px 0;
+          padding: 14px 0;
+          mask-image: linear-gradient(90deg, transparent, black 6%, black 94%, transparent);
         }
-        .lm-track {
+        .lm-row {
           display: flex;
-          gap: 56px;
-          width: max-content;
-          animation: lm-scroll 40s linear infinite;
+          flex-wrap: wrap;
+          gap: 32px 44px;
+          justify-content: center;
+          align-items: center;
         }
         .lm-item {
           display: inline-flex;
           align-items: center;
           gap: 10px;
-          font-size: 14px;
+          font-size: 13px;
           font-weight: 600;
           color: var(--muted);
           font-family: var(--mono);
           letter-spacing: -0.01em;
           opacity: 0.65;
           transition: opacity 0.2s, color 0.2s;
+          white-space: nowrap;
         }
         .lm-item:hover { opacity: 1; color: var(--ink); }
         .lm-dot {
-          width: 6px;
-          height: 6px;
+          width: 5px;
+          height: 5px;
           border-radius: 50%;
           background: var(--accent);
           flex-shrink: 0;
-        }
-        @keyframes lm-scroll {
-          from { transform: translateX(0); }
-          to { transform: translateX(-50%); }
-        }
-        @media (prefers-reduced-motion: reduce) {
-          .lm-track { animation: none; }
         }
       `}</style>
     </div>

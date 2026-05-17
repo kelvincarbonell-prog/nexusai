@@ -43,25 +43,37 @@ export function LetterReveal({
   const text = String(children);
   const words = text.split(" ");
 
+  // Render: cada palabra es un span inline-block (para no romper), entre
+  // palabras un text-node de espacio real (no inline-block) para que el
+  // navegador respete los espacios.
+  const pieces: ReactNode[] = [];
+  let charIdx = 0;
+  words.forEach((word, wi) => {
+    pieces.push(
+      <span key={`w-${wi}`} className="lr-word">
+        {[...word].map((ch, ci) => {
+          const delay = charIdx * delayStep;
+          charIdx++;
+          return (
+            <span key={ci} className="lr-char" style={{ transitionDelay: `${delay}ms` }}>
+              {ch}
+            </span>
+          );
+        })}
+      </span>,
+    );
+    if (wi < words.length - 1) {
+      pieces.push(<span key={`s-${wi}`}>{" "}</span>);
+      charIdx++; // contar el espacio para que el siguiente char tenga el delay correcto
+    }
+  });
+
   return (
     <Component ref={ref as never} className={`lr-text ${className ?? ""}`} data-lr="out" style={style}>
-      {words.map((word, wi) => (
-        <span key={wi} className="lr-word">
-          {[...word].map((ch, ci) => {
-            const idx = words.slice(0, wi).reduce((s, w) => s + w.length + 1, 0) + ci;
-            return (
-              <span key={ci} className="lr-char" style={{ animationDelay: `${idx * delayStep}ms` }}>
-                {ch}
-              </span>
-            );
-          })}
-          {wi < words.length - 1 ? <span className="lr-space"> </span> : null}
-        </span>
-      ))}
+      {pieces}
       <style jsx global>{`
-        .lr-text { overflow: hidden; }
+        .lr-text { overflow: hidden; word-spacing: normal; }
         .lr-word { display: inline-block; white-space: nowrap; }
-        .lr-space { display: inline-block; }
         .lr-char {
           display: inline-block;
           opacity: 0;
@@ -71,7 +83,6 @@ export function LetterReveal({
         .lr-text[data-lr="in"] .lr-char {
           opacity: 1;
           transform: translateY(0);
-          animation: none;
         }
         @media (prefers-reduced-motion: reduce) {
           .lr-char { opacity: 1; transform: none; transition: none; }

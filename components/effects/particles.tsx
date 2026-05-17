@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 /**
  * Pequeñas partículas flotantes sutiles. Canvas-based para no inflar el DOM.
- * Respeta prefers-reduced-motion (no se anima).
+ * Respeta prefers-reduced-motion (no se anima). Desactivado en mobile
+ * (< 900px) para no penalizar el rendimiento.
  */
 export function Particles({
   count = 22,
@@ -16,8 +17,17 @@ export function Particles({
   style?: React.CSSProperties;
 }) {
   const ref = useRef<HTMLCanvasElement | null>(null);
+  const [enabled, setEnabled] = useState(false);
+
+  // Solo se monta en desktop y respetando reduce-motion
+  useEffect(() => {
+    const isDesktop = window.matchMedia("(min-width: 900px)").matches;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (isDesktop && !reduce) setEnabled(true);
+  }, []);
 
   useEffect(() => {
+    if (!enabled) return;
     const canvas = ref.current;
     if (!canvas) return;
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -80,8 +90,9 @@ export function Particles({
       window.removeEventListener("resize", resize);
       cancelAnimationFrame(raf);
     };
-  }, [count]);
+  }, [count, enabled]);
 
+  if (!enabled) return null;
   return (
     <canvas
       ref={ref}

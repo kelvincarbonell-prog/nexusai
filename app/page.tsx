@@ -1,19 +1,23 @@
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { Camera, Inbox, BarChart3, FileText, Mic, Building2, type LucideIcon } from "lucide-react";
 import { Aurora } from "@/components/effects/aurora";
 import { Reveal } from "@/components/effects/reveal";
 import { CountUp } from "@/components/effects/count-up";
-import { LiveDemoHero } from "@/components/effects/live-demo-hero";
-import { LiveDemoVoice } from "@/components/effects/live-demo-voice";
-import { LiveDemoFichaje } from "@/components/effects/live-demo-fichaje";
-import { LiveDemoModelo } from "@/components/effects/live-demo-modelo";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { TypingHeadline } from "@/components/effects/typing-headline";
 import { Magnetic } from "@/components/effects/magnetic";
 import { TiltCard } from "@/components/effects/tilt-card";
 import { LogoMarquee } from "@/components/effects/logo-marquee";
 import { LetterReveal } from "@/components/effects/letter-reveal";
-import { Particles } from "@/components/effects/particles";
+
+// Pesados → code-splitting con next/dynamic para no bloquear el bundle inicial.
+// SSR sigue activo para que el HTML llegue completo (mejor SEO/LCP).
+const Particles = dynamic(() => import("@/components/effects/particles").then((m) => m.Particles));
+const LiveDemoHero = dynamic(() => import("@/components/effects/live-demo-hero").then((m) => m.LiveDemoHero), { loading: () => <div style={{ height: 320 }} /> });
+const LiveDemoVoice = dynamic(() => import("@/components/effects/live-demo-voice").then((m) => m.LiveDemoVoice), { loading: () => <div style={{ height: 240 }} /> });
+const LiveDemoFichaje = dynamic(() => import("@/components/effects/live-demo-fichaje").then((m) => m.LiveDemoFichaje), { loading: () => <div style={{ height: 240 }} /> });
+const LiveDemoModelo = dynamic(() => import("@/components/effects/live-demo-modelo").then((m) => m.LiveDemoModelo), { loading: () => <div style={{ height: 240 }} /> });
 
 export const metadata = {
   title: "Modelo 26 · Tecnología fiscal y laboral del futuro",
@@ -61,9 +65,8 @@ export default function LandingPage() {
       </header>
 
       <section className="landing-hero" style={{ position: "relative", overflow: "hidden" }}>
-        <div className="mesh-gradient" aria-hidden="true" />
         <Aurora />
-        <Particles count={26} />
+        <Particles count={10} />
         <Reveal>
           <span className="ticker">
             <span className="pulse-dot" aria-hidden="true" />

@@ -387,6 +387,44 @@ create trigger set_updated_at_empresas before update on public.empresas
   for each row execute function public.set_updated_at();
 
 -- =========================================================================
+-- SPRINT 5: CONCILIACIÓN BANCARIA + TESORERÍA
+-- =========================================================================
+create table if not exists public.bank_movements (
+  id uuid primary key default gen_random_uuid(),
+  empresa_id uuid not null references public.empresas(id) on delete cascade,
+  iban text,
+  banco text,
+  oficina text,
+  cuenta text,
+  fecha_operacion date not null,
+  fecha_valor date,
+  importe numeric(14, 2) not null,
+  divisa text not null default 'EUR',
+  concepto_comun text,
+  concepto_propio text,
+  referencia1 text,
+  referencia2 text,
+  saldo_acumulado numeric(14, 2),
+  origen text not null default 'n43',
+  factura_id uuid references public.facturas(id) on delete set null,
+  gasto_id uuid references public.gastos(id) on delete set null,
+  journal_entry_id uuid references public.journal_entries(id) on delete set null,
+  metadata jsonb not null default '{}'::jsonb,
+  reconciled boolean not null default false,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index if not exists idx_bank_movements_empresa_fecha on public.bank_movements(empresa_id, fecha_operacion desc);
+create index if not exists idx_bank_movements_factura on public.bank_movements(factura_id);
+create index if not exists idx_bank_movements_gasto on public.bank_movements(gasto_id);
+
+drop trigger if exists set_updated_at_bank_movements on public.bank_movements;
+create trigger set_updated_at_bank_movements before update on public.bank_movements
+  for each row execute function public.set_updated_at();
+
+alter table public.bank_movements enable row level security;
+
+-- =========================================================================
 -- ÚLTIMO PASO: refresca el cache de PostgREST sin reiniciar
 -- =========================================================================
 notify pgrst, 'reload schema';
