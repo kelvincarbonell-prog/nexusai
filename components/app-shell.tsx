@@ -15,6 +15,7 @@ import {
   ShieldCheck,
   UsersRound,
   MessageSquare,
+  Inbox,
   type LucideIcon,
 } from "lucide-react";
 import { StorageBadge } from "@/components/storage/storage-badge";
@@ -41,6 +42,7 @@ const gestorNav: NavItem[] = [
 ];
 
 const accountNav: NavItem[] = [
+  { href: "/solicitudes", label: "Solicitudes", icon: Inbox },
   { href: "/mensajes", label: "Mensajes", icon: MessageSquare },
   { href: "/tareas", label: "Tareas", icon: ListChecks },
   { href: "/inteligencia", label: "Inteligencia", icon: LineChart },

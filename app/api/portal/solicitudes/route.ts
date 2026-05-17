@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
       tipo: "solicitud_cliente",
       titulo,
       detalle,
-      url: `/laboral?empresa=${parsed.data.empresa_id}&tab=solicitudes`,
+      url: `/solicitudes`,
       severidad: sev,
       metadata: { solicitud_id: data.id, tipo_solicitud: parsed.data.tipo, prioridad: parsed.data.prioridad },
     });
