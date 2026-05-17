@@ -116,8 +116,7 @@ export const metadata: Metadata = {
     telephone: false,
   },
   verification: {
-    // Estos los rellenas tras dar de alta en Search Console / Bing / Yandex
-    // google: "PEGA_AQUI_TU_TOKEN_DE_GOOGLE",
+    google: "5U4MuDx0OXbLoyCz6L5JcTXKBq76pxJLWBKVxXrgRVU",
     // yandex: "...",
     // other: { "msvalidate.01": "..." },
   },
