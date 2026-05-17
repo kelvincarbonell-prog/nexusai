@@ -4,6 +4,7 @@ import { jsonError } from "@/lib/http";
 import { getUserFromRequest } from "@/lib/supabase/auth";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { canAccessLaborCompany, isGestorOrAdmin } from "@/lib/laboral/access";
+import { asentarFacturaEmitida, autoAsientosActivado } from "@/lib/accounting/auto-asientos";
 
 const Linea = z.object({
   descripcion: z.string().min(1).max(500),
@@ -127,5 +128,31 @@ export async function POST(request: NextRequest) {
     .select("*")
     .single();
   if (error || !data) return jsonError(error?.message ?? "No se pudo crear", 500);
-  return NextResponse.json({ ok: true, factura: data });
+
+  // Auto-asentado contable si está activado
+  let asiento_id: string | null = null;
+  try {
+    if (parsed.data.tipo === "emitida" && (await autoAsientosActivado(admin, parsed.data.empresa_id))) {
+      const asiento = await asentarFacturaEmitida(
+        admin,
+        {
+          id: data.id,
+          empresa_id: data.empresa_id,
+          fecha_emision: data.fecha_emision,
+          contacto_nombre: data.contacto_nombre,
+          numero: data.numero,
+          base: Number(data.base ?? 0),
+          iva: Number(data.iva ?? 0),
+          total: Number(data.total ?? 0),
+          metadata: (data.metadata ?? {}) as Record<string, unknown>,
+        },
+        user.id,
+      );
+      asiento_id = asiento?.id ?? null;
+    }
+  } catch {
+    // No bloquea la respuesta si el asiento falla.
+  }
+
+  return NextResponse.json({ ok: true, factura: data, asiento_id });
 }
