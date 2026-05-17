@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Camera, Inbox, BarChart3, FileText, Mic, Building2, type LucideIcon } from "lucide-react";
 import { Aurora } from "@/components/effects/aurora";
 import { Reveal } from "@/components/effects/reveal";
 import { CountUp } from "@/components/effects/count-up";
@@ -247,17 +248,34 @@ export default function LandingPage() {
           </h2>
         </Reveal>
         <div className="features-grid three">
-          {[
-            { icon: "📸", title: "Foto = gasto", body: "Foto al ticket y M26 monta el gasto, lo categoriza y lo guarda para tu IRPF." },
-            { icon: "📬", title: "Buzón único", body: "Reenvías la factura del SaaS o del coworking y aparece en tu contabilidad. Sin abrir el ordenador." },
-            { icon: "📊", title: "Estimación IRPF", body: "M26 calcula cuánto te toca pagar cada mes para que no llegues a abril con sorpresas." },
-            { icon: "🧾", title: "Modelo 130/131", body: "Pago fraccionado trimestral generado solo. Firmas y se presenta. 4 € al mes." },
-            { icon: "🎙️", title: "Voz", body: "«M26, ¿cuánto puedo gastarme este mes sin descuadrar mis impuestos?» — y te responde." },
-            { icon: "💳", title: "Banco conectado", body: "Tus ingresos y gastos entran solos vía PSD2. Nada de subir extractos a mano." },
-          ].map((f, i) => (
+          {([
+            { Icon: Camera, title: "Foto = gasto", body: "Foto al ticket y M26 monta el gasto, lo categoriza y lo guarda para tu IRPF." },
+            { Icon: Inbox, title: "Buzón único", body: "Reenvías la factura del SaaS o del coworking y aparece en tu contabilidad. Sin abrir el ordenador." },
+            { Icon: BarChart3, title: "Estimación IRPF", body: "M26 calcula cuánto te toca pagar cada mes para que no llegues a abril con sorpresas." },
+            { Icon: FileText, title: "Modelo 130/131", body: "Pago fraccionado trimestral generado solo. Firmas y se presenta. 4 € al mes." },
+            { Icon: Mic, title: "Voz", body: "«M26, ¿cuánto puedo gastarme este mes sin descuadrar mis impuestos?» — y te responde." },
+            { Icon: Building2, title: "Banco conectado", body: "Tus ingresos y gastos entran solos vía PSD2. Nada de subir extractos a mano." },
+          ] as { Icon: LucideIcon; title: string; body: string }[]).map((f, i) => (
             <Reveal key={f.title} delay={i * 60}>
               <article className="feature tilt">
-                <strong style={{ fontSize: 20 }}><span aria-hidden="true">{f.icon}</span> {f.title}</strong>
+                <strong style={{ fontSize: 20, display: "inline-flex", alignItems: "center", gap: 10 }}>
+                  <span
+                    aria-hidden="true"
+                    style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: 10,
+                      background: "color-mix(in srgb, var(--accent) 12%, transparent)",
+                      display: "inline-grid",
+                      placeItems: "center",
+                      color: "var(--accent)",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <f.Icon size={18} strokeWidth={1.7} />
+                  </span>
+                  {f.title}
+                </strong>
                 <p>{f.body}</p>
               </article>
             </Reveal>
