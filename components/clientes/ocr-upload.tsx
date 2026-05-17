@@ -189,7 +189,13 @@ export function OcrUpload({ empresaId, modo = "gasto" }: { empresaId: string; mo
           );
         }
       }
-      setSuccess(`Procesado${list.length > 1 ? `s ${list.length} archivos` : ""}. Revisa abajo los datos extraídos.`);
+      // Cuenta los archivos auto-confirmados para mostrar mensaje específico
+      const autoConfirmados = recent.filter((r) => r.result?.confidence !== undefined && r.result.confidence >= 70 && r.status === "ok").length;
+      if (autoConfirmados > 0) {
+        setSuccess(`${autoConfirmados} ${modo === "ingreso" ? "ingreso" : "gasto"}${autoConfirmados > 1 ? "s" : ""} creado${autoConfirmados > 1 ? "s" : ""} automáticamente con cuenta PGC asignada por IA. Ya aparecen en el listado.`);
+      } else {
+        setSuccess(`Procesado${list.length > 1 ? `s ${list.length} archivos` : ""}. Revisa los datos extraídos y confirma cada uno.`);
+      }
       await load();
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Error");

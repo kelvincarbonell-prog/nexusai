@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { Eye, Trash2 } from "lucide-react";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 
 type Linea = {
@@ -14,6 +15,9 @@ type Linea = {
   base: number;
   iva: number;
   total: number;
+  irpf: number;
+  origen_ocr: string | null;
+  cuenta_pgc: string | null;
   estado: string;
 };
 
@@ -58,32 +62,44 @@ export function ClienteGastos({ empresaId }: { empresaId: string }) {
       if (facRes.error) throw facRes.error;
       if (gasRes.error) throw gasRes.error;
       const lineas: Linea[] = [
-        ...(facRes.data ?? []).map((f) => ({
-          id: f.id,
-          origen: "factura" as const,
-          fecha: f.fecha_emision ?? null,
-          proveedor: f.contacto_nombre ?? null,
-          concepto: ((f.metadata ?? {}) as Record<string, unknown>).concepto as string | null ?? null,
-          nif: ((f.metadata ?? {}) as Record<string, unknown>).contacto_nif as string | null ?? null,
-          numero: f.numero ?? null,
-          base: Number(f.base ?? 0),
-          iva: Number(f.iva ?? 0),
-          total: Number(f.total ?? 0),
-          estado: f.estado ?? "borrador",
-        })),
-        ...(gasRes.data ?? []).map((g) => ({
-          id: g.id,
-          origen: "gasto" as const,
-          fecha: g.fecha ?? null,
-          proveedor: g.proveedor ?? null,
-          concepto: g.concepto ?? null,
-          nif: ((g.metadata ?? {}) as Record<string, unknown>).proveedor_nif as string | null ?? null,
-          numero: null,
-          base: Number(g.base ?? 0),
-          iva: Number(g.iva ?? 0),
-          total: Number(g.total ?? 0),
-          estado: g.estado ?? "pendiente",
-        })),
+        ...(facRes.data ?? []).map((f) => {
+          const m = (f.metadata ?? {}) as Record<string, unknown>;
+          return {
+            id: f.id,
+            origen: "factura" as const,
+            fecha: f.fecha_emision ?? null,
+            proveedor: f.contacto_nombre ?? null,
+            concepto: (m.concepto as string | undefined) ?? null,
+            nif: (m.contacto_nif as string | undefined) ?? null,
+            numero: f.numero ?? null,
+            base: Number(f.base ?? 0),
+            iva: Number(f.iva ?? 0),
+            total: Number(f.total ?? 0),
+            irpf: Number((m.retencion_irpf as number | undefined) ?? 0),
+            origen_ocr: (m.origen_ocr as string | undefined) ?? null,
+            cuenta_pgc: (m.cuenta_pgc as string | undefined) ?? null,
+            estado: f.estado ?? "borrador",
+          };
+        }),
+        ...(gasRes.data ?? []).map((g) => {
+          const m = (g.metadata ?? {}) as Record<string, unknown>;
+          return {
+            id: g.id,
+            origen: "gasto" as const,
+            fecha: g.fecha ?? null,
+            proveedor: g.proveedor ?? null,
+            concepto: g.concepto ?? null,
+            nif: (m.proveedor_nif as string | undefined) ?? null,
+            numero: null,
+            base: Number(g.base ?? 0),
+            iva: Number(g.iva ?? 0),
+            total: Number(g.total ?? 0),
+            irpf: Number((m.retencion_irpf as number | undefined) ?? 0),
+            origen_ocr: (m.origen_ocr as string | undefined) ?? null,
+            cuenta_pgc: (m.cuenta_pgc as string | undefined) ?? null,
+            estado: g.estado ?? "pendiente",
+          };
+        }),
       ];
       lineas.sort((a, b) => (b.fecha ?? "").localeCompare(a.fecha ?? ""));
       setItems(lineas);
@@ -98,6 +114,43 @@ export function ClienteGastos({ empresaId }: { empresaId: string }) {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [empresaId]);
+
+  async function verFactura(extraccionId: string) {
+    try {
+      const { data: sess } = await supabase.auth.getSession();
+      const tk = sess.session?.access_token ?? "";
+      const res = await fetch(`/api/portal/extracciones/${extraccionId}/archivo`, {
+        headers: { Authorization: `Bearer ${tk}` },
+      });
+      const json = await res.json();
+      if (!json.ok || !json.url) {
+        setError(json.error ?? "Sin archivo");
+        return;
+      }
+      window.open(json.url, "_blank", "noopener,noreferrer");
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Error");
+    }
+  }
+
+  async function borrar(g: Linea) {
+    if (!confirm(`¿Borrar este ${g.origen}? También se eliminará su asiento contable si lo tiene.`)) return;
+    try {
+      const { data: sess } = await supabase.auth.getSession();
+      const tk = sess.session?.access_token ?? "";
+      const table = g.origen === "factura" ? "facturas" : "gastos";
+      // Borra el asiento contable enlazado (si existe)
+      const sourceType = g.origen === "factura" ? "factura_recibida" : "gasto";
+      await supabase.from("journal_entries").delete().eq("empresa_id", empresaId).eq("source_type", sourceType).eq("source_id", g.id);
+      // Borra la entrada principal
+      const { error: err } = await supabase.from(table).delete().eq("id", g.id);
+      if (err) throw err;
+      void tk;
+      await load();
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Error");
+    }
+  }
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -158,10 +211,13 @@ export function ClienteGastos({ empresaId }: { empresaId: string }) {
                 <th>Proveedor</th>
                 <th>NIF</th>
                 <th>Concepto</th>
+                <th>Cuenta</th>
                 <th className="num">Base</th>
                 <th className="num">IVA</th>
+                <th className="num">IRPF</th>
                 <th className="num">Total</th>
                 <th>Estado</th>
+                <th style={{ width: 90 }}></th>
               </tr>
             </thead>
             <tbody>
@@ -173,11 +229,43 @@ export function ClienteGastos({ empresaId }: { empresaId: string }) {
                   <td><span className={`pill ${g.origen === "factura" ? "plain" : "warn"}`} style={{ fontSize: 11 }}>{g.origen === "factura" ? "F" : "G"}</span></td>
                   <td>{g.proveedor ?? "—"}</td>
                   <td style={{ fontFamily: "var(--mono)", fontSize: 12 }}>{g.nif ?? "—"}</td>
-                  <td style={{ fontSize: 13 }}>{g.concepto ?? "—"}</td>
+                  <td style={{ fontSize: 13, maxWidth: 220, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{g.concepto ?? "—"}</td>
+                  <td>
+                    {g.cuenta_pgc ? (
+                      <span className="pill accent" style={{ fontSize: 10, fontFamily: "var(--mono)" }} title="Cuenta PGC asignada por IA">{g.cuenta_pgc}</span>
+                    ) : (
+                      <span className="muted" style={{ fontSize: 11 }}>—</span>
+                    )}
+                  </td>
                   <td className="num">{EUR(g.base)}</td>
                   <td className="num">{EUR(g.iva)}</td>
+                  <td className="num" style={{ color: g.irpf > 0 ? "var(--accent)" : "var(--muted)" }}>
+                    {g.irpf > 0 ? EUR(g.irpf) : "—"}
+                  </td>
                   <td className="num" style={{ fontWeight: 600 }}>{EUR(g.total)}</td>
                   <td><span className={`status ${g.estado === "pagada" || g.estado === "registrada" ? "good" : ""}`}>{g.estado}</span></td>
+                  <td>
+                    <div style={{ display: "inline-flex", gap: 4 }}>
+                      {g.origen_ocr ? (
+                        <button
+                          className="button ghost compact"
+                          onClick={() => verFactura(g.origen_ocr!)}
+                          title="Ver archivo original"
+                          style={{ padding: "4px 8px" }}
+                        >
+                          <Eye size={13} strokeWidth={1.8} />
+                        </button>
+                      ) : null}
+                      <button
+                        className="button ghost compact"
+                        onClick={() => borrar(g)}
+                        title={`Borrar ${g.origen}`}
+                        style={{ padding: "4px 8px", color: "var(--bad)" }}
+                      >
+                        <Trash2 size={13} strokeWidth={1.8} />
+                      </button>
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>
