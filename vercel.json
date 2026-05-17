@@ -9,6 +9,10 @@
     {
       "path": "/api/cron/automation-scan",
       "schedule": "0 7 * * *"
+    },
+    {
+      "path": "/api/cron/bot-fiscal-daily",
+      "schedule": "30 7 * * *"
     }
   ]
 }

@@ -2,6 +2,7 @@ import { AppShell } from "@/components/app-shell";
 import { UpcomingObligations } from "@/components/dashboard/upcoming-obligations";
 import { TareasWidget } from "@/components/dashboard/tareas-widget";
 import { OnboardingWizard } from "@/components/dashboard/onboarding-wizard";
+import { CarteraClientes } from "@/components/dashboard/cartera-clientes";
 import { SetupRequired } from "@/components/setup-required";
 import { hasSupabaseConfig } from "@/lib/env";
 import { createServerSupabase } from "@/lib/supabase/server";
@@ -193,41 +194,12 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
           </div>
         </article>
 
-        <article className="card span-12">
-          <div className="topbar" style={{ border: 0, padding: 0, margin: 0 }}>
-            <div>
-              <span className="card-eyebrow">Cartera</span>
-              <strong style={{ fontSize: 18 }}>{companyCount ?? empresas.length} clientes</strong>
-            </div>
-            <div className="button-row">
-              <span className="pill good">al día · 12</span>
-              <span className="pill warn">atención · 3</span>
-              <span className="pill bad">crítico · 1</span>
-            </div>
-          </div>
-          <div className="client-grid">
-            {empresas.length === 0
-              ? Array.from({ length: 8 }).map((_, i) => (
-                  <div key={i} className="client-card">
-                    <strong>—</strong>
-                    <small>sin datos</small>
-                    <div className="health">— <small>/100</small></div>
-                  </div>
-                ))
-              : empresas.map((e) => (
-                  <a key={e.id} href={`/clientes/${e.id}`} className="client-card">
-                    <strong>{e.nombre}</strong>
-                    <small>{e.nif ?? "—"}</small>
-                    <div className="health">{Math.floor(Math.random() * 60 + 40)} <small>/100</small></div>
-                  </a>
-                ))}
-          </div>
-          {activeView !== "panel" ? (
-            <p className="muted" style={{ marginTop: 12, fontSize: 13 }}>
-              Vista activa: <strong>{activeView}</strong> — pulsa en un cliente para abrir su ficha.
-            </p>
-          ) : null}
-        </article>
+        <CarteraClientes initialCount={companyCount ?? empresas.length} />
+        {activeView !== "panel" ? (
+          <p className="muted span-12" style={{ marginTop: 0, fontSize: 13 }}>
+            Vista activa: <strong>{activeView}</strong> — pulsa en un cliente para abrir su ficha.
+          </p>
+        ) : null}
       </section>
     </AppShell>
   );

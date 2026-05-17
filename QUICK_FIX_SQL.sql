@@ -456,6 +456,26 @@ alter table public.empresas add column if not exists tipo text default 'autonomo
 alter table public.empresas add column if not exists iban text;
 
 -- =========================================================================
+-- SPRINT 8: BOT FISCAL DAILY · health scores persistidos por día
+-- =========================================================================
+create table if not exists public.bot_scans (
+  empresa_id uuid not null references public.empresas(id) on delete cascade,
+  fecha date not null,
+  score integer not null,
+  categoria text not null,
+  alertas_total integer not null default 0,
+  alertas_danger integer not null default 0,
+  alertas_warning integer not null default 0,
+  alertas_info integer not null default 0,
+  alertas jsonb not null default '[]'::jsonb,
+  created_at timestamptz not null default now(),
+  primary key (empresa_id, fecha)
+);
+create index if not exists idx_bot_scans_fecha on public.bot_scans(fecha desc);
+
+alter table public.bot_scans enable row level security;
+
+-- =========================================================================
 -- ÚLTIMO PASO: refresca el cache de PostgREST sin reiniciar
 -- =========================================================================
 notify pgrst, 'reload schema';
