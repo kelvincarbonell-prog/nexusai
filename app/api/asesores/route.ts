@@ -78,12 +78,35 @@ export async function POST(request: NextRequest) {
     return jsonError("Ese email ya tiene cuenta en otra gestoría. Pídele que cambie de despacho desde su perfil.", 409);
   }
 
-  // Crear usuario en Supabase Auth con magic link / invitación
+  // Crear usuario en Supabase Auth + enviar email de invitación.
+  // El email lo manda Supabase Auth con su propio SMTP (o el SMTP custom
+  // que tengas configurado en Auth → SMTP Settings).
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? request.nextUrl.origin;
   const { data: invited, error: inviteErr } = await admin.auth.admin.inviteUserByEmail(parsed.data.email, {
-    data: { nombre: parsed.data.nombre, nombre_gestoria: self.nombre_gestoria, rol: parsed.data.rol },
+    redirectTo: `${baseUrl}/login?invited=1`,
+    data: {
+      nombre: parsed.data.nombre,
+      nombre_gestoria: self.nombre_gestoria,
+      rol: parsed.data.rol,
+      invitado_por: user.id,
+    },
   });
+
   if (inviteErr || !invited?.user) {
-    return jsonError(inviteErr?.message ?? "No se pudo enviar la invitación", 500);
+    // eslint-disable-next-line no-console
+    console.error("[asesores] inviteUserByEmail error:", inviteErr?.message, inviteErr);
+    const msg = inviteErr?.message ?? "No se pudo enviar la invitación";
+    // Mensajes más claros para errores comunes de Supabase
+    if (/already.*registered|already.*exists|duplicate/i.test(msg)) {
+      return jsonError("Este email ya tiene cuenta. Si quieres añadirlo al equipo, pídele que entre y desde su perfil cambie de gestoría.", 409);
+    }
+    if (/rate limit|too many/i.test(msg)) {
+      return jsonError("Has superado el límite de emails de Supabase (4/hora con SMTP por defecto). Configura un SMTP propio en Supabase → Auth → SMTP Settings, o espera unos minutos.", 429);
+    }
+    if (/smtp|email/i.test(msg)) {
+      return jsonError(`Supabase no pudo enviar el email: ${msg}. Configura un SMTP en Supabase → Auth → SMTP Settings.`, 500);
+    }
+    return jsonError(msg, 500);
   }
 
   // Crear o actualizar el perfil
