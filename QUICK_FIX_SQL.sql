@@ -425,6 +425,37 @@ create trigger set_updated_at_bank_movements before update on public.bank_moveme
 alter table public.bank_movements enable row level security;
 
 -- =========================================================================
+-- SPRINT 7: BOT FISCAL PROACTIVO — registro de presentaciones AEAT
+-- =========================================================================
+create table if not exists public.aeat_presentaciones (
+  id uuid primary key default gen_random_uuid(),
+  empresa_id uuid not null references public.empresas(id) on delete cascade,
+  modelo text not null,                   -- "303" | "111" | "115" | "130" | "390" | "200"
+  ejercicio integer not null,
+  periodo text not null,                  -- "1T" | "2T" | "3T" | "4T" | "ANUAL"
+  fecha_presentacion date not null default current_date,
+  importe numeric(14, 2),
+  csv text,                               -- Código Seguro de Verificación AEAT
+  estado text not null default 'presentado',
+  presentado_por uuid references auth.users(id) on delete set null,
+  metadata jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (empresa_id, modelo, ejercicio, periodo)
+);
+create index if not exists idx_aeat_presentaciones_empresa on public.aeat_presentaciones(empresa_id, ejercicio desc, modelo);
+
+drop trigger if exists set_updated_at_aeat_presentaciones on public.aeat_presentaciones;
+create trigger set_updated_at_aeat_presentaciones before update on public.aeat_presentaciones
+  for each row execute function public.set_updated_at();
+
+alter table public.aeat_presentaciones enable row level security;
+
+-- Idempotencia: si la empresa cambió de tipo, asegúrate de tener la columna tipo
+alter table public.empresas add column if not exists tipo text default 'autonomo';
+alter table public.empresas add column if not exists iban text;
+
+-- =========================================================================
 -- ÚLTIMO PASO: refresca el cache de PostgREST sin reiniciar
 -- =========================================================================
 notify pgrst, 'reload schema';

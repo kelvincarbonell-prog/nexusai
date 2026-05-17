@@ -9,6 +9,7 @@ import { CierreAperturaPanel } from "@/components/accounting/cierre-apertura-pan
 import { ConciliacionPanel } from "@/components/accounting/conciliacion-panel";
 import { AsientosPredefinidosPanel } from "@/components/accounting/asientos-predefinidos-panel";
 import { ComparativaPanel } from "@/components/accounting/comparativa-panel";
+import { BotFiscalPanel } from "@/components/dashboard/bot-fiscal-panel";
 
 type Empresa = { id: string; nombre: string | null; nif?: string | null };
 
@@ -30,6 +31,7 @@ export function ContabilidadMulti({
       <EmpresaSelector empresas={empresas} initialId={empresaId} onChange={setEmpresaId} />
 
       {/* Key forzada para remontar los paneles al cambiar de cliente */}
+      <BotFiscalPanel key={`bf-${empresaId}`} empresaId={empresaId} />
       <ComparativaPanel key={`cmp-${empresaId}`} empresaId={empresaId} />
       <AutoAsientosPanel key={`aa-${empresaId}`} empresaId={empresaId} />
       <AsientosPredefinidosPanel key={`ap-${empresaId}`} empresaId={empresaId} />
