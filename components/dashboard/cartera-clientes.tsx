@@ -94,7 +94,7 @@ export function CarteraClientes({ initialCount }: { initialCount?: number }) {
                 ? "pill bad"
                 : "pill";
             return (
-              <Link key={e.id} href={`/clientes/${e.id}`} className="client-card">
+              <Link key={e.id} href={`/clientes/${e.id}`} prefetch className="client-card">
                 <strong>{e.nombre ?? "Sin nombre"}</strong>
                 <small>{e.nif ?? "—"}</small>
                 <div className="health">

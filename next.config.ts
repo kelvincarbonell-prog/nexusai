@@ -2,9 +2,23 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  reactStrictMode: true,
+  compress: true,
+  productionBrowserSourceMaps: false,
+  images: {
+    formats: ["image/avif", "image/webp"],
+    minimumCacheTTL: 60 * 60 * 24 * 30,
+  },
   experimental: {
     serverActions: {
       bodySizeLimit: "10mb",
+    },
+    // Tree-shaking agresivo de packages grandes (iconos, fechas, etc.)
+    optimizePackageImports: ["lucide-react", "date-fns", "@supabase/supabase-js"],
+    // Mantener viva la caché del cliente para volver instantáneo al pulsar atrás/adelante
+    staleTimes: {
+      dynamic: 30,
+      static: 180,
     },
   },
   async headers() {

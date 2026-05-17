@@ -41,11 +41,20 @@ export async function GET(request: NextRequest) {
     });
   }
 
-  // Escanea las primeras 30 con bot fiscal (paralelo). El resto se queda sin score.
-  const LIMITE = 30;
-  const escaneables = empresas.slice(0, LIMITE);
+  // Estrategia rápida: primero leer el snapshot del día (bot_scans, lo escribe el cron diario).
+  // Si no existe, ejecutamos bot fiscal en paralelo solo para las que falten.
+  const hoy = new Date().toISOString().slice(0, 10);
+  const idsAll = empresas.map((e) => e.id);
+  const { data: scans } = await admin
+    .from("bot_scans")
+    .select("empresa_id,score,categoria,alertas_total,alertas_danger")
+    .in("empresa_id", idsAll)
+    .eq("fecha", hoy);
+  const cached = new Map((scans ?? []).map((s) => [s.empresa_id, s]));
+
+  const sinScan = empresas.filter((e) => !cached.has(e.id)).slice(0, 20); // tope para no saturar la request
   const escaneos = await Promise.all(
-    escaneables.map(async (e) => {
+    sinScan.map(async (e) => {
       try {
         const r = await scanEmpresa(admin, e.id);
         const { score, categoria } = computeHealthScore(r.alertas);
@@ -53,9 +62,19 @@ export async function GET(request: NextRequest) {
       } catch {
         return { id: e.id, score: 100, categoria: "al_dia" as HealthCategoria, alertas_total: 0, alertas_danger: 0 };
       }
-    })
+    }),
   );
-  const byId = new Map(escaneos.map((s) => [s.id, s]));
+  const byId = new Map<string, { id: string; score: number; categoria: HealthCategoria; alertas_total: number; alertas_danger: number }>();
+  for (const [empresaId, s] of cached.entries()) {
+    byId.set(empresaId, {
+      id: empresaId,
+      score: Number(s.score ?? 100),
+      categoria: (s.categoria as HealthCategoria) ?? "al_dia",
+      alertas_total: Number(s.alertas_total ?? 0),
+      alertas_danger: Number(s.alertas_danger ?? 0),
+    });
+  }
+  for (const s of escaneos) byId.set(s.id, s);
 
   const items = empresas.map((e) => {
     const s = byId.get(e.id);

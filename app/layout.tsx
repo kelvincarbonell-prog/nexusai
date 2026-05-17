@@ -1,8 +1,13 @@
 import type { Metadata, Viewport } from "next";
+import dynamic from "next/dynamic";
 import "./globals.css";
-import { PWARegister } from "@/components/mobile/pwa-register";
 import { ToastProvider } from "@/components/toast/toaster";
 import { RouteProgress } from "@/components/effects/route-progress";
+
+// Defer no-crítico para acelerar el First Contentful Paint
+const PWARegister = dynamic(() => import("@/components/mobile/pwa-register").then((m) => ({ default: m.PWARegister })), {
+  loading: () => null,
+});
 
 const themeScript = `(() => {
   try {

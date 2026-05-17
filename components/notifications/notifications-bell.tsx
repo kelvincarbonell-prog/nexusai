@@ -47,9 +47,32 @@ export function NotificationsBell() {
 
   useEffect(() => {
     load();
-    // Polling cada 60s para nuevas notificaciones
-    const t = setInterval(load, 60_000);
-    return () => clearInterval(t);
+    // Polling cada 90s SOLO cuando la pestaña está visible (ahorra red/CPU)
+    let t: number | null = null;
+    function startPoll() {
+      if (t != null) return;
+      t = window.setInterval(load, 90_000);
+    }
+    function stopPoll() {
+      if (t != null) {
+        clearInterval(t);
+        t = null;
+      }
+    }
+    function onVisibility() {
+      if (document.hidden) {
+        stopPoll();
+      } else {
+        load(); // refresca al volver a la pestaña
+        startPoll();
+      }
+    }
+    document.addEventListener("visibilitychange", onVisibility);
+    if (!document.hidden) startPoll();
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibility);
+      stopPoll();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
