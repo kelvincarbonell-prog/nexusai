@@ -1,15 +1,63 @@
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import type { NominaResult } from "@/lib/laboral/payroll/calc";
 
+export type PayrollTemplate = "moderno" | "clasico" | "minimal";
+
 export type PayrollPDFInput = {
   empresa: { nombre: string; nif: string; direccion?: string };
   trabajador: { nombre: string; dni?: string; nss?: string; puesto?: string };
   periodo: string; // YYYY-MM
   result: NominaResult;
   generado_en: string;
+  /** Plantilla visual. Default: "moderno". */
+  template?: PayrollTemplate;
 };
 
 const EUR = (n: number) => new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR" }).format(n);
+
+type Theme = {
+  ink: ReturnType<typeof rgb>;
+  accent: ReturnType<typeof rgb>;
+  muted: ReturnType<typeof rgb>;
+  line: ReturnType<typeof rgb>;
+  bandBg: ReturnType<typeof rgb>;
+  bandFg: ReturnType<typeof rgb>;
+  bandSub: ReturnType<typeof rgb>;
+  brand: string;
+};
+
+const THEMES: Record<PayrollTemplate, Theme> = {
+  moderno: {
+    ink: rgb(0.04, 0.02, 0.06),
+    accent: rgb(0.54, 0.36, 0.96),
+    muted: rgb(0.45, 0.45, 0.5),
+    line: rgb(0.85, 0.85, 0.85),
+    bandBg: rgb(0.024, 0.016, 0.05),
+    bandFg: rgb(1, 1, 1),
+    bandSub: rgb(0.7, 0.75, 0.95),
+    brand: "Modelo 26",
+  },
+  clasico: {
+    ink: rgb(0.05, 0.05, 0.05),
+    accent: rgb(0.18, 0.32, 0.62),
+    muted: rgb(0.40, 0.40, 0.45),
+    line: rgb(0.70, 0.70, 0.70),
+    bandBg: rgb(1, 1, 1),
+    bandFg: rgb(0.05, 0.05, 0.05),
+    bandSub: rgb(0.40, 0.40, 0.45),
+    brand: "Modelo 26",
+  },
+  minimal: {
+    ink: rgb(0.10, 0.10, 0.12),
+    accent: rgb(0.10, 0.10, 0.12),
+    muted: rgb(0.55, 0.55, 0.58),
+    line: rgb(0.90, 0.90, 0.90),
+    bandBg: rgb(0.98, 0.98, 0.98),
+    bandFg: rgb(0.10, 0.10, 0.12),
+    bandSub: rgb(0.55, 0.55, 0.58),
+    brand: "Modelo 26",
+  },
+};
 
 export async function generatePayrollPDF(input: PayrollPDFInput): Promise<{ bytes: Uint8Array; sha256: string }> {
   const pdf = await PDFDocument.create();
@@ -17,17 +65,32 @@ export async function generatePayrollPDF(input: PayrollPDFInput): Promise<{ byte
   const helv = await pdf.embedFont(StandardFonts.Helvetica);
   const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
 
-  const ink = rgb(0.04, 0.02, 0.06);
-  const accent = rgb(0.54, 0.36, 0.96);
-  const muted = rgb(0.45, 0.45, 0.5);
-  const line = rgb(0.85, 0.85, 0.85);
+  const template = input.template ?? "moderno";
+  const theme = THEMES[template];
+  const { ink, accent, muted, line } = theme;
 
-  // Header band
-  page.drawRectangle({ x: 0, y: 770, width: 595, height: 72, color: rgb(0.024, 0.016, 0.05) });
-  page.drawText("RECIBO DE SALARIOS", { x: 42, y: 805, size: 16, font: bold, color: rgb(1, 1, 1) });
-  page.drawText(`Periodo · ${input.periodo}`, { x: 42, y: 786, size: 10, font: helv, color: rgb(0.7, 0.75, 0.95) });
-  page.drawText("Modelo 26", { x: 470, y: 805, size: 12, font: bold, color: accent });
-  page.drawText("tecnología fiscal · firma electrónica", { x: 380, y: 786, size: 8, font: helv, color: rgb(0.7, 0.75, 0.95) });
+  // Header band (varía por plantilla)
+  if (template === "minimal") {
+    // Mínimal: solo línea horizontal inferior, texto en ink
+    page.drawText("RECIBO DE SALARIOS", { x: 42, y: 805, size: 14, font: bold, color: ink });
+    page.drawText(`Periodo · ${input.periodo}`, { x: 42, y: 788, size: 9, font: helv, color: muted });
+    page.drawText(theme.brand, { x: 488, y: 805, size: 10, font: bold, color: ink });
+    page.drawLine({ start: { x: 42, y: 776 }, end: { x: 553, y: 776 }, thickness: 0.5, color: line });
+  } else if (template === "clasico") {
+    // Clásico: borde superior con doble línea, sin banda de color
+    page.drawLine({ start: { x: 42, y: 822 }, end: { x: 553, y: 822 }, thickness: 1.5, color: ink });
+    page.drawLine({ start: { x: 42, y: 818 }, end: { x: 553, y: 818 }, thickness: 0.5, color: ink });
+    page.drawText("RECIBO INDIVIDUAL JUSTIFICATIVO DEL PAGO DE SALARIOS", { x: 42, y: 798, size: 12, font: bold, color: ink });
+    page.drawText(`Periodo de liquidacion · ${input.periodo}`, { x: 42, y: 783, size: 9, font: helv, color: muted });
+    page.drawText(theme.brand, { x: 488, y: 798, size: 11, font: bold, color: accent });
+  } else {
+    // Moderno (default): banda oscura
+    page.drawRectangle({ x: 0, y: 770, width: 595, height: 72, color: theme.bandBg });
+    page.drawText("RECIBO DE SALARIOS", { x: 42, y: 805, size: 16, font: bold, color: theme.bandFg });
+    page.drawText(`Periodo · ${input.periodo}`, { x: 42, y: 786, size: 10, font: helv, color: theme.bandSub });
+    page.drawText(theme.brand, { x: 470, y: 805, size: 12, font: bold, color: accent });
+    page.drawText("tecnologia fiscal · firma electronica", { x: 380, y: 786, size: 8, font: helv, color: theme.bandSub });
+  }
 
   let y = 745;
   // Empresa

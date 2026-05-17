@@ -6,6 +6,7 @@ import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { isGestorOrAdmin } from "@/lib/laboral/access";
 import { calcularNomina } from "@/lib/laboral/payroll/calc";
 import { calcularBonificaciones } from "@/lib/laboral/payroll/bonificaciones";
+import { calcularEmbargoLegal } from "@/lib/laboral/embargos";
 
 const Schema = z.object({
   empresa_id: z.string().uuid(),
@@ -48,6 +49,35 @@ export async function POST(request: NextRequest) {
     .eq("periodo", parsed.data.periodo)
     .in("trabajador_id", ids);
   const yaCreadas = new Set((existentes ?? []).map((n) => n.trabajador_id));
+
+  // Pre-carga embargos activos y anticipos con saldo pendiente por trabajador (1 sola query cada uno)
+  const [embargosRes, anticiposRes] = await Promise.all([
+    admin
+      .from("embargos")
+      .select("trabajador_id,deuda_total,saldo_pendiente,pension_alimentos,porcentaje_pension,id")
+      .eq("empresa_id", parsed.data.empresa_id)
+      .eq("estado", "activo")
+      .in("trabajador_id", ids),
+    admin
+      .from("anticipos_nomina")
+      .select("trabajador_id,id,saldo_pendiente,cuota_importe,cuotas,importe")
+      .eq("empresa_id", parsed.data.empresa_id)
+      .eq("estado", "activo")
+      .in("trabajador_id", ids)
+      .gt("saldo_pendiente", 0),
+  ]);
+  const embargosByTrab = new Map<string, NonNullable<typeof embargosRes.data>>();
+  for (const e of embargosRes.data ?? []) {
+    const arr = embargosByTrab.get(e.trabajador_id) ?? [];
+    arr.push(e);
+    embargosByTrab.set(e.trabajador_id, arr);
+  }
+  const anticiposByTrab = new Map<string, NonNullable<typeof anticiposRes.data>>();
+  for (const a of anticiposRes.data ?? []) {
+    const arr = anticiposByTrab.get(a.trabajador_id) ?? [];
+    arr.push(a);
+    anticiposByTrab.set(a.trabajador_id, arr);
+  }
 
   const resultados: Array<{
     trabajador_id: string;
@@ -104,6 +134,40 @@ export async function POST(request: NextRequest) {
       });
       const bonifMensual = bonis.reduce((s, b) => s + b.importe_anual / 12, 0);
       const ssEmpresaNeta = Math.max(0, calc.ss_empresa - bonifMensual);
+
+      // ===== Embargos judiciales (LEC art. 607) =====
+      const embargosTrab = embargosByTrab.get(t.id) ?? [];
+      let embargoMes = 0;
+      const embargosAplicados: Array<{ id: string; importe_mes: number }> = [];
+      for (const emb of embargosTrab) {
+        const e = calcularEmbargoLegal({
+          liquido_mensual: calc.liquido,
+          pension_alimentos: Boolean(emb.pension_alimentos),
+          porcentaje_pension: emb.porcentaje_pension ? Number(emb.porcentaje_pension) : undefined,
+        });
+        // No descontar más que el saldo pendiente
+        const importe = Math.min(e.embargable_legal, Number(emb.saldo_pendiente ?? 0));
+        if (importe > 0) {
+          embargoMes += importe;
+          embargosAplicados.push({ id: emb.id, importe_mes: Math.round(importe * 100) / 100 });
+        }
+      }
+
+      // ===== Anticipos pendientes =====
+      const anticiposTrab = anticiposByTrab.get(t.id) ?? [];
+      let anticipoMes = 0;
+      const anticiposAplicados: Array<{ id: string; importe_mes: number }> = [];
+      for (const ant of anticiposTrab) {
+        const cuota = Math.min(Number(ant.cuota_importe ?? 0), Number(ant.saldo_pendiente ?? 0));
+        if (cuota > 0) {
+          anticipoMes += cuota;
+          anticiposAplicados.push({ id: ant.id, importe_mes: Math.round(cuota * 100) / 100 });
+        }
+      }
+
+      const totalDeducciones = Math.round((embargoMes + anticipoMes) * 100) / 100;
+      const liquidoFinal = Math.round((calc.liquido - totalDeducciones) * 100) / 100;
+
       const { error: errIns } = await admin
         .from("nominas")
         .upsert(
@@ -125,7 +189,12 @@ export async function POST(request: NextRequest) {
               ss_empresa_neta: ssEmpresaNeta,
               bonificaciones: bonis,
               bonificacion_mes: Math.round(bonifMensual * 100) / 100,
-              liquido: calc.liquido,
+              embargo_mes: Math.round(embargoMes * 100) / 100,
+              anticipo_mes: Math.round(anticipoMes * 100) / 100,
+              embargos_aplicados: embargosAplicados,
+              anticipos_aplicados: anticiposAplicados,
+              liquido_pre_deducciones: calc.liquido,
+              liquido: liquidoFinal,
               conceptos: calc.conceptos,
               hijos: t.hijos ?? 0,
               generado_masivo: true,
@@ -133,17 +202,45 @@ export async function POST(request: NextRequest) {
           },
           { onConflict: "empresa_id,trabajador_id,periodo" },
         );
+
+      // Actualiza saldos de embargos y anticipos
+      for (const a of anticiposAplicados) {
+        const ant = anticiposTrab.find((x) => x.id === a.id);
+        if (!ant) continue;
+        const nuevoSaldo = Math.max(0, Number(ant.saldo_pendiente) - a.importe_mes);
+        await admin
+          .from("anticipos_nomina")
+          .update({
+            saldo_pendiente: nuevoSaldo,
+            estado: nuevoSaldo <= 0 ? "pagado" : "activo",
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", a.id);
+      }
+      for (const e of embargosAplicados) {
+        const emb = embargosTrab.find((x) => x.id === e.id);
+        if (!emb) continue;
+        const nuevoSaldo = Math.max(0, Number(emb.saldo_pendiente) - e.importe_mes);
+        await admin
+          .from("embargos")
+          .update({
+            saldo_pendiente: nuevoSaldo,
+            estado: nuevoSaldo <= 0 ? "finalizado" : "activo",
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", e.id);
+      }
       if (errIns) throw new Error(errIns.message);
       resultados.push({
         trabajador_id: t.id,
         nombre: t.nombre,
         status: yaCreadas.has(t.id) ? "sobrescrita" : "creada",
         bruto: calc.devengo_bruto,
-        liquido: calc.liquido,
+        liquido: liquidoFinal,
         ss_empresa: calc.ss_empresa,
       });
       totalBruto += calc.devengo_bruto;
-      totalLiquido += calc.liquido;
+      totalLiquido += liquidoFinal;
       totalSsEmpresa += ssEmpresaNeta;
       totalIrpf += calc.irpf_retenido;
     } catch (e: unknown) {

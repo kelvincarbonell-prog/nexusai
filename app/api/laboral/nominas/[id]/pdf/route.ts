@@ -47,6 +47,13 @@ export async function GET(request: NextRequest, ctx: { params: Promise<{ id: str
     irpf_pct_aplicado: meta.irpf_pct_aplicado ?? 0,
   };
 
+  // Plantilla: ?template=clasico|moderno|minimal o desde empresa.metadata.nomina_template
+  const url = new URL(request.url);
+  const templateParam = url.searchParams.get("template");
+  const empresaMeta = (empresa.metadata ?? {}) as Record<string, unknown>;
+  const templateAll = (templateParam ?? (empresaMeta.nomina_template as string | undefined) ?? "moderno") as "moderno" | "clasico" | "minimal";
+  const template: "moderno" | "clasico" | "minimal" = ["moderno", "clasico", "minimal"].includes(templateAll) ? templateAll : "moderno";
+
   const { bytes } = await generatePayrollPDF({
     empresa: {
       nombre: empresa.nombre,
@@ -59,6 +66,7 @@ export async function GET(request: NextRequest, ctx: { params: Promise<{ id: str
       nss: trabajador?.nss,
       puesto: trabajador?.puesto,
     },
+    template,
     periodo: nomina.periodo,
     result,
     generado_en: new Date().toISOString(),

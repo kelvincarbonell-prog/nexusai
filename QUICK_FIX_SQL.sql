@@ -574,6 +574,32 @@ create trigger set_updated_at_embargos before update on public.embargos
 alter table public.embargos enable row level security;
 
 -- =========================================================================
+-- SPRINT 17: cuadrante de turnos
+-- =========================================================================
+create table if not exists public.turnos (
+  id uuid primary key default gen_random_uuid(),
+  empresa_id uuid not null references public.empresas(id) on delete cascade,
+  trabajador_id uuid not null references public.trabajadores(id) on delete cascade,
+  gestor_id uuid references auth.users(id) on delete set null,
+  fecha date not null,
+  hora_inicio time not null,
+  hora_fin time not null,
+  descanso_min integer not null default 0,
+  ubicacion text,
+  notas text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index if not exists idx_turnos_empresa_fecha on public.turnos(empresa_id, fecha);
+create index if not exists idx_turnos_trabajador on public.turnos(trabajador_id, fecha);
+
+drop trigger if exists set_updated_at_turnos on public.turnos;
+create trigger set_updated_at_turnos before update on public.turnos
+  for each row execute function public.set_updated_at();
+
+alter table public.turnos enable row level security;
+
+-- =========================================================================
 -- ÚLTIMO PASO: refresca el cache de PostgREST sin reiniciar
 -- =========================================================================
 notify pgrst, 'reload schema';

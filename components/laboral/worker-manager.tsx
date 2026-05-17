@@ -6,6 +6,7 @@ import { PayrollPanel } from "@/components/laboral/payroll-panel";
 import { NominasMasivasPanel } from "@/components/laboral/nominas-masivas-panel";
 import { SiltraFanPanel } from "@/components/laboral/siltra-fan-panel";
 import { WorkerActionsModal } from "@/components/laboral/worker-actions-modal";
+import { CuadrantePanel } from "@/components/laboral/cuadrante-panel";
 import { CalendarioLaboral } from "@/components/laboral/calendario-laboral";
 import { FiniquitoModal } from "@/components/laboral/finiquito-modal";
 import { BonificacionesModal } from "@/components/laboral/bonificaciones-modal";
@@ -33,7 +34,7 @@ type Fichaje = { id: string; trabajador_id: string; fecha: string; hora_entrada?
 const TIPO_CONTRATO = ["indefinido", "temporal", "obra y servicio", "formacion", "practicas", "fijo discontinuo"];
 const TIPO_AUSENCIA = ["vacaciones", "it", "permiso", "maternidad", "paternidad", "excedencia", "otro"];
 
-type LaboralTab = "trabajadores" | "ausencias" | "horario" | "nominas" | "calendario";
+type LaboralTab = "trabajadores" | "ausencias" | "horario" | "nominas" | "cuadrante" | "calendario";
 
 export function WorkerManager({ empresas, initialTab = "trabajadores" }: { empresas: Empresa[]; initialTab?: LaboralTab }) {
   const supabase = useMemo(() => createBrowserSupabase(), []);
@@ -270,7 +271,7 @@ export function WorkerManager({ empresas, initialTab = "trabajadores" }: { empre
       </div>
 
       <div role="tablist" style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
-        {(["trabajadores", "ausencias", "horario", "nominas", "calendario"] as const).map((t) => (
+        {(["trabajadores", "ausencias", "horario", "cuadrante", "nominas", "calendario"] as const).map((t) => (
           <button
             key={t}
             role="tab"
@@ -278,7 +279,7 @@ export function WorkerManager({ empresas, initialTab = "trabajadores" }: { empre
             className={`button ${tab === t ? "" : "secondary"} compact`}
             onClick={() => setTab(t)}
           >
-            {t === "trabajadores" ? "Trabajadores" : t === "ausencias" ? "Ausencias" : t === "horario" ? "Fichajes" : t === "nominas" ? "Nóminas" : "Calendario"}
+            {t === "trabajadores" ? "Trabajadores" : t === "ausencias" ? "Ausencias" : t === "horario" ? "Fichajes" : t === "cuadrante" ? "Cuadrante" : t === "nominas" ? "Nóminas" : "Calendario"}
           </button>
         ))}
       </div>
@@ -433,7 +434,10 @@ export function WorkerManager({ empresas, initialTab = "trabajadores" }: { empre
 
       {tab === "horario" ? (
         <div style={{ display: "grid", gap: 16 }}>
-          <p className="muted">Fichaje de hoy (cumplimiento RD 8/2019, registro horario obligatorio).</p>
+          <p className="muted">
+            Fichaje de hoy (cumplimiento RD 8/2019, registro horario obligatorio).{" "}
+            <strong>Descarga el PDF mensual</strong> con un clic desde cada trabajador.
+          </p>
           <div style={{ display: "grid", gap: 8 }}>
             {trabajadores.filter((t) => t.activo).map((t) => {
               const today = new Date().toISOString().slice(0, 10);
@@ -447,9 +451,22 @@ export function WorkerManager({ empresas, initialTab = "trabajadores" }: { empre
                       {abierto ? `Entrada: ${new Date(abierto.hora_entrada ?? "").toLocaleTimeString("es-ES")}` : todayFichajes.length === 0 ? "Sin fichaje hoy" : "Jornada cerrada"}
                     </small>
                   </div>
-                  <div style={{ display: "flex", gap: 8 }}>
+                  <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
                     <button className="button compact" onClick={() => fichar(t.id, "entrada")} disabled={!!abierto}>Entrada</button>
                     <button className="button secondary compact" onClick={() => fichar(t.id, "salida")} disabled={!abierto}>Salida</button>
+                    <button
+                      className="button ghost compact"
+                      title="Registro horario mensual (PDF firmable)"
+                      onClick={() => {
+                        const periodo = new Date().toISOString().slice(0, 7);
+                        descargarPdf(
+                          `/api/laboral/registro-horario/pdf?empresa_id=${empresaId}&trabajador_id=${t.id}&periodo=${periodo}`,
+                          `registro-horario-${t.dni ?? t.id.slice(0, 8)}-${periodo}.pdf`,
+                        );
+                      }}
+                    >
+                      PDF mes
+                    </button>
                   </div>
                 </div>
               );
@@ -482,6 +499,8 @@ export function WorkerManager({ empresas, initialTab = "trabajadores" }: { empre
           <PayrollPanel empresaId={empresaId} trabajadores={trabajadores} />
         </div>
       ) : null}
+
+      {tab === "cuadrante" ? <CuadrantePanel empresaId={empresaId} trabajadores={trabajadores} /> : null}
 
       {tab === "calendario" ? <CalendarioLaboral /> : null}
 
