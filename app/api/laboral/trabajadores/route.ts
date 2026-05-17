@@ -23,6 +23,12 @@ const TrabajadorSchema = z.object({
   salario_bruto_anual: z.number().min(0).max(1_000_000).optional(),
   irpf_pct: z.number().min(0).max(60).optional(),
   convenio: z.string().max(180).optional(),
+  convenio_codigo: z.string().max(40).optional(),
+  categoria_convenio: z.string().max(40).optional(),
+  grupo_cotizacion: z.number().int().min(0).max(11).optional(),
+  apellidos: z.string().max(180).optional(),
+  sexo: z.enum(["1", "6"]).optional(),
+  hijos: z.number().int().min(0).max(20).optional(),
   activo: z.boolean().optional(),
 });
 

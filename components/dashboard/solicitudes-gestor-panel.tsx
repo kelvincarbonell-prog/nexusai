@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { Inbox, AlertOctagon, CheckCircle2, Clock, ArrowRight, Filter } from "lucide-react";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
@@ -25,7 +25,11 @@ export function SolicitudesGestorPanel() {
   const supabase = useMemo(() => createBrowserSupabase(), []);
   const [items, setItems] = useState<Solicitud[]>([]);
   const [resumen, setResumen] = useState<Resumen>({ pendientes: 0, en_proceso: 0, resueltas: 0, urgentes: 0 });
-  const [filtro, setFiltro] = useState<Filtro>("pendiente");
+  const [filtro, setFiltroRaw] = useState<Filtro>("pendiente");
+  const [, startFiltroTransition] = useTransition();
+  function setFiltro(f: Filtro) {
+    startFiltroTransition(() => setFiltroRaw(f));
+  }
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);

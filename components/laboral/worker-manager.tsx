@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 import { PayrollPanel } from "@/components/laboral/payroll-panel";
 import { NominasMasivasPanel } from "@/components/laboral/nominas-masivas-panel";
@@ -37,7 +37,11 @@ type LaboralTab = "trabajadores" | "ausencias" | "horario" | "nominas" | "calend
 export function WorkerManager({ empresas, initialTab = "trabajadores" }: { empresas: Empresa[]; initialTab?: LaboralTab }) {
   const supabase = useMemo(() => createBrowserSupabase(), []);
   const [empresaId, setEmpresaId] = useState(empresas[0]?.id ?? "");
-  const [tab, setTab] = useState<LaboralTab>(initialTab);
+  const [tab, setTabRaw] = useState<LaboralTab>(initialTab);
+  const [, startTabTransition] = useTransition();
+  function setTab(t: LaboralTab) {
+    startTabTransition(() => setTabRaw(t));
+  }
   const [trabajadores, setTrabajadores] = useState<Trabajador[]>([]);
   const [ausencias, setAusencias] = useState<Ausencia[]>([]);
   const [fichajes, setFichajes] = useState<Fichaje[]>([]);
@@ -59,7 +63,42 @@ export function WorkerManager({ empresas, initialTab = "trabajadores" }: { empre
     salario_bruto_anual: 0,
     irpf_pct: 0,
     fecha_alta: new Date().toISOString().slice(0, 10),
+    convenio_codigo: "",
+    categoria_convenio: "",
+    grupo_cotizacion: 0,
   });
+
+  const [convenios, setConvenios] = useState<Array<{ codigo: string; nombre: string; categorias: Array<{ code: string; nombre: string; bruto_anual: number; grupo_cotizacion: number }>; jornada_semanal: number }>>([]);
+  useEffect(() => {
+    (async () => {
+      const tk = await token();
+      try {
+        const res = await fetch("/api/laboral/convenios", { headers: { Authorization: `Bearer ${tk}` } });
+        const j = await res.json();
+        if (j.ok) setConvenios(j.items ?? []);
+      } catch {
+        // catálogo es opcional
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const convenioSel = convenios.find((c) => c.codigo === nuevo.convenio_codigo) ?? null;
+
+  function aplicarCategoria(code: string) {
+    const cat = convenioSel?.categorias.find((x) => x.code === code);
+    if (!cat) {
+      setNuevo((prev) => ({ ...prev, categoria_convenio: code }));
+      return;
+    }
+    setNuevo((prev) => ({
+      ...prev,
+      categoria_convenio: code,
+      salario_bruto_anual: cat.bruto_anual,
+      grupo_cotizacion: cat.grupo_cotizacion,
+      jornada_horas: convenioSel?.jornada_semanal ?? prev.jornada_horas,
+    }));
+  }
 
   const [nuevaAusencia, setNuevaAusencia] = useState({
     trabajador_id: "",
@@ -264,6 +303,18 @@ export function WorkerManager({ empresas, initialTab = "trabajadores" }: { empre
               <input className="input" type="number" placeholder="Jornada (h/sem)" value={nuevo.jornada_horas} onChange={(e) => setNuevo({ ...nuevo, jornada_horas: Number(e.target.value) })} />
               <input className="input" type="number" placeholder="Salario bruto anual" value={nuevo.salario_bruto_anual} onChange={(e) => setNuevo({ ...nuevo, salario_bruto_anual: Number(e.target.value) })} />
               <input className="input" type="number" placeholder="IRPF %" value={nuevo.irpf_pct} onChange={(e) => setNuevo({ ...nuevo, irpf_pct: Number(e.target.value) })} step="0.1" />
+              <select className="input" value={nuevo.convenio_codigo} onChange={(e) => setNuevo({ ...nuevo, convenio_codigo: e.target.value, categoria_convenio: "" })}>
+                <option value="">— Convenio colectivo (opcional) —</option>
+                {convenios.map((c) => <option key={c.codigo} value={c.codigo}>{c.nombre}</option>)}
+              </select>
+              <select className="input" value={nuevo.categoria_convenio} onChange={(e) => aplicarCategoria(e.target.value)} disabled={!convenioSel}>
+                <option value="">{convenioSel ? "— Categoría del convenio —" : "Selecciona convenio primero"}</option>
+                {convenioSel?.categorias.map((cat) => (
+                  <option key={cat.code} value={cat.code}>
+                    {cat.nombre} · {new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(cat.bruto_anual)}
+                  </option>
+                ))}
+              </select>
               <div className="span-form">
                 <button className="button" onClick={altaTrabajador}>Crear trabajador</button>
               </div>

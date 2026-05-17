@@ -104,7 +104,7 @@ export function AppShell({
             const isActive = item.href === active;
             const Icon = item.icon;
             return (
-              <Link key={item.href} href={item.href} className={isActive ? "active" : undefined} aria-current={isActive ? "page" : undefined}>
+              <Link key={item.href} href={item.href} prefetch className={isActive ? "active" : undefined} aria-current={isActive ? "page" : undefined}>
                 <span style={{ display: "inline-flex", alignItems: "center", gap: 10, minWidth: 0 }}>
                   <Icon
                     size={15}
