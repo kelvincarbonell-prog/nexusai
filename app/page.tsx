@@ -8,7 +8,6 @@ import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { TypingHeadline } from "@/components/effects/typing-headline";
 import { Magnetic } from "@/components/effects/magnetic";
 import { TiltCard } from "@/components/effects/tilt-card";
-import { LogoMarquee } from "@/components/effects/logo-marquee";
 import { LetterReveal } from "@/components/effects/letter-reveal";
 
 // Pesados → code-splitting con next/dynamic para no bloquear el bundle inicial.
@@ -131,14 +130,6 @@ export default function LandingPage() {
           </div>
         </Reveal>
 
-        <Reveal delay={380}>
-          <div style={{ marginTop: 36 }}>
-            <small className="muted" style={{ fontSize: 11, fontFamily: "var(--mono)", letterSpacing: "0.08em", textTransform: "uppercase", display: "block", marginBottom: 6, textAlign: "center" }}>
-              Confían en M26
-            </small>
-            <LogoMarquee />
-          </div>
-        </Reveal>
 
         <Reveal delay={420}>
           <div style={{ marginTop: 40 }}>
