@@ -511,6 +511,35 @@ alter table public.trabajadores add column if not exists categoria_convenio text
 
 -- Empresa: Código Cuenta Cotización
 alter table public.empresas add column if not exists ccc text;
+alter table public.empresas add column if not exists cnae text;
+alter table public.empresas add column if not exists ccaa text;   -- ISO ES-XX para festivos
+
+-- =========================================================================
+-- SPRINT 14: anticipos de nómina
+-- =========================================================================
+create table if not exists public.anticipos_nomina (
+  id uuid primary key default gen_random_uuid(),
+  empresa_id uuid not null references public.empresas(id) on delete cascade,
+  trabajador_id uuid not null references public.trabajadores(id) on delete cascade,
+  gestor_id uuid references auth.users(id) on delete set null,
+  importe numeric(12, 2) not null,
+  saldo_pendiente numeric(12, 2) not null default 0,
+  cuotas integer not null default 1,
+  cuota_importe numeric(12, 2) not null default 0,
+  fecha date not null default current_date,
+  motivo text,
+  estado text not null default 'activo',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index if not exists idx_anticipos_empresa on public.anticipos_nomina(empresa_id, fecha desc);
+create index if not exists idx_anticipos_trabajador on public.anticipos_nomina(trabajador_id);
+
+drop trigger if exists set_updated_at_anticipos on public.anticipos_nomina;
+create trigger set_updated_at_anticipos before update on public.anticipos_nomina
+  for each row execute function public.set_updated_at();
+
+alter table public.anticipos_nomina enable row level security;
 
 -- =========================================================================
 -- ÚLTIMO PASO: refresca el cache de PostgREST sin reiniciar

@@ -7,7 +7,10 @@ import { isGestorOrAdmin } from "@/lib/laboral/access";
 import { PLANTILLAS, getPlantilla, resolveFormula, resolveTemplate } from "@/lib/accounting/asientos-predefinidos";
 
 export async function GET() {
-  return NextResponse.json({ ok: true, plantillas: PLANTILLAS });
+  return NextResponse.json(
+    { ok: true, plantillas: PLANTILLAS },
+    { headers: { "cache-control": "private, max-age=600, stale-while-revalidate=3600" } },
+  );
 }
 
 const Schema = z.object({

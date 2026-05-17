@@ -5,6 +5,7 @@ import { getUserFromRequest } from "@/lib/supabase/auth";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { isGestorOrAdmin } from "@/lib/laboral/access";
 import { calcularNomina } from "@/lib/laboral/payroll/calc";
+import { calcularBonificaciones } from "@/lib/laboral/payroll/bonificaciones";
 
 const Schema = z.object({
   empresa_id: z.string().uuid(),
@@ -29,7 +30,7 @@ export async function POST(request: NextRequest) {
 
   const { data: trabajadores } = await admin
     .from("trabajadores")
-    .select("id,nombre,salario_bruto_anual,irpf_pct,hijos,activo")
+    .select("id,nombre,salario_bruto_anual,irpf_pct,hijos,activo,fecha_alta,fecha_nacimiento,tipo_contrato,sexo,metadata")
     .eq("empresa_id", parsed.data.empresa_id)
     .eq("activo", true)
     .limit(500);
@@ -84,6 +85,25 @@ export async function POST(request: NextRequest) {
         irpf_pct_override: t.irpf_pct ? Number(t.irpf_pct) : undefined,
         hijos: t.hijos ? Number(t.hijos) : 0,
       });
+
+      // Bonificaciones SS aplicables (reducen SS empresa)
+      const tMeta = (t.metadata ?? {}) as Record<string, unknown>;
+      const edad = t.fecha_nacimiento
+        ? Math.floor((Date.now() - new Date(t.fecha_nacimiento as string).getTime()) / (365.25 * 86400000))
+        : 30;
+      const bonis = calcularBonificaciones({
+        edad,
+        fecha_alta: (t.fecha_alta as string | null) ?? new Date().toISOString().slice(0, 10),
+        tipo_contrato: (t.tipo_contrato as string | null) ?? "indefinido",
+        genero: t.sexo === "6" ? "F" : "M",
+        discapacidad_pct: typeof tMeta.discapacidad_pct === "number" ? (tMeta.discapacidad_pct as number) : undefined,
+        victima_violencia: tMeta.victima_violencia === true,
+        parado_larga_duracion: tMeta.parado_larga_duracion === true,
+        primer_empleo_joven: tMeta.primer_empleo_joven === true,
+        zona_rural_despoblada: tMeta.zona_rural_despoblada === true,
+      });
+      const bonifMensual = bonis.reduce((s, b) => s + b.importe_anual / 12, 0);
+      const ssEmpresaNeta = Math.max(0, calc.ss_empresa - bonifMensual);
       const { error: errIns } = await admin
         .from("nominas")
         .upsert(
@@ -102,6 +122,9 @@ export async function POST(request: NextRequest) {
               irpf_retenido: calc.irpf_retenido,
               irpf_pct: calc.irpf_pct_aplicado,
               ss_empresa: calc.ss_empresa,
+              ss_empresa_neta: ssEmpresaNeta,
+              bonificaciones: bonis,
+              bonificacion_mes: Math.round(bonifMensual * 100) / 100,
               liquido: calc.liquido,
               conceptos: calc.conceptos,
               hijos: t.hijos ?? 0,
@@ -121,7 +144,7 @@ export async function POST(request: NextRequest) {
       });
       totalBruto += calc.devengo_bruto;
       totalLiquido += calc.liquido;
-      totalSsEmpresa += calc.ss_empresa;
+      totalSsEmpresa += ssEmpresaNeta;
       totalIrpf += calc.irpf_retenido;
     } catch (e: unknown) {
       resultados.push({

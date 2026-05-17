@@ -21,5 +21,13 @@ export async function GET(request: NextRequest) {
 
   const q = request.nextUrl.searchParams.get("q") ?? "";
   const items = q ? buscarConvenios(q) : CONVENIOS;
-  return NextResponse.json({ ok: true, items, total: items.length });
+  // Catálogo estático: cachealo agresivamente en el browser
+  return NextResponse.json(
+    { ok: true, items, total: items.length },
+    {
+      headers: {
+        "cache-control": "private, max-age=600, stale-while-revalidate=3600",
+      },
+    },
+  );
 }
