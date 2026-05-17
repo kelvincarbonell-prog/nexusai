@@ -13,6 +13,7 @@ import {
   Target,
   UserCircle,
   ShieldCheck,
+  UsersRound,
   type LucideIcon,
 } from "lucide-react";
 import { StorageBadge } from "@/components/storage/storage-badge";
@@ -42,6 +43,7 @@ const accountNav: NavItem[] = [
   { href: "/tareas", label: "Tareas", icon: ListChecks },
   { href: "/inteligencia", label: "Inteligencia", icon: LineChart },
   { href: "/crm", label: "CRM", icon: Target },
+  { href: "/equipo", label: "Equipo", icon: UsersRound },
   { href: "/perfil", label: "Mi perfil", icon: UserCircle },
 ];
 

@@ -333,6 +333,42 @@ insert into storage.buckets (id, name, public) values ('payroll-receipts', 'payr
 insert into storage.buckets (id, name, public) values ('avatars', 'avatars', true) on conflict (id) do nothing;
 
 -- =========================================================================
+-- updated_at + created_at defensivos + triggers (arregla
+-- "column documentos.updated_at does not exist")
+-- =========================================================================
+alter table public.documentos add column if not exists updated_at timestamptz not null default now();
+alter table public.documentos add column if not exists created_at timestamptz not null default now();
+alter table public.facturas add column if not exists updated_at timestamptz not null default now();
+alter table public.facturas add column if not exists created_at timestamptz not null default now();
+alter table public.gastos add column if not exists updated_at timestamptz not null default now();
+alter table public.gastos add column if not exists created_at timestamptz not null default now();
+alter table public.trabajadores add column if not exists updated_at timestamptz not null default now();
+alter table public.trabajadores add column if not exists created_at timestamptz not null default now();
+alter table public.nominas add column if not exists updated_at timestamptz not null default now();
+alter table public.nominas add column if not exists created_at timestamptz not null default now();
+alter table public.empresas add column if not exists updated_at timestamptz not null default now();
+alter table public.empresas add column if not exists created_at timestamptz not null default now();
+alter table public.firma_docs add column if not exists updated_at timestamptz not null default now();
+alter table public.solicitudes_laborales add column if not exists updated_at timestamptz not null default now();
+alter table public.solicitudes_laborales add column if not exists created_at timestamptz not null default now();
+
+drop trigger if exists set_updated_at_documentos on public.documentos;
+create trigger set_updated_at_documentos before update on public.documentos
+  for each row execute function public.set_updated_at();
+drop trigger if exists set_updated_at_facturas on public.facturas;
+create trigger set_updated_at_facturas before update on public.facturas
+  for each row execute function public.set_updated_at();
+drop trigger if exists set_updated_at_gastos on public.gastos;
+create trigger set_updated_at_gastos before update on public.gastos
+  for each row execute function public.set_updated_at();
+drop trigger if exists set_updated_at_trabajadores on public.trabajadores;
+create trigger set_updated_at_trabajadores before update on public.trabajadores
+  for each row execute function public.set_updated_at();
+drop trigger if exists set_updated_at_empresas on public.empresas;
+create trigger set_updated_at_empresas before update on public.empresas
+  for each row execute function public.set_updated_at();
+
+-- =========================================================================
 -- ÚLTIMO PASO: refresca el cache de PostgREST sin reiniciar
 -- =========================================================================
 notify pgrst, 'reload schema';

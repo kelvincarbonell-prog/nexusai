@@ -559,6 +559,27 @@ export function CasillasSimple({ modelo, empresas }: { modelo: "100" | "111" | "
         <div className="button-row">
           <button className="button secondary" onClick={load} disabled={loading || saving}>↻ Recalcular</button>
           <button className="button secondary" onClick={() => save("borrador")} disabled={saving || !empresaId}>Guardar borrador</button>
+          <button
+            className="button secondary"
+            disabled={!declaracion}
+            onClick={async () => {
+              const tk = await token();
+              const url = `/api/aeat/${modelo}/fichero?empresa_id=${empresaId}&ejercicio=${ejercicio}&periodo=${periodo}`;
+              const res = await fetch(url, { headers: { Authorization: `Bearer ${tk}` } });
+              if (!res.ok) {
+                setError("No se pudo generar el fichero AEAT");
+                return;
+              }
+              const blob = await res.blob();
+              const objUrl = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = objUrl;
+              a.download = `modelo-${modelo}-${periodo}-${ejercicio}.txt`;
+              a.click();
+              URL.revokeObjectURL(objUrl);
+            }}
+            title="Descarga el fichero TXT con formato AEAT para subirlo a la sede"
+          >↓ Fichero AEAT</button>
           <button className="button" onClick={() => save("presentado")} disabled={saving || !declaracion}>Marcar presentado ✓</button>
         </div>
       </div>

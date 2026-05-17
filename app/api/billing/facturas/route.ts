@@ -5,6 +5,7 @@ import { getUserFromRequest } from "@/lib/supabase/auth";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { canAccessLaborCompany, isGestorOrAdmin } from "@/lib/laboral/access";
 import { asentarFacturaEmitida, autoAsientosActivado } from "@/lib/accounting/auto-asientos";
+import { generarHashFactura, generarUrlQR } from "@/lib/payments/verifactu";
 
 const Linea = z.object({
   descripcion: z.string().min(1).max(500),
@@ -79,7 +80,7 @@ export async function POST(request: NextRequest) {
   // Generar siguiente número usando la serie de la empresa
   const { data: empresa } = await admin
     .from("empresas")
-    .select("metadata")
+    .select("nif,nombre,metadata")
     .eq("id", parsed.data.empresa_id)
     .single();
   const empresaMeta = (empresa?.metadata ?? {}) as Record<string, unknown>;
@@ -128,6 +129,54 @@ export async function POST(request: NextRequest) {
     .select("*")
     .single();
   if (error || !data) return jsonError(error?.message ?? "No se pudo crear", 500);
+
+  // VeriFactu — solo facturas emitidas y solo si la empresa lo tiene activado
+  if (parsed.data.tipo === "emitida") {
+    try {
+      const empresaMeta2 = (empresa?.metadata ?? {}) as Record<string, unknown>;
+      if (empresaMeta2.verifactu === true) {
+        // Encadena con el hash de la última factura VeriFactu de la empresa
+        const { data: last } = await admin
+          .from("facturas")
+          .select("metadata")
+          .eq("empresa_id", parsed.data.empresa_id)
+          .eq("tipo", "emitida")
+          .not("metadata->>verifactu_hash", "is", null)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        const hashAnterior = (last?.metadata as Record<string, unknown> | undefined)?.verifactu_hash as string | undefined ?? "";
+
+        const verifactuData = {
+          emisor_nif: empresa?.nif ?? (empresaMeta2.nif as string ?? ""),
+          numero_factura: numero,
+          fecha_emision: data.fecha_emision ?? new Date().toISOString().slice(0, 10),
+          importe_total: total,
+          base_imponible: base,
+          cuota_iva: ivaTotal,
+          iva_pct: parsed.data.lineas[0]?.iva_pct ?? 21,
+          tipo_factura: "F1" as const,
+        };
+        const hash = generarHashFactura(verifactuData, hashAnterior);
+        const qrUrl = generarUrlQR(verifactuData, hash);
+        await admin
+          .from("facturas")
+          .update({
+            metadata: {
+              ...(data.metadata as Record<string, unknown>),
+              verifactu_hash: hash,
+              verifactu_hash_anterior: hashAnterior,
+              verifactu_qr_url: qrUrl,
+              verifactu_fecha_generacion: new Date().toISOString(),
+              verifactu_status: "pendiente_envio",
+            },
+          })
+          .eq("id", data.id);
+      }
+    } catch {
+      // No bloquea: el VeriFactu se puede regenerar desde el endpoint dedicado.
+    }
+  }
 
   // Auto-asentado contable si está activado
   let asiento_id: string | null = null;
