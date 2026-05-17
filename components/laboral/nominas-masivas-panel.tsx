@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Users, CheckCircle2, AlertTriangle, Loader2, Zap, FileText } from "lucide-react";
+import { Users, CheckCircle2, AlertTriangle, Loader2, Zap, FileText, UploadCloud } from "lucide-react";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 
 type Resultado = {
@@ -34,7 +34,34 @@ export function NominasMasivasPanel({ empresaId }: { empresaId: string }) {
   const [sobreescribir, setSobreescribir] = useState(false);
   const [result, setResult] = useState<Resp | null>(null);
   const [loading, setLoading] = useState(false);
+  const [publishing, setPublishing] = useState(false);
+  const [publishMsg, setPublishMsg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  async function publicarAlPortal() {
+    setPublishing(true);
+    setPublishMsg(null);
+    setError(null);
+    try {
+      const { data: sess } = await supabase.auth.getSession();
+      const tk = sess.session?.access_token ?? "";
+      const res = await fetch("/api/laboral/nominas/publicar-mes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${tk}` },
+        body: JSON.stringify({ empresa_id: empresaId, periodo, notificar_por_email: true }),
+      });
+      const j = await res.json();
+      if (!j.ok) throw new Error(j.error ?? "No se pudo publicar");
+      const partes = [`${j.publicadas} publicadas`];
+      if (j.omitidas) partes.push(`${j.omitidas} ya estaban`);
+      if (j.errores?.length) partes.push(`${j.errores.length} con error`);
+      setPublishMsg(partes.join(" · "));
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Error");
+    } finally {
+      setPublishing(false);
+    }
+  }
 
   async function generar() {
     setLoading(true);
@@ -108,7 +135,33 @@ export function NominasMasivasPanel({ empresaId }: { empresaId: string }) {
           {loading ? <Loader2 size={14} className="animate-spin" /> : <Zap size={14} />}
           {loading ? "Generando…" : "Generar nóminas del mes"}
         </button>
+        <button
+          type="button"
+          onClick={publicarAlPortal}
+          disabled={publishing}
+          style={{
+            padding: "8px 14px",
+            borderRadius: 8,
+            border: "1px solid var(--border, #e5e7eb)",
+            background: "transparent",
+            cursor: publishing ? "wait" : "pointer",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+            fontWeight: 600,
+          }}
+        >
+          {publishing ? <Loader2 size={14} className="animate-spin" /> : <UploadCloud size={14} />}
+          {publishing ? "Publicando…" : "Publicar al portal"}
+        </button>
       </div>
+
+      {publishMsg && (
+        <div style={{ padding: 10, borderRadius: 8, background: "#10b98112", border: "1px solid #10b98155", color: "#10b981", fontSize: 13, display: "flex", alignItems: "center", gap: 6 }}>
+          <CheckCircle2 size={14} />
+          {publishMsg} — los trabajadores la verán en su portal.
+        </div>
+      )}
 
       {error && (
         <div style={{ padding: 10, borderRadius: 8, background: "#ef444412", border: "1px solid #ef444455", color: "#ef4444", fontSize: 13 }}>

@@ -542,6 +542,38 @@ create trigger set_updated_at_anticipos before update on public.anticipos_nomina
 alter table public.anticipos_nomina enable row level security;
 
 -- =========================================================================
+-- SPRINT 15: embargos judiciales
+-- =========================================================================
+create table if not exists public.embargos (
+  id uuid primary key default gen_random_uuid(),
+  empresa_id uuid not null references public.empresas(id) on delete cascade,
+  trabajador_id uuid not null references public.trabajadores(id) on delete cascade,
+  gestor_id uuid references auth.users(id) on delete set null,
+  juzgado text not null,
+  procedimiento text,
+  beneficiario text,
+  iban_beneficiario text,
+  deuda_total numeric(14, 2) not null,
+  saldo_pendiente numeric(14, 2) not null default 0,
+  fecha_inicio date not null default current_date,
+  fecha_fin date,
+  pension_alimentos boolean not null default false,
+  porcentaje_pension numeric(5, 2),
+  estado text not null default 'activo',
+  metadata jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index if not exists idx_embargos_empresa on public.embargos(empresa_id, fecha_inicio desc);
+create index if not exists idx_embargos_trabajador on public.embargos(trabajador_id);
+
+drop trigger if exists set_updated_at_embargos on public.embargos;
+create trigger set_updated_at_embargos before update on public.embargos
+  for each row execute function public.set_updated_at();
+
+alter table public.embargos enable row level security;
+
+-- =========================================================================
 -- ÚLTIMO PASO: refresca el cache de PostgREST sin reiniciar
 -- =========================================================================
 notify pgrst, 'reload schema';
