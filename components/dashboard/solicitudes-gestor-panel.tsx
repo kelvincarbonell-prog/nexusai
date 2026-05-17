@@ -84,16 +84,25 @@ export function SolicitudesGestorPanel() {
             <strong style={{ fontSize: 18, display: "block" }}>Bandeja</strong>
           </div>
         </div>
-        <div className="button-row" style={{ flexWrap: "wrap" }}>
-          {resumen.urgentes > 0 && (
-            <span className="pill bad">
-              <AlertOctagon size={11} style={{ marginRight: 4, verticalAlign: "middle" }} />
-              {resumen.urgentes} urgentes
-            </span>
+        <div className="button-row" style={{ flexWrap: "wrap" }} suppressHydrationWarning>
+          {loading ? (
+            <span className="pill" style={{ opacity: 0.5 }}>cargando…</span>
+          ) : (
+            <>
+              {resumen.urgentes > 0 && (
+                <span className="pill bad">
+                  <AlertOctagon size={11} style={{ marginRight: 4, verticalAlign: "middle" }} />
+                  {resumen.urgentes} urgentes
+                </span>
+              )}
+              {resumen.pendientes > 0 && <span className="pill warn">pendientes · {resumen.pendientes}</span>}
+              {resumen.en_proceso > 0 && <span className="pill accent">en proceso · {resumen.en_proceso}</span>}
+              {resumen.resueltas > 0 && <span className="pill good">resueltas · {resumen.resueltas}</span>}
+              {resumen.pendientes === 0 && resumen.en_proceso === 0 && resumen.urgentes === 0 && (
+                <span className="pill good">bandeja vacía</span>
+              )}
+            </>
           )}
-          <span className="pill warn">pendientes · {resumen.pendientes}</span>
-          <span className="pill accent">en proceso · {resumen.en_proceso}</span>
-          <span className="pill good">resueltas · {resumen.resueltas}</span>
         </div>
       </div>
 

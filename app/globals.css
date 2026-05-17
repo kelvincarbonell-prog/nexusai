@@ -3364,3 +3364,69 @@ code {
   transform-style: preserve-3d;
   border-radius: 14px;
 }
+
+/* =========================================================================
+   SPEED FEEDBACK — efectos para que la plataforma sienta más rápida
+========================================================================= */
+
+/* Entrada suave de cada página (route view crossfade) */
+@keyframes routeFadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.app-shell main,
+[data-route-enter] {
+  animation: routeFadeIn 0.22s cubic-bezier(0.22, 0.8, 0.36, 1);
+}
+
+/* Press feedback en buttons clicables (mobile-friendly tap) */
+button:not(:disabled):active,
+.button:not(:disabled):active,
+a.button:active,
+[role="button"]:not([aria-disabled="true"]):active {
+  transform: scale(0.985);
+  transition: transform 0.06s ease;
+}
+
+/* Hover lift en tarjetas clicables */
+a.client-card:hover,
+a.action-card:hover {
+  transform: translateY(-1px);
+  transition: transform 0.12s cubic-bezier(0.2, 0.8, 0.2, 1), border-color 0.12s;
+}
+
+/* Skeleton shimmer reutilizable */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--line) 35%, transparent);
+  border-radius: 6px;
+}
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--ink) 8%, transparent),
+    transparent
+  );
+  transform: translateX(-100%);
+  animation: skeletonShimmer 1.3s ease-in-out infinite;
+}
+@keyframes skeletonShimmer {
+  100% { transform: translateX(100%); }
+}
+
+/* Reduce motion: corta todas las animaciones de feedback */
+@media (prefers-reduced-motion: reduce) {
+  .app-shell main,
+  [data-route-enter] { animation: none; }
+  button:not(:disabled):active,
+  .button:not(:disabled):active { transform: none; }
+  .skeleton::after { animation: none; }
+}
+
+/* spin util para iconos Loader2 (Tailwind-like) */
+.animate-spin { animation: spin 1s linear infinite; }

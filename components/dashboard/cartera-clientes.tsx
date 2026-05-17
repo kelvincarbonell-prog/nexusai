@@ -53,10 +53,19 @@ export function CarteraClientes({ initialCount }: { initialCount?: number }) {
             {loading ? (initialCount ?? "—") : resumen.total} clientes
           </strong>
         </div>
-        <div className="button-row">
-          <span className="pill good">al día · {resumen.al_dia}</span>
-          <span className="pill warn">atención · {resumen.atencion}</span>
-          <span className="pill bad">crítico · {resumen.critico}</span>
+        <div className="button-row" suppressHydrationWarning>
+          {!loading ? (
+            <>
+              {resumen.al_dia > 0 && <span className="pill good">al día · {resumen.al_dia}</span>}
+              {resumen.atencion > 0 && <span className="pill warn">atención · {resumen.atencion}</span>}
+              {resumen.critico > 0 && <span className="pill bad">crítico · {resumen.critico}</span>}
+              {resumen.total > 0 && resumen.al_dia === resumen.total && (
+                <span className="pill good">todo al día</span>
+              )}
+            </>
+          ) : (
+            <span className="pill" style={{ opacity: 0.5 }}>calculando…</span>
+          )}
         </div>
       </div>
       <div className="client-grid">

@@ -94,7 +94,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
       <header style={{ display: "flex", justifyContent: "space-between", gap: 24, flexWrap: "wrap" }}>
         <div style={{ maxWidth: 760 }}>
           <span className="eyebrow">
-            {greeting()}{firstName ? `, ${firstName}` : ""} · 0 cosas urgentes
+            {greeting()}{firstName ? `, ${firstName}` : ""}
           </span>
           <h1 className="display">
             Esta semana <span className="brand-text">M26</span> te ha ahorrado <em>31 h 12 m</em>.

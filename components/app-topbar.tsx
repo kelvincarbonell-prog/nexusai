@@ -1,18 +1,59 @@
 "use client";
 
-import { Mic } from "lucide-react";
+import { Mic, ArrowLeft } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
 import { NotificationsBell } from "@/components/notifications/notifications-bell";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { UserAvatarButton } from "@/components/user/user-avatar-button";
 
+/**
+ * Topbar global con buscador, campana y avatar.
+ * Incluye un botón "Volver" inteligente que aparece cuando estamos en
+ * una sub-página de detalle (cualquier ruta con >1 segmento de
+ * profundidad: /clientes/[id], /facturacion/x, etc.).
+ */
 export function AppTopbar() {
+  const pathname = usePathname() ?? "/";
+  const router = useRouter();
+  const segments = pathname.split("/").filter(Boolean);
+  const showBack = segments.length > 1;
+  const parent = "/" + segments[0];
+
   function openPalette() {
     const evt = new KeyboardEvent("keydown", { key: "k", metaKey: true, ctrlKey: true, bubbles: true });
     window.dispatchEvent(evt);
   }
 
+  function goBack(e: React.MouseEvent) {
+    e.preventDefault();
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      router.back();
+    } else {
+      router.push(parent);
+    }
+  }
+
   return (
     <div className="topbar">
+      {showBack ? (
+        <a
+          href={parent}
+          onClick={goBack}
+          className="button ghost compact"
+          aria-label="Volver"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+            marginRight: 8,
+            whiteSpace: "nowrap",
+          }}
+        >
+          <ArrowLeft size={14} aria-hidden="true" />
+          Volver
+        </a>
+      ) : null}
+
       <button
         type="button"
         className="topbar-search"

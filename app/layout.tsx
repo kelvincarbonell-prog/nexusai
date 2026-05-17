@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { PWARegister } from "@/components/mobile/pwa-register";
 import { ToastProvider } from "@/components/toast/toaster";
+import { RouteProgress } from "@/components/effects/route-progress";
 
 const themeScript = `(() => {
   try {
@@ -207,6 +208,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         />
       </head>
       <body>
+        <RouteProgress />
         <ToastProvider>
           {children}
         </ToastProvider>
