@@ -5,6 +5,7 @@ import { TareasWidget } from "@/components/dashboard/tareas-widget";
 import { OnboardingWizard } from "@/components/dashboard/onboarding-wizard";
 import { CarteraClientes } from "@/components/dashboard/cartera-clientes";
 import { PendingActions } from "@/components/dashboard/pending-actions";
+import { MiDia } from "@/components/dashboard/mi-dia";
 import { SetupRequired } from "@/components/setup-required";
 import { hasSupabaseConfig } from "@/lib/env";
 import { createServerSupabase } from "@/lib/supabase/server";
@@ -113,6 +114,8 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
           <OnboardingWizard userName={profile?.nombre ?? undefined} />
         </section>
       ) : null}
+
+      <MiDia nombre={profile?.nombre ?? undefined} />
 
       <PendingActions />
 
