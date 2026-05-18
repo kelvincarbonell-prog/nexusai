@@ -96,7 +96,6 @@ export async function POST(request: NextRequest) {
   });
 
   if (inviteErr || !invited?.user) {
-    // eslint-disable-next-line no-console
     console.error("[asesores] inviteUserByEmail error:", inviteErr?.message, inviteErr);
     const msg = inviteErr?.message ?? "No se pudo enviar la invitación";
     // Mensajes más claros para errores comunes de Supabase

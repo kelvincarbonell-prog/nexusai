@@ -422,7 +422,6 @@ export async function bestAvailableJSON(
     const result = await step.run();
     if (result.ok && result.text) {
       if (process.env.NODE_ENV !== "production") {
-        // eslint-disable-next-line no-console
         console.log(`[llm] OK via ${step.name}`);
       }
       return result;

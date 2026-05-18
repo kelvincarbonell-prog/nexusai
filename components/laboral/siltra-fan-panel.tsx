@@ -169,7 +169,7 @@ export function SiltraFanPanel({ empresaId }: { empresaId: string }) {
               }}
             >
               <FileCheck2 size={14} color="#10b981" />
-              Listo para subir a Sistema RED. Pulsa "Descargar FAN" y súbelo desde SILTRA.
+              Listo para subir a Sistema RED. Pulsa &quot;Descargar FAN&quot; y súbelo desde SILTRA.
             </div>
           )}
         </>

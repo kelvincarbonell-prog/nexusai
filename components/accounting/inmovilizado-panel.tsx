@@ -78,7 +78,8 @@ export function InmovilizadoPanel({ empresaId }: { empresaId: string }) {
       setLoading(false);
     }
   }
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, [empresaId]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { load(); }, [empresaId]);
 
   function onTipoChange(key: string) {
     const t = TIPOS.find((x) => x.key === key);
@@ -173,7 +174,7 @@ export function InmovilizadoPanel({ empresaId }: { empresaId: string }) {
           <Loader2 size={14} className="animate-spin" /> Cargando…
         </span>
       ) : items.length === 0 ? (
-        <p style={{ margin: 0, fontSize: 13, opacity: 0.65 }}>Sin elementos. Pulsa "Alta" para añadir el primero.</p>
+        <p style={{ margin: 0, fontSize: 13, opacity: 0.65 }}>Sin elementos. Pulsa &quot;Alta&quot; para añadir el primero.</p>
       ) : (
         <div style={{ overflow: "auto", border: "1px solid color-mix(in srgb, currentColor 12%, transparent)", borderRadius: 10 }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Users, CheckCircle2, AlertTriangle, Loader2, Zap, FileText, UploadCloud } from "lucide-react";
+import { Users, CheckCircle2, AlertTriangle, Loader2, Zap, FileText, UploadCloud, Landmark, FileBadge } from "lucide-react";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 
 type Resultado = {
@@ -37,6 +37,71 @@ export function NominasMasivasPanel({ empresaId }: { empresaId: string }) {
   const [publishing, setPublishing] = useState(false);
   const [publishMsg, setPublishMsg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [sepaBusy, setSepaBusy] = useState(false);
+  const [tcBusy, setTcBusy] = useState(false);
+
+  async function descargarSepa() {
+    setSepaBusy(true);
+    setError(null);
+    try {
+      const { data: sess } = await supabase.auth.getSession();
+      const tk = sess.session?.access_token ?? "";
+      const fechaEjec = new Date();
+      fechaEjec.setUTCDate(fechaEjec.getUTCDate() + 1);
+      const fechaIso = fechaEjec.toISOString().slice(0, 10);
+      const res = await fetch("/api/laboral/remesa", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${tk}` },
+        body: JSON.stringify({ empresa_id: empresaId, periodo, fecha_ejecucion: fechaIso, formato: "xml" }),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        throw new Error(j.error ?? `No se pudo generar la remesa (${res.status})`);
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `remesa-nominas-${periodo}.xml`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Error generando remesa SEPA");
+    } finally {
+      setSepaBusy(false);
+    }
+  }
+
+  async function descargarTc() {
+    setTcBusy(true);
+    setError(null);
+    try {
+      const { data: sess } = await supabase.auth.getSession();
+      const tk = sess.session?.access_token ?? "";
+      const res = await fetch(`/api/laboral/cotizaciones/tc-pdf?empresa_id=${empresaId}&periodo=${periodo}`, {
+        headers: { Authorization: `Bearer ${tk}` },
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        throw new Error(j.error ?? `No se pudo generar TC1/TC2 (${res.status})`);
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `TC1-TC2-${periodo}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Error generando TC1/TC2");
+    } finally {
+      setTcBusy(false);
+    }
+  }
 
   async function publicarAlPortal() {
     setPublishing(true);
@@ -153,6 +218,46 @@ export function NominasMasivasPanel({ empresaId }: { empresaId: string }) {
         >
           {publishing ? <Loader2 size={14} className="animate-spin" /> : <UploadCloud size={14} />}
           {publishing ? "Publicando…" : "Publicar al portal"}
+        </button>
+        <button
+          type="button"
+          onClick={descargarSepa}
+          disabled={sepaBusy}
+          title="Genera el fichero pain.001 listo para subir al banco"
+          style={{
+            padding: "8px 14px",
+            borderRadius: 8,
+            border: "1px solid var(--border, #e5e7eb)",
+            background: "transparent",
+            cursor: sepaBusy ? "wait" : "pointer",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+            fontWeight: 600,
+          }}
+        >
+          {sepaBusy ? <Loader2 size={14} className="animate-spin" /> : <Landmark size={14} />}
+          {sepaBusy ? "Generando…" : "Remesa SEPA"}
+        </button>
+        <button
+          type="button"
+          onClick={descargarTc}
+          disabled={tcBusy}
+          title="Boletines TC1/TC2 listos para imprimir o archivar"
+          style={{
+            padding: "8px 14px",
+            borderRadius: 8,
+            border: "1px solid var(--border, #e5e7eb)",
+            background: "transparent",
+            cursor: tcBusy ? "wait" : "pointer",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+            fontWeight: 600,
+          }}
+        >
+          {tcBusy ? <Loader2 size={14} className="animate-spin" /> : <FileBadge size={14} />}
+          {tcBusy ? "Generando…" : "TC1/TC2 PDF"}
         </button>
       </div>
 

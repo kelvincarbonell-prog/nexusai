@@ -139,7 +139,7 @@ export function VacacionesSaldoPanel({ empresaId }: { empresaId: string }) {
 
           <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, opacity: 0.6 }}>
             <Calendar size={11} />
-            Las solicitudes pendientes pasan a "disfrutadas" cuando las apruebas en la pestaña Ausencias.
+            Las solicitudes pendientes pasan a &quot;disfrutadas&quot; cuando las apruebas en la pestaña Ausencias.
           </div>
         </>
       )}

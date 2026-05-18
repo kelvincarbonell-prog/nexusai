@@ -175,7 +175,7 @@ export function ChatAssistant({
       </div>
       {triage.confianza < 0.6 && (
         <p style={{ margin: "8px 0 0", fontSize: 11, opacity: 0.6 }}>
-          No estoy 100% seguro de la respuesta. Si no te encaja, pulsa "Hablar con un asesor".
+          No estoy 100% seguro de la respuesta. Si no te encaja, pulsa &quot;Hablar con un asesor&quot;.
         </p>
       )}
     </div>
