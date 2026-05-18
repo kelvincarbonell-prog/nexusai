@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { Building, Plus, Trash2, X, Loader2, AlertTriangle, CheckCircle2, TrendingDown } from "lucide-react";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 
@@ -38,6 +39,7 @@ const EUR = (n: number) =>
 
 export function InmovilizadoPanel({ empresaId }: { empresaId: string }) {
   const supabase = useMemo(() => createBrowserSupabase(), []);
+  const { confirm } = useConfirm();
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -119,7 +121,7 @@ export function InmovilizadoPanel({ empresaId }: { empresaId: string }) {
   }
 
   async function borrar(id: string) {
-    if (!confirm("¿Eliminar este elemento del inmovilizado? Se perderá su cuadro de amortización.")) return;
+    if (!(await confirm({ title: "¿Eliminar este elemento del inmovilizado? Se perderá su cuadro de amortización.", tone: "danger", confirmLabel: "Confirmar" }))) return;
     const tk = await token();
     await fetch(`/api/accounting/inmovilizado?id=${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${tk}` } });
     await load();

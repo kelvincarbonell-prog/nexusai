@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 
 type Tarea = {
@@ -22,6 +23,7 @@ const PRIO_COLOR: Record<string, string> = {
 
 export function TareasList() {
   const supabase = useMemo(() => createBrowserSupabase(), []);
+  const { confirm } = useConfirm();
   const [items, setItems] = useState<Tarea[]>([]);
   const [showNew, setShowNew] = useState(false);
   const [draft, setDraft] = useState({ titulo: "", descripcion: "", prioridad: "media" as Tarea["prioridad"], fecha_limite: "" });
@@ -86,7 +88,7 @@ export function TareasList() {
   }
 
   async function borrar(id: string) {
-    if (!confirm("¿Borrar esta tarea?")) return;
+    if (!(await confirm({ title: "¿Borrar esta tarea?", tone: "danger", confirmLabel: "Borrar" }))) return;
     const tk = await token();
     await fetch(`/api/tareas?id=${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${tk}` } });
     load();

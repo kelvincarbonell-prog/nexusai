@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { useRouter } from "next/navigation";
 import { ClientesList } from "@/components/clientes/clientes-list";
 import { NuevoClienteForm } from "@/components/clientes/nuevo-cliente-form";
@@ -20,6 +21,7 @@ type Empresa = {
 
 export function ClientesPageClient({ initialEmpresas, isAdmin, userId }: { initialEmpresas: Empresa[]; isAdmin: boolean; userId: string }) {
   const supabase = useMemo(() => createBrowserSupabase(), []);
+  const { confirm } = useConfirm();
   const router = useRouter();
   const [showNew, setShowNew] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
@@ -42,7 +44,7 @@ export function ClientesPageClient({ initialEmpresas, isAdmin, userId }: { initi
   }
 
   async function borrarDemo() {
-    if (!confirm("¿Borrar las 3 empresas de prueba? Esta acción es irreversible.")) return;
+    if (!(await confirm({ title: "¿Borrar las 3 empresas de prueba? Esta acción es irreversible.", tone: "danger", confirmLabel: "Confirmar" }))) return;
     setBusy("seed");
     try {
       const tk = await token();

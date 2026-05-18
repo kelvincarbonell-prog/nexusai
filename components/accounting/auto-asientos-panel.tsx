@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { Sparkles, Zap, Check, AlertCircle, RefreshCw } from "lucide-react";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 
@@ -34,6 +35,7 @@ const SOURCE_LABELS: Record<string, string> = {
 
 export function AutoAsientosPanel({ empresaId }: { empresaId: string }) {
   const supabase = useMemo(() => createBrowserSupabase(), []);
+  const { confirm } = useConfirm();
   const [entries, setEntries] = useState<Entry[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -90,7 +92,7 @@ export function AutoAsientosPanel({ empresaId }: { empresaId: string }) {
   }, [empresaId]);
 
   async function regenerarTodos() {
-    if (!confirm("Va a recorrer todas las facturas y gastos del ejercicio actual que no tengan asiento y generarlos automáticamente. ¿Continuar?")) return;
+    if (!(await confirm({ title: "Va a recorrer todas las facturas y gastos del ejercicio actual que no tengan asiento y generarlos automáticamente. ¿Continuar?", tone: "danger", confirmLabel: "Confirmar" }))) return;
     setBusy(true);
     setPhase("regenerando");
     setError(null);

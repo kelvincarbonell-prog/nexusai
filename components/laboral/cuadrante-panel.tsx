@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { CalendarRange, Plus, Trash2, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 
@@ -30,6 +31,7 @@ function isoDe(d: Date): string {
 
 export function CuadrantePanel({ empresaId, trabajadores }: { empresaId: string; trabajadores: Trabajador[] }) {
   const supabase = useMemo(() => createBrowserSupabase(), []);
+  const { confirm } = useConfirm();
   const [refDate, setRefDate] = useState<string>(() => isoDe(new Date()));
   const monday = useMemo(() => lunesDe(refDate), [refDate]);
   const semana = useMemo(
@@ -102,7 +104,7 @@ export function CuadrantePanel({ empresaId, trabajadores }: { empresaId: string;
   }
 
   async function borrar(id: string) {
-    if (!confirm("¿Eliminar este turno?")) return;
+    if (!(await confirm({ title: "¿Eliminar este turno?", tone: "danger", confirmLabel: "Confirmar" }))) return;
     setBusy(true);
     try {
       const tk = await token();

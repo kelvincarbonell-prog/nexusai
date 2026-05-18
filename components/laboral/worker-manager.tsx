@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useTransition } from "react";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 import { PayrollPanel } from "@/components/laboral/payroll-panel";
 import { NominasMasivasPanel } from "@/components/laboral/nominas-masivas-panel";
@@ -40,6 +41,7 @@ type LaboralTab = "trabajadores" | "ausencias" | "horario" | "nominas" | "cuadra
 
 export function WorkerManager({ empresas, initialTab = "trabajadores" }: { empresas: Empresa[]; initialTab?: LaboralTab }) {
   const supabase = useMemo(() => createBrowserSupabase(), []);
+  const { confirm } = useConfirm();
   const [empresaId, setEmpresaId] = useState(empresas[0]?.id ?? "");
   const [tab, setTabRaw] = useState<LaboralTab>(initialTab);
   const [, startTabTransition] = useTransition();
@@ -176,7 +178,7 @@ export function WorkerManager({ empresas, initialTab = "trabajadores" }: { empre
   }
 
   async function bajaTrabajador(id: string) {
-    if (!confirm("¿Dar de baja a este trabajador?")) return;
+    if (!(await confirm({ title: "¿Dar de baja a este trabajador?", tone: "danger", confirmLabel: "Confirmar" }))) return;
     const tk = await token();
     const res = await fetch(`/api/laboral/trabajadores/${id}`, {
       method: "DELETE",

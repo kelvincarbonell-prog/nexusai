@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 
 type Empresa = {
@@ -18,6 +19,7 @@ type Cuenta = {
 
 export function ClienteBancos({ empresa }: { empresa: Empresa }) {
   const supabase = useMemo(() => createBrowserSupabase(), []);
+  const { confirm } = useConfirm();
   const initialCuentas = ((empresa.metadata?.cuentas_bancarias as Cuenta[] | undefined) ?? []);
   const initialIban = (empresa.metadata?.iban as string | undefined) ?? "";
 
@@ -65,8 +67,8 @@ export function ClienteBancos({ empresa }: { empresa: Empresa }) {
     setDraft({ alias: "", banco: "", iban: "", divisa: "EUR" });
   }
 
-  function borrar(idx: number) {
-    if (!confirm("¿Eliminar esta cuenta?")) return;
+  async function borrar(idx: number) {
+    if (!(await confirm({ title: "¿Eliminar esta cuenta?", tone: "danger", confirmLabel: "Eliminar" }))) return;
     persistir(cuentas.filter((_, i) => i !== idx));
   }
 

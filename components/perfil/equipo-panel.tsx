@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { UserPlus, Trash2, Check, ShieldCheck, Mail } from "lucide-react";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 
@@ -8,6 +9,7 @@ type Asesor = { id: string; nombre: string | null; email: string; rol: string };
 
 export function EquipoPanel() {
   const supabase = useMemo(() => createBrowserSupabase(), []);
+  const { confirm } = useConfirm();
   const [items, setItems] = useState<Asesor[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
@@ -85,7 +87,7 @@ export function EquipoPanel() {
   }
 
   async function quitar(id: string, email: string) {
-    if (!confirm(`¿Quitar a ${email} del equipo? Mantendrá su cuenta pero ya no verá los clientes.`)) return;
+    if (!(await confirm({ title: `¿Quitar a ${email} del equipo?`, message: "Mantendrá su cuenta pero ya no verá los clientes.", tone: "warn", confirmLabel: "Quitar" }))) return;
     setBusy(id);
     try {
       const tk = await token();

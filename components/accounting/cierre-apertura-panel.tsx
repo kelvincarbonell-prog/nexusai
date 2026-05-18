@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 
 type Linea = { code: string; description: string; debit: number; credit: number };
@@ -16,6 +17,7 @@ type Preview = {
 const EUR = (n: number) => new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR" }).format(n);
 
 export function CierreAperturaPanel({ empresaId, defaultEjercicio }: { empresaId: string; defaultEjercicio: number }) {
+  const { confirm } = useConfirm();
   const [ejercicio, setEjercicio] = useState(defaultEjercicio);
   const [preview, setPreview] = useState<Preview | null>(null);
   const [loading, setLoading] = useState(false);
@@ -83,9 +85,9 @@ export function CierreAperturaPanel({ empresaId, defaultEjercicio }: { empresaId
           </button>
           <button
             className="button"
-            onClick={() => {
+            onClick={async () => {
               if (!preview) return;
-              if (!confirm(`Se contabilizarán ${preview.regularizacion.length + preview.cierre.length + preview.apertura.length} apuntes. ¿Continuar?`)) return;
+              if (!(await confirm({ title: `Se contabilizarán ${preview.regularizacion.length + preview.cierre.length + preview.apertura.length} apuntes`, message: "¿Continuar?", tone: "warn", confirmLabel: "Continuar" }))) return;
               generar(false);
             }}
             disabled={!preview || posting}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { Eye, Trash2, Check } from "lucide-react";
 import { InlineEdit } from "@/components/ui/inline-edit";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
@@ -26,6 +27,7 @@ const EUR = (n: number) => new Intl.NumberFormat("es-ES", { style: "currency", c
 
 export function ClienteGastos({ empresaId }: { empresaId: string }) {
   const supabase = useMemo(() => createBrowserSupabase(), []);
+  const { confirm } = useConfirm();
   const [items, setItems] = useState<Linea[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -167,7 +169,7 @@ export function ClienteGastos({ empresaId }: { empresaId: string }) {
   }
 
   async function borrar(g: Linea) {
-    if (!confirm(`¿Borrar este ${g.origen}? También se eliminará su asiento contable si lo tiene.`)) return;
+    if (!(await confirm({ title: `¿Borrar este ${g.origen}?`, message: "También se eliminará su asiento contable si lo tiene.", tone: "danger", confirmLabel: "Borrar" }))) return;
     try {
       const { data: sess } = await supabase.auth.getSession();
       const tk = sess.session?.access_token ?? "";

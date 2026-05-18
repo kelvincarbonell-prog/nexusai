@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { Sparkles, ReceiptText, FileImage, FilePlus2, Check, X, Eye, Trash2 } from "lucide-react";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 
@@ -73,6 +74,7 @@ const STAGE_LABELS: Record<Stage, string> = {
 
 export function OcrUpload({ empresaId, modo = "gasto" }: { empresaId: string; modo?: Modo }) {
   const supabase = useMemo(() => createBrowserSupabase(), []);
+  const { confirm } = useConfirm();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [items, setItems] = useState<Extraction[]>([]);
   const [busy, setBusy] = useState(false);
@@ -125,7 +127,7 @@ export function OcrUpload({ empresaId, modo = "gasto" }: { empresaId: string; mo
   }
 
   async function borrarLote() {
-    if (!confirm(`¿Borrar definitivamente ${selected.size} extracciones?`)) return;
+    if (!(await confirm({ title: `¿Borrar ${selected.size} extracciones?`, message: "Esta acción no se puede deshacer.", tone: "danger", confirmLabel: "Borrar" }))) return;
     setBulkBusy(true);
     try {
       const ids = Array.from(selected);
@@ -309,7 +311,7 @@ export function OcrUpload({ empresaId, modo = "gasto" }: { empresaId: string; mo
   }
 
   async function borrar(extraccionId: string) {
-    if (!confirm("¿Borrar definitivamente esta extracción y su archivo? No se puede deshacer.")) return;
+    if (!(await confirm({ title: "¿Borrar definitivamente esta extracción y su archivo? No se puede deshacer.", tone: "danger", confirmLabel: "Confirmar" }))) return;
     setError(null);
     try {
       const tk = await token();
