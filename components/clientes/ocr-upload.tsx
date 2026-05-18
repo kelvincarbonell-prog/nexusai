@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useConfirm } from "@/components/ui/confirm-dialog";
+import { EmptyState } from "@/components/ui/empty-state";
+import { usePersistedState } from "@/lib/hooks/use-persisted-state";
 import { Sparkles, ReceiptText, FileImage, FilePlus2, Check, X, Eye, Trash2 } from "lucide-react";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 
@@ -82,7 +84,7 @@ export function OcrUpload({ empresaId, modo = "gasto" }: { empresaId: string; mo
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [recent, setRecent] = useState<LocalPreview[]>([]);
-  const [filter, setFilter] = useState<"todas" | "pendientes" | "vinculadas" | "descartadas">("todas");
+  const [filter, setFilter] = usePersistedState<"todas" | "pendientes" | "vinculadas" | "descartadas">(`ocr:filter:${empresaId}`, "todas");
   const [aiUnavailable, setAiUnavailable] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkBusy, setBulkBusy] = useState(false);
@@ -675,9 +677,16 @@ export function OcrUpload({ empresaId, modo = "gasto" }: { empresaId: string; mo
         </div>
 
         {filtered.length === 0 ? (
-          <p className="muted" style={{ fontSize: 13, marginTop: 12 }}>
-            {items.length === 0 ? "Sin facturas procesadas todavía. Sube la primera arriba." : "Sin resultados para este filtro."}
-          </p>
+          <div style={{ marginTop: 16 }}>
+            <EmptyState
+              icon={<FileImage size={36} strokeWidth={1.6} />}
+              title={items.length === 0 ? "Aún no has subido ninguna factura" : "Sin resultados para este filtro"}
+              description={items.length === 0
+                ? "Arrastra una imagen o PDF a cualquier parte de la pantalla, o pulsa el área de subida de arriba. La IA extraerá los datos automáticamente."
+                : "Cambia el filtro o sube nuevas facturas."}
+              cta={items.length === 0 ? { label: "Subir factura ahora", onClick: () => fileInputRef.current?.click() } : { label: "Ver todas", onClick: () => setFilter("todas") }}
+            />
+          </div>
         ) : (
           <>
           {selected.size > 0 && (

@@ -5,6 +5,8 @@ import Link from "next/link";
 import { Inbox, AlertOctagon, CheckCircle2, Clock, ArrowRight, Filter } from "lucide-react";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 import { getSolicitudByKey } from "@/lib/solicitudes/catalogo";
+import { usePersistedState } from "@/lib/hooks/use-persisted-state";
+import { EmptyState } from "@/components/ui/empty-state";
 
 type Solicitud = {
   id: string;
@@ -25,7 +27,7 @@ export function SolicitudesGestorPanel() {
   const supabase = useMemo(() => createBrowserSupabase(), []);
   const [items, setItems] = useState<Solicitud[]>([]);
   const [resumen, setResumen] = useState<Resumen>({ pendientes: 0, en_proceso: 0, resueltas: 0, urgentes: 0 });
-  const [filtro, setFiltroRaw] = useState<Filtro>("pendiente");
+  const [filtro, setFiltroRaw] = usePersistedState<Filtro>("gestor:solicitudes:filtro", "pendiente");
   const [, startFiltroTransition] = useTransition();
   function setFiltro(f: Filtro) {
     startFiltroTransition(() => setFiltroRaw(f));
@@ -133,9 +135,17 @@ export function SolicitudesGestorPanel() {
       {loading && <p className="muted" style={{ marginTop: 12, fontSize: 13 }}>Cargando…</p>}
 
       {!loading && items.length === 0 && (
-        <p className="muted" style={{ marginTop: 16, fontSize: 13 }}>
-          Sin solicitudes en este filtro.
-        </p>
+        <div style={{ marginTop: 16 }}>
+          <EmptyState
+            icon={<Inbox size={36} strokeWidth={1.6} />}
+            title={filtro === "todas" ? "Aún no has recibido solicitudes" : `Sin solicitudes ${filtro === "pendiente" ? "pendientes" : filtro === "en_proceso" ? "en proceso" : "resueltas"}`}
+            description={filtro === "todas"
+              ? "Cuando tus clientes te soliciten algo desde su portal, aparecerá aquí."
+              : "Cambia de filtro para ver otras solicitudes."}
+            cta={filtro !== "todas" ? { label: "Ver todas", onClick: () => setFiltro("todas") } : undefined}
+            size="sm"
+          />
+        </div>
       )}
 
       {!loading && items.length > 0 && (

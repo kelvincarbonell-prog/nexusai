@@ -2,8 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useConfirm } from "@/components/ui/confirm-dialog";
-import { Eye, Trash2, Check } from "lucide-react";
+import { Eye, Trash2, Check, FileText, Plus } from "lucide-react";
 import { InlineEdit } from "@/components/ui/inline-edit";
+import { EmptyState } from "@/components/ui/empty-state";
+import { usePersistedState } from "@/lib/hooks/use-persisted-state";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 
 type Linea = {
@@ -31,8 +33,8 @@ export function ClienteGastos({ empresaId }: { empresaId: string }) {
   const [items, setItems] = useState<Linea[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filtro, setFiltro] = useState<"todos" | "factura" | "gasto">("todos");
-  const [filtroEstado, setFiltroEstado] = useState<"todos" | "pendiente" | "cobrada">("todos");
+  const [filtro, setFiltro] = usePersistedState<"todos" | "factura" | "gasto">(`gastos:filtro:${empresaId}`, "todos");
+  const [filtroEstado, setFiltroEstado] = usePersistedState<"todos" | "pendiente" | "cobrada">(`gastos:estado:${empresaId}`, "todos");
   const [search, setSearch] = useState("");
 
   async function load() {
@@ -240,9 +242,19 @@ export function ClienteGastos({ empresaId }: { empresaId: string }) {
         {loading ? <p className="muted">Cargando…</p> : null}
 
         {filtered.length === 0 && !loading ? (
-          <p className="muted" style={{ marginTop: 12, fontSize: 13 }}>
-            Sin gastos para mostrar. Usa el «Lector gastos» para subir facturas o «Importaciones» para CSV.
-          </p>
+          <div style={{ marginTop: 16 }}>
+            <EmptyState
+              icon={<FileText size={36} strokeWidth={1.6} />}
+              title={items.length === 0 ? "Aún no hay gastos ni facturas" : "Sin resultados para este filtro"}
+              description={items.length === 0
+                ? "Sube tu primer ticket o factura al lector OCR y aparecerá aquí automáticamente."
+                : "Prueba a quitar filtros o ampliar el rango de búsqueda."}
+              cta={items.length === 0
+                ? { label: "Abrir lector OCR", href: `?tab=lector-gastos` }
+                : { label: "Quitar filtros", onClick: () => { setFiltro("todos"); setFiltroEstado("todos"); setSearch(""); } }}
+              secondary={items.length === 0 ? { label: "Importar CSV", href: `?tab=importaciones` } : undefined}
+            />
+          </div>
         ) : (
           <table className="table" style={{ marginTop: 12 }}>
             <thead>

@@ -3505,3 +3505,54 @@ a, button { -webkit-tap-highlight-color: transparent; }
   border-color: color-mix(in srgb, currentColor 16%, transparent);
 }
 .icon-btn:active { transform: scale(0.94); }
+
+/* ============================================================
+   Tablas responsive — en mobile colapsa a "cards" verticales.
+   Aplica a cualquier <table class="table"> sin tocar marcado.
+   ============================================================ */
+@media (max-width: 720px) {
+  .table {
+    border: 0;
+  }
+  .table thead {
+    position: absolute;
+    top: -9999px;
+    left: -9999px;
+  }
+  .table tr {
+    display: block;
+    margin-bottom: 10px;
+    border-radius: 10px;
+    background: color-mix(in srgb, currentColor 4%, transparent);
+    border: 1px solid color-mix(in srgb, currentColor 10%, transparent);
+    padding: 10px 12px;
+  }
+  .table td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 6px 0;
+    border: 0;
+    text-align: right;
+  }
+  .table td::before {
+    content: attr(data-label);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    opacity: 0.6;
+    font-weight: 600;
+    text-align: left;
+    flex-shrink: 0;
+  }
+  .table td:last-child {
+    justify-content: flex-end;
+  }
+  .table .num { text-align: right; }
+}
+
+/* Cmd/Ctrl+K hint visible solo en pantallas grandes */
+@media (max-width: 720px) {
+  .topbar-search .kbd { display: none; }
+}
