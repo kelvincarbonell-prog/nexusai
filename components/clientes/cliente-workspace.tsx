@@ -35,6 +35,7 @@ import { StorageBadge } from "@/components/storage/storage-badge";
 // Lazy-load para acelerar el primer render.
 const OcrUpload = dynamic(() => import("@/components/clientes/ocr-upload").then((m) => m.OcrUpload), { loading: () => <p className="muted">Cargando lector…</p>, ssr: false });
 const ClienteImportar = dynamic(() => import("@/components/clientes/cliente-importar").then((m) => m.ClienteImportar), { loading: () => <p className="muted">Cargando…</p>, ssr: false });
+const CSVImportPanel = dynamic(() => import("@/components/import/csv-import-panel").then((m) => m.CSVImportPanel), { loading: () => <p className="muted">Cargando…</p>, ssr: false });
 const ClienteGastos = dynamic(() => import("@/components/clientes/cliente-gastos").then((m) => m.ClienteGastos), { loading: () => <p className="muted">Cargando…</p>, ssr: false });
 const BillingWorkspace = dynamic(() => import("@/components/billing/billing-workspace").then((m) => m.BillingWorkspace), { loading: () => <p className="muted">Cargando…</p>, ssr: false });
 const AeatWorkspace = dynamic(() => import("@/components/aeat/aeat-workspace").then((m) => m.AeatWorkspace), { loading: () => <p className="muted">Cargando…</p>, ssr: false });
@@ -175,6 +176,8 @@ const SECTIONS: Section[] = [
     icon: Upload,
     subTabs: [
       { key: "facturas_csv", label: "Facturas y gastos (A3/Quipu/Contasol/SAGE)" },
+      { key: "trabajadores_csv", label: "Trabajadores (CSV)" },
+      { key: "contactos_csv", label: "Clientes y proveedores (CSV)" },
       { key: "modelos_aeat", label: "Modelos AEAT presentados (TXT/XML)" },
       { key: "cuentas_anuales", label: "Cuentas anuales (XBRL/Excel)" },
       { key: "pgc", label: "Plan General Contable (PGC)" },
@@ -472,7 +475,9 @@ export function ClienteWorkspace({ empresa }: { empresa: Empresa }) {
 
           {/* IMPORTACIONES */}
           {section === "importaciones" && activeSub === "facturas_csv" ? <ClienteImportar empresaId={empresa.id} /> : null}
-          {section === "importaciones" && activeSub !== "facturas_csv" ? (
+          {section === "importaciones" && activeSub === "trabajadores_csv" ? <CSVImportPanel empresaId={empresa.id} target="trabajadores" /> : null}
+          {section === "importaciones" && activeSub === "contactos_csv" ? <CSVImportPanel empresaId={empresa.id} target="contactos" /> : null}
+          {section === "importaciones" && !["facturas_csv", "trabajadores_csv", "contactos_csv"].includes(activeSub) ? (
             <ImportacionEspecifica empresaId={empresa.id} tipo={activeSub} />
           ) : null}
         </div>

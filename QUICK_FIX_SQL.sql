@@ -600,6 +600,47 @@ create trigger set_updated_at_turnos before update on public.turnos
 alter table public.turnos enable row level security;
 
 -- =========================================================================
+-- SPRINT 20: importación CSV de contactos (clientes y proveedores)
+-- =========================================================================
+create table if not exists public.contactos (
+  id uuid primary key default gen_random_uuid(),
+  empresa_id uuid not null references public.empresas(id) on delete cascade,
+  gestor_id uuid references auth.users(id) on delete set null,
+  tipo text not null default 'cliente',          -- cliente | proveedor | ambos
+  nombre text not null,
+  nif text,
+  email text,
+  telefono text,
+  direccion text,
+  cp text,
+  ciudad text,
+  provincia text,
+  pais text default 'ES',
+  iban text,
+  condiciones_pago_dias integer default 30,
+  irpf_pct numeric(5, 2),
+  notas text,
+  activo boolean not null default true,
+  metadata jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index if not exists idx_contactos_empresa_tipo on public.contactos(empresa_id, tipo);
+create index if not exists idx_contactos_nif on public.contactos(empresa_id, nif);
+create unique index if not exists uq_contactos_empresa_nif_tipo on public.contactos(empresa_id, tipo, lower(nif)) where nif is not null;
+
+drop trigger if exists set_updated_at_contactos on public.contactos;
+create trigger set_updated_at_contactos before update on public.contactos
+  for each row execute function public.set_updated_at();
+
+alter table public.contactos enable row level security;
+
+-- =========================================================================
+-- SPRINT 21: recordatorios → empresa.email para envío de digest
+-- =========================================================================
+alter table public.empresas add column if not exists email text;
+
+-- =========================================================================
 -- ÚLTIMO PASO: refresca el cache de PostgREST sin reiniciar
 -- =========================================================================
 notify pgrst, 'reload schema';
