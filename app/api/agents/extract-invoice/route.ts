@@ -43,6 +43,26 @@ export async function POST(request: NextRequest) {
   }
 
   const start = Date.now();
+
+  // ============================================================
+  // ESCANEO DE SEGURIDAD (magic numbers + heurística + VirusTotal)
+  // ============================================================
+  if (parsed.data.base64) {
+    const { scanFile } = await import("@/lib/security/file-scan");
+    const fileBuf = Buffer.from(parsed.data.base64, "base64");
+    const scan = await scanFile(fileBuf, { mimeType: parsed.data.mime_type, filename: parsed.data.filename });
+    if (!scan.ok) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: `Archivo bloqueado: ${scan.reason ?? "no superó el análisis de seguridad."}`,
+          scan: { reason: scan.reason, sha256: scan.sha256, scanned_by: scan.scanned_by },
+        },
+        { status: 422 },
+      );
+    }
+  }
+
   const extraction = parsed.data.base64
     ? await extractInvoiceFromImage(parsed.data.mime_type ?? "image/png", parsed.data.base64)
     : await extractInvoiceFromText(parsed.data.text ?? "");

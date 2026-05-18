@@ -41,7 +41,7 @@ const ACCEPT = "image/jpeg,image/png,image/webp,application/pdf";
 
 type Modo = "ingreso" | "gasto";
 
-type Stage = "loading" | "extracting" | "encrypting" | "done";
+type Stage = "loading" | "scanning" | "extracting" | "encrypting" | "done";
 type LocalPreview = {
   name: string;
   size: number;
@@ -60,6 +60,7 @@ type LocalPreview = {
 
 const STAGE_LABELS: Record<Stage, string> = {
   loading: "Cargando…",
+  scanning: "Analizando virus…",
   extracting: "Extrayendo datos…",
   encrypting: "Encriptando…",
   done: "Cargado con éxito",
@@ -143,7 +144,8 @@ export function OcrUpload({ empresaId, modo = "gasto" }: { empresaId: string; mo
         const startedAt = Date.now();
         // Fases mientras esperamos la respuesta de la IA.
         const stageTimers: ReturnType<typeof setTimeout>[] = [];
-        stageTimers.push(setTimeout(() => updateStage(i, "extracting"), 800));
+        stageTimers.push(setTimeout(() => updateStage(i, "scanning"), 400));
+        stageTimers.push(setTimeout(() => updateStage(i, "extracting"), 1400));
         stageTimers.push(setTimeout(() => updateStage(i, "encrypting"), 4500));
 
         const res = await fetch("/api/agents/extract-invoice", {
@@ -657,21 +659,25 @@ export function OcrUpload({ empresaId, modo = "gasto" }: { empresaId: string; mo
                           </button>
                         ) : null}
                         {linked ? (
-                          <span className="pill good" style={{ fontSize: 11 }}>✓ vinculado</span>
+                          <span className="pill good" style={{ fontSize: 11 }}>guardado</span>
                         ) : e.status === "rejected" ? (
-                          <span className="muted" style={{ fontSize: 11 }}>descartado</span>
+                          <span className="muted" style={{ fontSize: 11 }}>deshecho</span>
                         ) : (
                           <>
-                            {modo === "ingreso" ? (
-                              <button className="button compact" onClick={() => confirmar(e.id, "factura")} title="Crear factura emitida">+ Ingreso</button>
-                            ) : (
-                              <>
-                                <button className="button compact" onClick={() => confirmar(e.id, "gasto")} title="Convertir en gasto">+ Gasto</button>
-                                <button className="button secondary compact" onClick={() => confirmar(e.id, "factura")} title="Convertir en factura recibida">+ Factura</button>
-                              </>
-                            )}
-                            <button className="button ghost compact" onClick={() => descartar(e.id)} title="Descartar (no se borra)" style={{ padding: "4px 8px" }}>
-                              <X size={13} strokeWidth={1.8} />
+                            <button
+                              className="button compact"
+                              onClick={() => confirmar(e.id, modo === "ingreso" ? "factura" : "gasto")}
+                              title={`Guardar como ${modo === "ingreso" ? "ingreso" : "gasto"} y generar asiento contable`}
+                            >
+                              Guardar
+                            </button>
+                            <button
+                              className="button ghost compact"
+                              onClick={() => descartar(e.id)}
+                              title="Deshacer (puedes recuperarlo desde el histórico)"
+                              style={{ padding: "4px 10px" }}
+                            >
+                              Deshacer
                             </button>
                           </>
                         )}
