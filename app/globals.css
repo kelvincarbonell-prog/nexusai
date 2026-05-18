@@ -3435,14 +3435,9 @@ a.action-card:hover {
    SENIOR-LEVEL PERFORMANCE PASS — pintar solo lo visible, reducir reflow
 ========================================================================= */
 
-/* Pinta solo las tarjetas dentro del viewport (chrome/edge skipping out of view) */
-.card,
-.action-card,
-.client-card,
-.notification-item {
-  content-visibility: auto;
-  contain-intrinsic-size: 0 220px;
-}
+/* (Eliminado: content-visibility:auto en .card causaba parpadeo/expansión visual
+   en widgets como Calendario fiscal. Se prefiere un layout estable a la
+   microoptimización de pintado fuera del viewport.) */
 
 /* GPU compositing en transformaciones para que no haya jank al hacer scroll */
 .tilt-card,
@@ -3454,13 +3449,12 @@ a.action-card:hover {
   will-change: transform;
 }
 
-/* Las animaciones de la landing se pausan cuando no están en pantalla */
+/* Solo en landing (no en app autenticada) usamos content-visibility para
+   animaciones pesadas que sí toleran colapso fuera del viewport. */
 @media (prefers-reduced-motion: no-preference) {
-  [data-reveal="out"],
   .marquee,
   .mesh-gradient,
   .particles,
-  .glass-card,
   .tilt-glow {
     content-visibility: auto;
   }

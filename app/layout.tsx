@@ -2,7 +2,9 @@ import type { Metadata, Viewport } from "next";
 import dynamic from "next/dynamic";
 import "./globals.css";
 import { ToastProvider } from "@/components/toast/toaster";
+import { ConfirmProvider } from "@/components/ui/confirm-dialog";
 import { RouteProgress } from "@/components/effects/route-progress";
+import { KeyboardShortcuts } from "@/components/effects/keyboard-shortcuts";
 
 // Defer no-crítico para acelerar el First Contentful Paint
 const PWARegister = dynamic(() => import("@/components/mobile/pwa-register").then((m) => ({ default: m.PWARegister })), {
@@ -218,8 +220,11 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       </head>
       <body>
         <RouteProgress />
+        <KeyboardShortcuts />
         <ToastProvider>
-          {children}
+          <ConfirmProvider>
+            {children}
+          </ConfirmProvider>
         </ToastProvider>
         <PWARegister />
       </body>
