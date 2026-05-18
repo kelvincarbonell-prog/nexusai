@@ -8,6 +8,7 @@ const Invite = z.object({
   email: z.string().email(),
   nombre: z.string().min(2).max(120),
   rol: z.enum(["gestor", "asesor"]).default("asesor"),
+  especialidad: z.enum(["laboral", "fiscal", "generalista"]).default("generalista"),
 });
 
 /**
@@ -26,19 +27,19 @@ export async function GET(request: NextRequest) {
   if (isAdmin) {
     const { data } = await admin
       .from("perfiles")
-      .select("id,nombre,email,rol")
+      .select("id,nombre,email,rol,especialidad")
       .in("rol", ["admin", "gestor", "asesor"])
       .order("nombre");
     return NextResponse.json({ ok: true, asesores: data ?? [] });
   }
 
-  const { data: self } = await admin.from("perfiles").select("id,nombre,email,rol,nombre_gestoria").eq("id", user.id).maybeSingle();
+  const { data: self } = await admin.from("perfiles").select("id,nombre,email,rol,especialidad,nombre_gestoria").eq("id", user.id).maybeSingle();
   if (!self?.nombre_gestoria) {
     return NextResponse.json({ ok: true, asesores: self ? [self] : [] });
   }
   const { data } = await admin
     .from("perfiles")
-    .select("id,nombre,email,rol")
+    .select("id,nombre,email,rol,especialidad")
     .eq("nombre_gestoria", self.nombre_gestoria)
     .in("rol", ["admin", "gestor", "asesor"]);
   return NextResponse.json({ ok: true, asesores: data ?? [] });
@@ -88,6 +89,7 @@ export async function POST(request: NextRequest) {
       nombre: parsed.data.nombre,
       nombre_gestoria: self.nombre_gestoria,
       rol: parsed.data.rol,
+      especialidad: parsed.data.especialidad,
       invitado_por: user.id,
       password_set: false,
     },
@@ -119,6 +121,7 @@ export async function POST(request: NextRequest) {
         email: parsed.data.email,
         nombre: parsed.data.nombre,
         rol: parsed.data.rol,
+        especialidad: parsed.data.especialidad,
         nombre_gestoria: self.nombre_gestoria,
       },
       { onConflict: "id" },
@@ -132,6 +135,7 @@ export async function POST(request: NextRequest) {
       email: parsed.data.email,
       nombre: parsed.data.nombre,
       rol: parsed.data.rol,
+      especialidad: parsed.data.especialidad,
     },
   });
 }
@@ -139,6 +143,7 @@ export async function POST(request: NextRequest) {
 const Update = z.object({
   id: z.string().uuid(),
   rol: z.enum(["admin", "gestor", "asesor"]).optional(),
+  especialidad: z.enum(["laboral", "fiscal", "generalista"]).optional(),
 });
 
 export async function PATCH(request: NextRequest) {
@@ -153,6 +158,7 @@ export async function PATCH(request: NextRequest) {
   if (!target || target.nombre_gestoria !== self.nombre_gestoria) return jsonError("Ese asesor no es de tu equipo", 403);
   const update: Record<string, unknown> = {};
   if (parsed.data.rol) update.rol = parsed.data.rol;
+  if (parsed.data.especialidad) update.especialidad = parsed.data.especialidad;
   const { error } = await admin.from("perfiles").update(update).eq("id", parsed.data.id);
   if (error) return jsonError(error.message, 500);
   return NextResponse.json({ ok: true });

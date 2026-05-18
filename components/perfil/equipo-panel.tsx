@@ -5,7 +5,8 @@ import { useConfirm } from "@/components/ui/confirm-dialog";
 import { UserPlus, Trash2, Check, ShieldCheck, Mail } from "lucide-react";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 
-type Asesor = { id: string; nombre: string | null; email: string; rol: string };
+type Especialidad = "laboral" | "fiscal" | "generalista";
+type Asesor = { id: string; nombre: string | null; email: string; rol: string; especialidad?: Especialidad | null };
 
 export function EquipoPanel() {
   const supabase = useMemo(() => createBrowserSupabase(), []);
@@ -14,7 +15,12 @@ export function EquipoPanel() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
   const [showInvite, setShowInvite] = useState(false);
-  const [draft, setDraft] = useState({ email: "", nombre: "", rol: "asesor" as "gestor" | "asesor" });
+  const [draft, setDraft] = useState({
+    email: "",
+    nombre: "",
+    rol: "asesor" as "gestor" | "asesor",
+    especialidad: "generalista" as Especialidad,
+  });
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -58,7 +64,7 @@ export function EquipoPanel() {
       if (!json.ok) throw new Error(json.error ?? "Error");
       setSuccess(`Invitación enviada a ${draft.email}.`);
       setShowInvite(false);
-      setDraft({ email: "", nombre: "", rol: "asesor" });
+      setDraft({ email: "", nombre: "", rol: "asesor", especialidad: "generalista" });
       await load();
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Error");
@@ -137,6 +143,14 @@ export function EquipoPanel() {
                 <option value="gestor">Gestor (puede invitar a otros)</option>
               </select>
             </label>
+            <label className="label">
+              Especialidad
+              <select className="input" value={draft.especialidad} onChange={(e) => setDraft({ ...draft, especialidad: e.target.value as Especialidad })}>
+                <option value="generalista">Generalista (fiscal + laboral)</option>
+                <option value="fiscal">Solo fiscal / contable</option>
+                <option value="laboral">Solo laboral / nóminas</option>
+              </select>
+            </label>
             <div className="span-form" style={{ display: "flex", justifyContent: "flex-end" }}>
               <button className="button" onClick={invitar} disabled={busy === "invite"} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
                 {busy === "invite" ? (
@@ -160,7 +174,7 @@ export function EquipoPanel() {
 
         {!loading && items.length > 0 ? (
           <table className="table">
-            <thead><tr><th>Nombre</th><th>Email</th><th>Rol</th><th></th></tr></thead>
+            <thead><tr><th>Nombre</th><th>Email</th><th>Rol</th><th>Especialidad</th><th></th></tr></thead>
             <tbody>
               {items.map((a) => (
                 <tr key={a.id}>
@@ -191,6 +205,31 @@ export function EquipoPanel() {
                       <option value="asesor">Asesor</option>
                       <option value="gestor">Gestor</option>
                       <option value="admin">Admin</option>
+                    </select>
+                  </td>
+                  <td>
+                    <select
+                      className="input compact"
+                      value={a.especialidad ?? "generalista"}
+                      onChange={async (e) => {
+                        const v = e.target.value as Especialidad;
+                        setBusy(a.id);
+                        try {
+                          const tk = await token();
+                          await fetch("/api/asesores", {
+                            method: "PATCH",
+                            headers: { Authorization: `Bearer ${tk}`, "Content-Type": "application/json" },
+                            body: JSON.stringify({ id: a.id, especialidad: v }),
+                          });
+                          await load();
+                        } finally { setBusy(null); }
+                      }}
+                      disabled={busy === a.id}
+                      style={{ fontSize: 12, padding: "4px 8px" }}
+                    >
+                      <option value="generalista">Generalista</option>
+                      <option value="fiscal">Fiscal</option>
+                      <option value="laboral">Laboral</option>
                     </select>
                   </td>
                   <td>

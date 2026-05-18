@@ -805,6 +805,13 @@ alter table public.contactos enable row level security;
 alter table public.empresas add column if not exists email text;
 
 -- =========================================================================
+-- SPRINT 22: especialidad del asesor (laboral | fiscal | generalista)
+-- =========================================================================
+alter table public.perfiles add column if not exists especialidad text default 'generalista';
+alter table public.perfiles add constraint perfiles_especialidad_chk
+  check (especialidad in ('laboral', 'fiscal', 'generalista')) not valid;
+
+-- =========================================================================
 -- ÚLTIMO PASO: refresca el cache de PostgREST sin reiniciar
 -- =========================================================================
 notify pgrst, 'reload schema';
