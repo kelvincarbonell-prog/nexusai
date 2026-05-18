@@ -13,6 +13,8 @@ import { DeduccionesActivasPanel } from "@/components/laboral/deducciones-activa
 import { CalendarioLaboral } from "@/components/laboral/calendario-laboral";
 import { FiniquitoModal } from "@/components/laboral/finiquito-modal";
 import { BonificacionesModal } from "@/components/laboral/bonificaciones-modal";
+import { AtrasosModal } from "@/components/laboral/atrasos-modal";
+import { ConceptosCatalogPanel } from "@/components/laboral/conceptos-catalog-panel";
 
 type Empresa = { id: string; nombre: string; nif?: string };
 type Trabajador = {
@@ -55,6 +57,7 @@ export function WorkerManager({ empresas, initialTab = "trabajadores" }: { empre
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [finiquitoTrabajador, setFiniquitoTrabajador] = useState<Trabajador | null>(null);
+  const [atrasosTrabajador, setAtrasosTrabajador] = useState<Trabajador | null>(null);
   const [bonisTrabajador, setBonisTrabajador] = useState<Trabajador | null>(null);
   const [accionRapida, setAccionRapida] = useState<{ trabajador: Trabajador; accion: "contrata" | "parte-it" | "anticipo" | "embargo" } | null>(null);
 
@@ -360,6 +363,11 @@ export function WorkerManager({ empresas, initialTab = "trabajadores" }: { empre
                     >Bonis</button>{" "}
                     <button
                       className="button secondary compact"
+                      title="Atrasos retroactivos por subida salarial"
+                      onClick={() => setAtrasosTrabajador(t)}
+                    >Atrasos</button>{" "}
+                    <button
+                      className="button secondary compact"
                       title="Generar XML Contrat@ (SEPE)"
                       onClick={() => setAccionRapida({ trabajador: t, accion: "contrata" })}
                     >Contrat@</button>{" "}
@@ -503,6 +511,7 @@ export function WorkerManager({ empresas, initialTab = "trabajadores" }: { empre
           <NominasMasivasPanel empresaId={empresaId} />
           <SiltraFanPanel empresaId={empresaId} />
           <PayrollPanel empresaId={empresaId} trabajadores={trabajadores} />
+          <ConceptosCatalogPanel />
         </div>
       ) : null}
 
@@ -515,6 +524,14 @@ export function WorkerManager({ empresas, initialTab = "trabajadores" }: { empre
           empresaId={empresaId}
           trabajador={finiquitoTrabajador}
           onClose={() => setFiniquitoTrabajador(null)}
+        />
+      ) : null}
+
+      {atrasosTrabajador ? (
+        <AtrasosModal
+          empresaId={empresaId}
+          trabajador={atrasosTrabajador}
+          onClose={() => setAtrasosTrabajador(null)}
         />
       ) : null}
 
