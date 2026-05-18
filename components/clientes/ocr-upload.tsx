@@ -82,7 +82,66 @@ export function OcrUpload({ empresaId, modo = "gasto" }: { empresaId: string; mo
   const [recent, setRecent] = useState<LocalPreview[]>([]);
   const [filter, setFilter] = useState<"todas" | "pendientes" | "vinculadas" | "descartadas">("todas");
   const [aiUnavailable, setAiUnavailable] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
 
+  function toggleSelect(id: string) {
+    setSelected((s) => {
+      const n = new Set(s);
+      if (n.has(id)) n.delete(id); else n.add(id);
+      return n;
+    });
+  }
+  function selectAllVisible(ids: string[]) {
+    setSelected((s) => {
+      const n = new Set(s);
+      const todosYa = ids.every((id) => n.has(id));
+      if (todosYa) ids.forEach((id) => n.delete(id));
+      else ids.forEach((id) => n.add(id));
+      return n;
+    });
+  }
+
+  async function guardarLote() {
+    setBulkBusy(true);
+    try {
+      const ids = Array.from(selected);
+      const tk = await token();
+      await Promise.all(
+        ids.map((id) =>
+          fetch(`/api/portal/extracciones/${id}/confirmar`, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${tk}`, "Content-Type": "application/json" },
+            body: JSON.stringify({ tipo: modo === "ingreso" ? "factura" : "gasto", factura_tipo: modo === "ingreso" ? "emitida" : "recibida" }),
+          }),
+        ),
+      );
+      setSelected(new Set());
+      setSuccess(`${ids.length} ${modo === "ingreso" ? "ingreso" : "gasto"}${ids.length === 1 ? "" : "s"} guardado${ids.length === 1 ? "" : "s"}.`);
+      await load();
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Error");
+    } finally { setBulkBusy(false); }
+  }
+
+  async function borrarLote() {
+    if (!confirm(`¿Borrar definitivamente ${selected.size} extracciones?`)) return;
+    setBulkBusy(true);
+    try {
+      const ids = Array.from(selected);
+      const tk = await token();
+      await Promise.all(
+        ids.map((id) =>
+          fetch(`/api/portal/extracciones/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${tk}` } }),
+        ),
+      );
+      setSelected(new Set());
+      setSuccess(`${ids.length} extracciones borradas.`);
+      await load();
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Error");
+    } finally { setBulkBusy(false); }
+  }
   async function token() {
     const { data } = await supabase.auth.getSession();
     return data.session?.access_token ?? "";
@@ -618,9 +677,46 @@ export function OcrUpload({ empresaId, modo = "gasto" }: { empresaId: string; mo
             {items.length === 0 ? "Sin facturas procesadas todavía. Sube la primera arriba." : "Sin resultados para este filtro."}
           </p>
         ) : (
+          <>
+          {selected.size > 0 && (
+            <div
+              style={{
+                marginTop: 12,
+                padding: "8px 12px",
+                borderRadius: 10,
+                background: "color-mix(in srgb, var(--accent) 12%, transparent)",
+                border: "1px solid color-mix(in srgb, var(--accent) 28%, transparent)",
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                flexWrap: "wrap",
+              }}
+            >
+              <strong style={{ fontSize: 13 }}>{selected.size} seleccionada{selected.size === 1 ? "" : "s"}</strong>
+              <div style={{ marginLeft: "auto", display: "flex", gap: 6 }}>
+                <button className="button compact" onClick={guardarLote} disabled={bulkBusy}>
+                  Guardar todas
+                </button>
+                <button className="button ghost compact" onClick={() => setSelected(new Set())} disabled={bulkBusy}>
+                  Limpiar selección
+                </button>
+                <button className="button ghost compact" onClick={borrarLote} disabled={bulkBusy} style={{ color: "var(--bad)" }}>
+                  Borrar todas
+                </button>
+              </div>
+            </div>
+          )}
           <table className="table" style={{ marginTop: 12 }}>
             <thead>
               <tr>
+                <th style={{ width: 32 }}>
+                  <input
+                    type="checkbox"
+                    aria-label="Seleccionar todas"
+                    checked={filtered.length > 0 && filtered.every((e) => selected.has(e.id))}
+                    onChange={() => selectAllVisible(filtered.map((e) => e.id))}
+                  />
+                </th>
                 <th>{modo === "ingreso" ? "Cliente" : "Proveedor"}</th>
                 <th>NIF</th>
                 <th>Fecha</th>
@@ -638,7 +734,15 @@ export function OcrUpload({ empresaId, modo = "gasto" }: { empresaId: string; mo
                 const okScan = conf >= 70 && e.status !== "failed";
                 const linked = e.factura_id || e.gasto_id;
                 return (
-                  <tr key={e.id}>
+                  <tr key={e.id} style={selected.has(e.id) ? { background: "color-mix(in srgb, var(--accent) 6%, transparent)" } : undefined}>
+                    <td>
+                      <input
+                        type="checkbox"
+                        aria-label="Seleccionar"
+                        checked={selected.has(e.id)}
+                        onChange={() => toggleSelect(e.id)}
+                      />
+                    </td>
                     <td><strong>{d.vendor_name ?? "—"}</strong></td>
                     <td style={{ fontFamily: "var(--mono)", fontSize: 12 }}>{d.vendor_nif ?? "—"}</td>
                     <td style={{ fontFamily: "var(--mono)", fontSize: 12 }}>{d.issue_date ?? "—"}</td>
@@ -731,6 +835,7 @@ export function OcrUpload({ empresaId, modo = "gasto" }: { empresaId: string; mo
               })}
             </tbody>
           </table>
+          </>
         )}
       </article>
 
