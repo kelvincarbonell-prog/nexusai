@@ -21,6 +21,7 @@ import {
 import { StorageBadge } from "@/components/storage/storage-badge";
 import { CommandPalette } from "@/components/command-palette";
 import { AppTopbar } from "@/components/app-topbar";
+import { GestorAsistente } from "@/components/dashboard/gestor-asistente";
 
 type NavItem = {
   href: string;
@@ -139,6 +140,9 @@ export function AppShell({
       </main>
 
       {rightRail}
+
+      {/* FAB asistente del gestor: presente en toda la app autenticada */}
+      <GestorAsistente />
     </div>
   );
 }
