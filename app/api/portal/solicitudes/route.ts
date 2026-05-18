@@ -8,8 +8,9 @@ import { canAccessLaborCompany } from "@/lib/laboral/access";
 const Create = z.object({
   empresa_id: z.string().uuid(),
   tipo: z.string().min(2).max(60),
-  descripcion: z.string().max(2000).optional(),
+  descripcion: z.string().max(4000).optional(),
   prioridad: z.enum(["normal", "alta", "urgente"]).default("normal"),
+  campos: z.record(z.string()).optional(),
 });
 
 export async function GET(request: NextRequest) {
@@ -43,7 +44,7 @@ export async function POST(request: NextRequest) {
       tipo: parsed.data.tipo,
       descripcion: parsed.data.descripcion ?? null,
       user_id: user.id,
-      metadata: { prioridad: parsed.data.prioridad },
+      metadata: { prioridad: parsed.data.prioridad, campos: parsed.data.campos ?? {} },
     })
     .select("*")
     .single();
