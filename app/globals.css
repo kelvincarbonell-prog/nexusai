@@ -3199,7 +3199,26 @@ code {
   .demo-body { grid-template-columns: 1fr; min-height: auto; }
   .demo-side { display: none; }
   .demo-fields { grid-template-columns: 1fr; }
+
+  /* Phone demos: reduce size on mobile so they don't dominate over the
+     surrounding text (especially in light theme where the dark phone
+     contrasts sharply with the white page). */
+  .live-demo { margin-inline: auto; max-width: 280px; }
+  .demo-window.phone { max-width: 240px; box-shadow: 0 18px 40px -24px rgba(0, 0, 0, 0.35); }
+  .demo-window.phone.narrow { max-width: 220px; }
+  .fichaje-body { min-height: 380px; padding: 12px; gap: 10px; }
+  .fichaje-clock { font-size: 38px; margin: 8px 0; }
 }
+
+/* Light-theme polish: the phone container is always dark on purpose
+   (mimics a real device), so soften its outer glow on white backgrounds
+   so it doesn't read as a giant black block next to the text. */
+:root[data-theme="light"] .demo-window.phone {
+  box-shadow:
+    0 24px 50px -30px rgba(60, 36, 120, 0.35),
+    0 0 0 1px rgba(0, 0, 0, 0.04);
+}
+:root[data-theme="light"] .demo-window.phone::before { opacity: 0.25; }
 
 /* ============================================================
    Responsive
