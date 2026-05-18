@@ -7,6 +7,11 @@
  *       coherente con lo que paga la empresa cada mes.
  */
 
+import { getConcepto } from "@/lib/laboral/conceptos";
+
+/** Concepto extra A3NOM aplicado al mes (referencia al catálogo + importe). */
+export type ConceptoExtraInput = { codigo: string; importe: number };
+
 export type NominaInputs = {
   salario_bruto_anual: number;        // bruto anual del trabajador
   pagas_anuales: number;              // 12 o 14 (default 12 con prorrata)
@@ -15,6 +20,7 @@ export type NominaInputs = {
   base_extras?: number;               // pluses/variables del mes (van al bruto del mes)
   dias_periodo?: number;              // 30 default
   ya_devengado_ano?: number;          // bruto ya devengado en lo que va de año
+  conceptos_extras?: ConceptoExtraInput[]; // del catálogo A3NOM
 };
 
 export type ConceptoLinea = { concepto: string; importe: number; tipo: "devengo" | "deduccion" };
@@ -145,10 +151,35 @@ export function calcularNomina(input: NominaInputs): NominaResult {
   const pagas = input.pagas_anuales ?? 12;
   const brutoAnual = input.salario_bruto_anual;
   const brutoMensual = round2(brutoAnual / pagas);
-  const brutoMes = round2(brutoMensual + (input.base_extras ?? 0));
+
+  // Conceptos extras del catálogo A3NOM (devengos/deducciones puntuales)
+  let devengosExtra = 0;
+  let deduccionesExtra = 0;
+  let cotizableExtra = 0;       // suma que aumenta bases SS
+  let irpfImponibleExtra = 0;   // suma que aumenta base IRPF
+  const conceptosExtraLineas: ConceptoLinea[] = [];
+  for (const ce of input.conceptos_extras ?? []) {
+    const cat = getConcepto(ce.codigo);
+    if (!cat || !Number.isFinite(ce.importe) || ce.importe <= 0) continue;
+    const importe = round2(ce.importe);
+    // Exención mensual aproximada (catálogo guarda exención anual)
+    const exentoMes = cat.exencion_anual ? cat.exencion_anual / 12 : 0;
+    const tributable = exentoMes > 0 ? Math.max(0, importe - exentoMes) : importe;
+    if (cat.tipo === "devengo") {
+      devengosExtra += importe;
+      if (cat.cotiza_cc || cat.cotiza_atyepy) cotizableExtra += tributable;
+      if (cat.sujeto_irpf) irpfImponibleExtra += tributable;
+      conceptosExtraLineas.push({ concepto: cat.nombre, importe, tipo: "devengo" });
+    } else {
+      deduccionesExtra += importe;
+      conceptosExtraLineas.push({ concepto: cat.nombre, importe: -importe, tipo: "deduccion" });
+    }
+  }
+
+  const brutoMes = round2(brutoMensual + (input.base_extras ?? 0) + devengosExtra);
 
   // Bases de cotización: con prorrata de pagas extras (sin tope MIN/MAX simplificado)
-  const brutoConProrrata = round2((brutoAnual + (input.base_extras ?? 0) * 12) / 12);
+  const brutoConProrrata = round2((brutoAnual + (input.base_extras ?? 0) * 12) / 12 + cotizableExtra);
   const baseCC = brutoConProrrata;
   const baseATyEPyFormacion = brutoConProrrata;
 
@@ -163,12 +194,13 @@ export function calcularNomina(input: NominaInputs): NominaResult {
     baseATyEPyFormacion * (SS_EMPRESA.desempleo + SS_EMPRESA.fogasa + SS_EMPRESA.formacion + SS_EMPRESA.at_ep) +
     baseCC * SS_EMPRESA.mei;
 
-  const baseIrpfAnual = brutoAnual + (input.base_extras ?? 0) * 12;
+  const baseIrpfAnual = brutoAnual + (input.base_extras ?? 0) * 12 + irpfImponibleExtra * 12;
   const pctIrpf =
     input.irpf_pct_override != null ? input.irpf_pct_override : calcularIrpfPct(baseIrpfAnual, input.hijos ?? 0);
-  const irpfRetenido = brutoMes * (pctIrpf / 100);
+  const baseIrpfMes = brutoMensual + (input.base_extras ?? 0) + irpfImponibleExtra;
+  const irpfRetenido = baseIrpfMes * (pctIrpf / 100);
 
-  const totalDeducciones = ssTrabajadorTotal + irpfRetenido;
+  const totalDeducciones = ssTrabajadorTotal + irpfRetenido + deduccionesExtra;
   const liquido = brutoMes - totalDeducciones;
 
   const conceptos: ConceptoLinea[] = [
@@ -177,6 +209,7 @@ export function calcularNomina(input: NominaInputs): NominaResult {
   if (input.base_extras && input.base_extras > 0) {
     conceptos.push({ concepto: "Pluses / variables", importe: round2(input.base_extras), tipo: "devengo" });
   }
+  conceptos.push(...conceptosExtraLineas.filter((l) => l.tipo === "devengo"));
   conceptos.push(
     { concepto: "Contingencias comunes (4,70 %)", importe: round2(-ssTrabajadorCC), tipo: "deduccion" },
     { concepto: "Desempleo (1,55 %)", importe: round2(-ssTrabajadorDes), tipo: "deduccion" },
@@ -184,12 +217,13 @@ export function calcularNomina(input: NominaInputs): NominaResult {
     { concepto: "MEI (0,13 %)", importe: round2(-ssTrabajadorMei), tipo: "deduccion" },
     { concepto: `Retención IRPF (${pctIrpf.toFixed(2)} %)`, importe: round2(-irpfRetenido), tipo: "deduccion" },
   );
+  conceptos.push(...conceptosExtraLineas.filter((l) => l.tipo === "deduccion"));
 
   return {
     devengo_bruto: round2(brutoMes),
     base_cotizacion_cc: round2(baseCC),
     base_cotizacion_atyepy: round2(baseATyEPyFormacion),
-    base_irpf: round2(brutoMes),
+    base_irpf: round2(baseIrpfMes),
     ss_trabajador: round2(ssTrabajadorTotal),
     irpf_retenido: round2(irpfRetenido),
     total_deducciones: round2(totalDeducciones),

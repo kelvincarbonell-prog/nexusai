@@ -1,5 +1,6 @@
 import { AppShell } from "@/components/app-shell";
 import { ClienteWorkspace } from "@/components/clientes/cliente-workspace";
+import { loadVistaConfigForCurrentUser } from "@/lib/vista-config/server";
 import { SetupRequired } from "@/components/setup-required";
 import { hasSupabaseConfig } from "@/lib/env";
 import { createServerSupabase } from "@/lib/supabase/server";
@@ -49,6 +50,7 @@ export default async function PortalPage({ searchParams }: Props) {
   const sp = searchParams ? await searchParams : {};
   const empresaIdParam = sp.empresa;
   const empresa = empresas.find((e) => e.id === empresaIdParam) ?? empresas[0];
+  const modulos = await loadVistaConfigForCurrentUser("cliente");
 
   return (
     <AppShell
@@ -74,7 +76,7 @@ export default async function PortalPage({ searchParams }: Props) {
         </div>
       ) : null}
 
-      <ClienteWorkspace empresa={empresa} />
+      <ClienteWorkspace empresa={empresa} modulos={modulos} />
     </AppShell>
   );
 }

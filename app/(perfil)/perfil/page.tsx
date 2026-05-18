@@ -1,6 +1,7 @@
 import { AppShell } from "@/components/app-shell";
 import { PerfilForm } from "@/components/perfil/perfil-form";
 import { EquipoPanel } from "@/components/perfil/equipo-panel";
+import { VistaConfigPanel } from "@/components/perfil/vista-config-panel";
 import { SetupRequired } from "@/components/setup-required";
 import { hasSupabaseConfig } from "@/lib/env";
 import { createServerSupabase } from "@/lib/supabase/server";
@@ -67,9 +68,14 @@ export default async function PerfilPage() {
       </header>
       <PerfilForm initial={perfil} />
       {(perfil.rol === "admin" || perfil.rol === "gestor") ? (
-        <div style={{ marginTop: 24 }}>
-          <EquipoPanel />
-        </div>
+        <>
+          <div style={{ marginTop: 24 }}>
+            <EquipoPanel />
+          </div>
+          <div style={{ marginTop: 24 }}>
+            <VistaConfigPanel />
+          </div>
+        </>
       ) : null}
     </AppShell>
   );

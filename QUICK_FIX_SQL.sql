@@ -812,6 +812,43 @@ alter table public.perfiles add constraint perfiles_especialidad_chk
   check (especialidad in ('laboral', 'fiscal', 'generalista')) not valid;
 
 -- =========================================================================
+-- SPRINT 23: vista_config — el gestor activa/desactiva módulos por vista
+--   alcance = 'asesor' | 'cliente'
+--   modulos = jsonb { "<feature_key>": true|false, ... }
+-- =========================================================================
+create table if not exists public.vista_config (
+  id uuid primary key default gen_random_uuid(),
+  nombre_gestoria text not null,
+  alcance text not null check (alcance in ('asesor', 'cliente')),
+  modulos jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (nombre_gestoria, alcance)
+);
+
+drop trigger if exists set_updated_at_vista_config on public.vista_config;
+create trigger set_updated_at_vista_config before update on public.vista_config
+  for each row execute function public.set_updated_at();
+
+alter table public.vista_config enable row level security;
+
+-- Política: cualquier perfil de la misma gestoría puede leer/escribir su config.
+drop policy if exists vista_config_rw on public.vista_config;
+create policy vista_config_rw on public.vista_config
+  for all using (
+    exists (
+      select 1 from public.perfiles p
+      where p.id = auth.uid() and p.nombre_gestoria = vista_config.nombre_gestoria
+    )
+  ) with check (
+    exists (
+      select 1 from public.perfiles p
+      where p.id = auth.uid() and p.nombre_gestoria = vista_config.nombre_gestoria
+        and p.rol in ('admin', 'gestor')
+    )
+  );
+
+-- =========================================================================
 -- ÚLTIMO PASO: refresca el cache de PostgREST sin reiniciar
 -- =========================================================================
 notify pgrst, 'reload schema';

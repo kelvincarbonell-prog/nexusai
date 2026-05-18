@@ -24,6 +24,7 @@ import { AppTopbar } from "@/components/app-topbar";
 import { GestorAsistente } from "@/components/dashboard/gestor-asistente";
 import { NavLink } from "@/components/ui/nav-link";
 import { GlobalDropzone } from "@/components/effects/global-dropzone";
+import { loadVistaConfigForCurrentUser } from "@/lib/vista-config/server";
 
 type NavItem = {
   href: string;
@@ -31,21 +32,23 @@ type NavItem = {
   icon: LucideIcon;
   count?: number | string;
   kbd?: string;
+  /** Si está presente, el item se oculta cuando el módulo está OFF en vista_config. */
+  moduloKey?: string;
 };
 
 const gestorNav: NavItem[] = [
-  { href: "/dashboard", label: "Hoy", icon: CalendarDays, kbd: "⌘1" },
-  { href: "/clientes", label: "Clientes", icon: UserSquare, kbd: "⌘2" },
-  { href: "/facturacion", label: "Facturación", icon: FileText, kbd: "⌘3" },
-  { href: "/aeat", label: "Modelos AEAT", icon: Calculator, kbd: "⌘4" },
-  { href: "/contabilidad", label: "Contabilidad", icon: BookOpen, kbd: "⌘5" },
-  { href: "/laboral", label: "Laboral", icon: Users, kbd: "⌘6" },
-  { href: "/agentes", label: "Agentes IA", icon: Sparkles, kbd: "⌘7" },
+  { href: "/dashboard", label: "Hoy", icon: CalendarDays, kbd: "⌘1", moduloKey: "dashboard" },
+  { href: "/clientes", label: "Clientes", icon: UserSquare, kbd: "⌘2", moduloKey: "clientes" },
+  { href: "/facturacion", label: "Facturación", icon: FileText, kbd: "⌘3", moduloKey: "facturas" },
+  { href: "/aeat", label: "Modelos AEAT", icon: Calculator, kbd: "⌘4", moduloKey: "fiscal" },
+  { href: "/contabilidad", label: "Contabilidad", icon: BookOpen, kbd: "⌘5", moduloKey: "contabilidad" },
+  { href: "/laboral", label: "Laboral", icon: Users, kbd: "⌘6", moduloKey: "laboral" },
+  { href: "/agentes", label: "Agentes IA", icon: Sparkles, kbd: "⌘7", moduloKey: "agentes" },
   { href: "/movil", label: "Móvil", icon: Smartphone, kbd: "⌘8" },
 ];
 
 const accountNav: NavItem[] = [
-  { href: "/solicitudes", label: "Solicitudes", icon: Inbox },
+  { href: "/solicitudes", label: "Solicitudes", icon: Inbox, moduloKey: "recordatorios" },
   { href: "/mensajes", label: "Mensajes", icon: MessageSquare },
   { href: "/tareas", label: "Tareas", icon: ListChecks },
   { href: "/inteligencia", label: "Inteligencia", icon: LineChart },
@@ -68,7 +71,7 @@ export type AppShellProps = {
   topbar?: React.ReactNode;
 };
 
-export function AppShell({
+export async function AppShell({
   children,
   active = "/dashboard",
   showSuperAdmin = false,
@@ -77,7 +80,9 @@ export function AppShell({
   hideTopbar = false,
   topbar,
 }: AppShellProps) {
-  const allNav = [...gestorNav, ...accountNav, ...(showSuperAdmin ? adminExtras : [])];
+  const modulos = await loadVistaConfigForCurrentUser("asesor");
+  const allowed = (item: NavItem) => !item.moduloKey || modulos[item.moduloKey] !== false;
+  const allNav = [...gestorNav.filter(allowed), ...accountNav.filter(allowed), ...(showSuperAdmin ? adminExtras : [])];
   return (
     <div className={rightRail ? "shell with-copilot" : "shell"}>
       <CommandPalette />

@@ -88,18 +88,21 @@ type Section = {
   label: string;
   icon: LucideIcon;
   subTabs?: SubTab[];
+  /** Si está presente y el módulo está OFF en vista_config (cliente), la sección se oculta. */
+  moduloKey?: string;
 };
 
 // Ordenadas por frecuencia/importancia real de uso para un cliente.
 const SECTIONS: Section[] = [
-  { key: "inicio", label: "Inicio", icon: Home },
+  { key: "inicio", label: "Inicio", icon: Home, moduloKey: "inicio" },
 
   // INGRESOS: lector OCR y gestión de facturas emitidas
-  { key: "lector_ingresos", label: "Lector ingresos", icon: ReceiptText },
+  { key: "lector_ingresos", label: "Lector ingresos", icon: ReceiptText, moduloKey: "facturas_emit" },
   {
     key: "ingresos",
     label: "Ingresos",
     icon: FileText,
+    moduloKey: "facturas_emit",
     subTabs: [
       { key: "crear", label: "Crear factura" },
       { key: "listado", label: "Listado de facturas" },
@@ -109,25 +112,27 @@ const SECTIONS: Section[] = [
   },
 
   // GASTOS: lector OCR y listado
-  { key: "lector_gastos", label: "Lector gastos", icon: ScanLine },
-  { key: "gastos", label: "Gastos", icon: Receipt },
+  { key: "lector_gastos", label: "Lector gastos", icon: ScanLine, moduloKey: "facturas_recv" },
+  { key: "gastos", label: "Gastos", icon: Receipt, moduloKey: "facturas_recv" },
 
   // Documentos comerciales (antes "Albaranes")
   {
     key: "comerciales",
     label: "Documentos comerciales",
     icon: Package,
+    moduloKey: "facturas_emit",
     subTabs: [
       { key: "albaranes", label: "Albaranes" },
       { key: "presupuestos", label: "Presupuestos" },
     ],
   },
-  { key: "mensajes", label: "Mensajes", icon: MessageSquare },
-  { key: "solicitudes", label: "Solicitudes", icon: Send },
+  { key: "mensajes", label: "Mensajes", icon: MessageSquare, moduloKey: "chat" },
+  { key: "solicitudes", label: "Solicitudes", icon: Send, moduloKey: "solicitudes" },
   {
     key: "documentos",
     label: "Documentos",
     icon: Folder,
+    moduloKey: "documentos",
     subTabs: [
       { key: "todos", label: "Todos" },
       { key: "impuesto", label: "Impuestos" },
@@ -138,12 +143,13 @@ const SECTIONS: Section[] = [
   },
 
   // Periódico / mensual o trimestral
-  { key: "modelos", label: "IVA y modelos AEAT", icon: Calculator },
-  { key: "obligaciones", label: "Obligaciones", icon: CalendarClock },
+  { key: "modelos", label: "IVA y modelos AEAT", icon: Calculator, moduloKey: "modelos" },
+  { key: "obligaciones", label: "Obligaciones", icon: CalendarClock, moduloKey: "obligaciones" },
   {
     key: "laboral",
     label: "Laboral",
     icon: Users,
+    moduloKey: "nominas",
     subTabs: [
       { key: "trabajadores", label: "Plantilla" },
       { key: "nominas", label: "Nóminas" },
@@ -154,7 +160,7 @@ const SECTIONS: Section[] = [
   },
 
   // Ocasional
-  { key: "bancos", label: "Bancos", icon: Landmark },
+  { key: "bancos", label: "Bancos", icon: Landmark, moduloKey: "bancos" },
   { key: "firmas", label: "Cl@ve & firmas", icon: PenLine },
   { key: "auditoria", label: "Historial", icon: History },
 
@@ -186,8 +192,9 @@ const SECTIONS: Section[] = [
   },
 ];
 
-export function ClienteWorkspace({ empresa }: { empresa: Empresa }) {
+export function ClienteWorkspace({ empresa, modulos = {} }: { empresa: Empresa; modulos?: Record<string, boolean> }) {
   const router = useRouter();
+  const visibleSections = SECTIONS.filter((s) => !s.moduloKey || modulos[s.moduloKey] !== false);
   const [isPending, startTransition] = useTransition();
   const [section, setSection] = useState<SectionKey>("inicio");
 
@@ -218,7 +225,7 @@ export function ClienteWorkspace({ empresa }: { empresa: Empresa }) {
 
   const empresaSingleton = [{ id: empresa.id, nombre: empresa.nombre, nif: empresa.nif ?? undefined }];
   const empresaConType = [{ ...empresaSingleton[0], account_type: empresa.account_type ?? "empresa" }];
-  const current = SECTIONS.find((s) => s.key === section) ?? SECTIONS[0];
+  const current = visibleSections.find((s) => s.key === section) ?? visibleSections[0] ?? SECTIONS[0];
   const activeSub = subTab[section];
 
   function setSub(s: SectionKey, k: string) {
@@ -315,7 +322,7 @@ export function ClienteWorkspace({ empresa }: { empresa: Empresa }) {
         </div>
 
         <nav className="sb-nav" role="tablist" aria-label="Secciones del cliente" style={{ display: "grid", gap: 2 }}>
-          {SECTIONS.map((s) => {
+          {visibleSections.map((s) => {
             const isActive = section === s.key;
             const Icon = s.icon;
             return (
