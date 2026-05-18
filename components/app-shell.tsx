@@ -23,6 +23,7 @@ import { CommandPalette } from "@/components/command-palette";
 import { AppTopbar } from "@/components/app-topbar";
 import { GestorAsistente } from "@/components/dashboard/gestor-asistente";
 import { NavLink } from "@/components/ui/nav-link";
+import { GlobalDropzone } from "@/components/effects/global-dropzone";
 
 type NavItem = {
   href: string;
@@ -153,6 +154,9 @@ export function AppShell({
 
       {/* FAB asistente del gestor: presente en toda la app autenticada */}
       <GestorAsistente />
+
+      {/* Drag&drop universal: cualquier archivo arrastrado va al OCR */}
+      <GlobalDropzone />
     </div>
   );
 }
