@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Eye, Trash2, Check } from "lucide-react";
+import { InlineEdit } from "@/components/ui/inline-edit";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 
 type Linea = {
@@ -115,6 +116,19 @@ export function ClienteGastos({ empresaId }: { empresaId: string }) {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [empresaId]);
+
+  async function patchGasto(gastoId: string, patch: Record<string, unknown>) {
+    const { data: sess } = await supabase.auth.getSession();
+    const tk = sess.session?.access_token ?? "";
+    const res = await fetch(`/api/gastos/${gastoId}`, {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${tk}`, "Content-Type": "application/json" },
+      body: JSON.stringify(patch),
+    });
+    const j = await res.json();
+    if (!j.ok) throw new Error(j.error ?? "Error");
+    setItems((prev) => prev.map((it) => (it.id === gastoId && it.origen === "gasto" ? { ...it, ...patch } as Linea : it)));
+  }
 
   async function marcarCobrada(gastoId: string) {
     try {
@@ -254,7 +268,18 @@ export function ClienteGastos({ empresaId }: { empresaId: string }) {
                   <td><span className={`pill ${g.origen === "factura" ? "plain" : "warn"}`} style={{ fontSize: 11 }}>{g.origen === "factura" ? "F" : "G"}</span></td>
                   <td>{g.proveedor ?? "—"}</td>
                   <td style={{ fontFamily: "var(--mono)", fontSize: 12 }}>{g.nif ?? "—"}</td>
-                  <td style={{ fontSize: 13, maxWidth: 220, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{g.concepto ?? "—"}</td>
+                  <td style={{ fontSize: 13, maxWidth: 220 }}>
+                    {g.origen === "gasto" ? (
+                      <InlineEdit
+                        value={g.concepto}
+                        onSave={(v) => patchGasto(g.id, { concepto: v })}
+                        type="text"
+                        placeholder="añadir concepto"
+                      />
+                    ) : (
+                      <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>{g.concepto ?? "—"}</span>
+                    )}
+                  </td>
                   <td>
                     {g.cuenta_pgc ? (
                       <span className="pill accent" style={{ fontSize: 10, fontFamily: "var(--mono)" }} title="Cuenta PGC asignada por IA">{g.cuenta_pgc}</span>
