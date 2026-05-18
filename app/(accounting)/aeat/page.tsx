@@ -18,10 +18,10 @@ export default async function AeatPage({ searchParams }: Props) {
   const isAdmin = profile?.rol === "admin";
 
   const empresasRes = isAdmin
-    ? await supabase.from("empresas").select("id,nombre,nif").order("nombre").limit(200)
+    ? await supabase.from("empresas").select("id,nombre,nif,account_type,tipo").order("nombre").limit(200)
     : await supabase
         .from("empresas")
-        .select("id,nombre,nif")
+        .select("id,nombre,nif,account_type,tipo")
         .or(`gestor_id.eq.${auth.user.id},owner_user_id.eq.${auth.user.id}`)
         .order("nombre");
   const empresas = empresasRes.data ?? [];
