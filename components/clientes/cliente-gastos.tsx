@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Eye, Trash2 } from "lucide-react";
+import { Eye, Trash2, Check } from "lucide-react";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 
 type Linea = {
@@ -29,6 +29,7 @@ export function ClienteGastos({ empresaId }: { empresaId: string }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filtro, setFiltro] = useState<"todos" | "factura" | "gasto">("todos");
+  const [filtroEstado, setFiltroEstado] = useState<"todos" | "pendiente" | "cobrada">("todos");
   const [search, setSearch] = useState("");
 
   async function load() {
@@ -115,6 +116,24 @@ export function ClienteGastos({ empresaId }: { empresaId: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [empresaId]);
 
+  async function marcarCobrada(gastoId: string) {
+    try {
+      const { data: sess } = await supabase.auth.getSession();
+      const tk = sess.session?.access_token ?? "";
+      const res = await fetch(`/api/gastos/${gastoId}`, {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${tk}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ estado: "cobrada" }),
+      });
+      const j = await res.json();
+      if (!j.ok) throw new Error(j.error ?? "Error");
+      // Refrescar la lista actualizando estado localmente
+      setItems((prev) => prev.map((it) => (it.id === gastoId && it.origen === "gasto" ? { ...it, estado: "cobrada" } : it)));
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Error");
+    }
+  }
+
   async function verFactura(extraccionId: string) {
     try {
       const { data: sess } = await supabase.auth.getSession();
@@ -156,6 +175,8 @@ export function ClienteGastos({ empresaId }: { empresaId: string }) {
     const q = search.trim().toLowerCase();
     return items.filter((i) => {
       if (filtro !== "todos" && i.origen !== filtro) return false;
+      if (filtroEstado === "pendiente" && (i.estado === "cobrada" || i.estado === "pagada" || i.estado === "registrada")) return false;
+      if (filtroEstado === "cobrada" && !(i.estado === "cobrada" || i.estado === "pagada" || i.estado === "registrada")) return false;
       if (!q) return true;
       return (
         i.proveedor?.toLowerCase().includes(q) ||
@@ -164,7 +185,7 @@ export function ClienteGastos({ empresaId }: { empresaId: string }) {
         i.numero?.toLowerCase().includes(q)
       );
     });
-  }, [items, filtro, search]);
+  }, [items, filtro, filtroEstado, search]);
 
   const totales = useMemo(() => ({
     base: filtered.reduce((s, i) => s + i.base, 0),
@@ -193,6 +214,10 @@ export function ClienteGastos({ empresaId }: { empresaId: string }) {
           <button className={`button compact ${filtro === "todos" ? "" : "secondary"}`} onClick={() => setFiltro("todos")}>Todos</button>
           <button className={`button compact ${filtro === "factura" ? "" : "secondary"}`} onClick={() => setFiltro("factura")}>Facturas</button>
           <button className={`button compact ${filtro === "gasto" ? "" : "secondary"}`} onClick={() => setFiltro("gasto")}>Gastos</button>
+          <span style={{ width: 12 }} />
+          <button className={`button compact ${filtroEstado === "todos" ? "" : "secondary"}`} onClick={() => setFiltroEstado("todos")} title="Cualquier estado">Cualquiera</button>
+          <button className={`button compact ${filtroEstado === "pendiente" ? "" : "secondary"}`} onClick={() => setFiltroEstado("pendiente")}>Pendientes</button>
+          <button className={`button compact ${filtroEstado === "cobrada" ? "" : "secondary"}`} onClick={() => setFiltroEstado("cobrada")}>Cobradas</button>
         </div>
 
         {error ? <p role="alert" style={{ color: "var(--bad)" }}>{error}</p> : null}
@@ -243,26 +268,43 @@ export function ClienteGastos({ empresaId }: { empresaId: string }) {
                     {g.irpf > 0 ? EUR(g.irpf) : "—"}
                   </td>
                   <td className="num" style={{ fontWeight: 600 }}>{EUR(g.total)}</td>
-                  <td><span className={`status ${g.estado === "pagada" || g.estado === "registrada" ? "good" : ""}`}>{g.estado}</span></td>
+                  <td>
+                    <span className={`status ${g.estado === "pagada" || g.estado === "cobrada" || g.estado === "registrada" ? "good" : ""}`}>
+                      {g.estado === "pagada" || g.estado === "cobrada" || g.estado === "registrada" ? "cobrada" : "pendiente"}
+                    </span>
+                  </td>
                   <td>
                     <div style={{ display: "inline-flex", gap: 4 }}>
+                      {/* Toggle pendiente ↔ cobrada */}
+                      {g.origen === "gasto" && g.estado !== "cobrada" && g.estado !== "pagada" && g.estado !== "registrada" && (
+                        <button
+                          className="icon-btn"
+                          onClick={() => marcarCobrada(g.id)}
+                          title="Marcar como cobrada / pagada"
+                          aria-label="Marcar cobrada"
+                          style={{ color: "#10b981" }}
+                        >
+                          <Check size={14} strokeWidth={2.2} />
+                        </button>
+                      )}
                       {g.origen_ocr ? (
                         <button
-                          className="button ghost compact"
+                          className="icon-btn"
                           onClick={() => verFactura(g.origen_ocr!)}
-                          title="Ver archivo original"
-                          style={{ padding: "4px 8px" }}
+                          title="Ver factura"
+                          aria-label="Ver factura"
                         >
-                          <Eye size={13} strokeWidth={1.8} />
+                          <Eye size={14} strokeWidth={1.8} />
                         </button>
                       ) : null}
                       <button
-                        className="button ghost compact"
+                        className="icon-btn"
                         onClick={() => borrar(g)}
                         title={`Borrar ${g.origen}`}
-                        style={{ padding: "4px 8px", color: "var(--bad)" }}
+                        aria-label="Borrar"
+                        style={{ color: "var(--bad, #ef4444)" }}
                       >
-                        <Trash2 size={13} strokeWidth={1.8} />
+                        <Trash2 size={14} strokeWidth={1.8} />
                       </button>
                     </div>
                   </td>

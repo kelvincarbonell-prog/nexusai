@@ -3491,3 +3491,23 @@ a, button { -webkit-tap-highlight-color: transparent; }
   from { background-position: 200% 0; }
   to { background-position: -200% 0; }
 }
+
+/* Botón solo-icono compacto (para acciones secundarias en tablas) */
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, transform 0.06s;
+}
+.icon-btn:hover {
+  background: color-mix(in srgb, currentColor 8%, transparent);
+  border-color: color-mix(in srgb, currentColor 16%, transparent);
+}
+.icon-btn:active { transform: scale(0.94); }

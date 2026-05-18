@@ -9,7 +9,10 @@ import { checkAgentRateLimit } from "@/lib/agents/rate-limit";
 import { categorizeExpense } from "@/lib/agents/expense-categorizer";
 import { asentarGasto, autoAsientosActivado } from "@/lib/accounting/auto-asientos";
 
-const AUTO_CONFIRM_THRESHOLD = 70;
+// Umbral para auto-creación del gasto/factura en estado "pendiente".
+// Lo bajamos a 30 para que cualquier extracción razonable aparezca al
+// instante en la lista. Marca metadata.requires_review si conf < 70 o mismatch.
+const AUTO_CONFIRM_THRESHOLD = 30;
 
 const MAX_BASE64 = 8_000_000; // ~6 MB binario
 
@@ -182,7 +185,10 @@ export async function POST(request: NextRequest) {
   let auto_gasto_id: string | null = null;
   let auto_asiento_id: string | null = null;
   let auto_cuenta_pgc: string | null = null;
-  if (extraction.ok && confidence >= AUTO_CONFIRM_THRESHOLD && status === "extracted") {
+  // Auto-crea el gasto SIEMPRE que la extracción haya funcionado, incluso
+  // si el matching no es perfecto: aparece en la lista de gastos como
+  // "pendiente" y el gestor lo revisa/cobra desde allí.
+  if (extraction.ok && confidence >= AUTO_CONFIRM_THRESHOLD && (status === "extracted" || status === "needs_manual_review")) {
     try {
       // 1) Auto-categorización IA (busca histórico, regla, IA fallback)
       const cat = await categorizeExpense({

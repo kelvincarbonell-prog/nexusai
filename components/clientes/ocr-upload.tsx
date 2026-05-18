@@ -267,6 +267,9 @@ export function OcrUpload({ empresaId, modo = "gasto" }: { empresaId: string; mo
     }
   }
 
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewMime, setPreviewMime] = useState<string | null>(null);
+
   async function visualizar(extraccionId: string) {
     setError(null);
     try {
@@ -276,7 +279,9 @@ export function OcrUpload({ empresaId, modo = "gasto" }: { empresaId: string; mo
       });
       const json = await res.json();
       if (!json.ok || !json.url) throw new Error(json.error ?? "Sin archivo");
-      window.open(json.url, "_blank", "noopener,noreferrer");
+      // Abre en modal interno (pequeño en pantalla), no en pestaña nueva
+      setPreviewUrl(json.url);
+      setPreviewMime(json.mime_type ?? null);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Error");
     }
@@ -601,9 +606,10 @@ export function OcrUpload({ empresaId, modo = "gasto" }: { empresaId: string; mo
           <span className="card-eyebrow">Extracciones</span>
           <div className="button-row" style={{ gap: 4 }}>
             <button className={`button compact ${filter === "todas" ? "" : "ghost"}`} onClick={() => setFilter("todas")}>Todas · {stats.total}</button>
-            <button className={`button compact ${filter === "pendientes" ? "" : "ghost"}`} onClick={() => setFilter("pendientes")}>Pendientes · {stats.pending}</button>
-            <button className={`button compact ${filter === "vinculadas" ? "" : "ghost"}`} onClick={() => setFilter("vinculadas")}>Vinculadas · {stats.ok}</button>
+            <button className={`button compact ${filter === "pendientes" ? "" : "ghost"}`} onClick={() => setFilter("pendientes")} title="Subidas pero aún sin guardar como gasto/ingreso">Sin guardar · {stats.pending}</button>
+            <button className={`button compact ${filter === "vinculadas" ? "" : "ghost"}`} onClick={() => setFilter("vinculadas")} title="Ya están en tu listado de gastos/ingresos">Guardadas · {stats.ok}</button>
             <button className={`button compact ${filter === "descartadas" ? "" : "ghost"}`} onClick={() => setFilter("descartadas")}>Descartadas · {stats.rejected}</button>
+            <a href="?tab=gastos" className="button compact ghost" style={{ marginLeft: "auto" }} title="Ver listado completo con filtro Pendiente/Cobrada">Ver en Gastos →</a>
           </div>
         </div>
 
@@ -615,16 +621,14 @@ export function OcrUpload({ empresaId, modo = "gasto" }: { empresaId: string; mo
           <table className="table" style={{ marginTop: 12 }}>
             <thead>
               <tr>
-                <th>Archivo</th>
                 <th>{modo === "ingreso" ? "Cliente" : "Proveedor"}</th>
                 <th>NIF</th>
                 <th>Fecha</th>
-                <th>Nº</th>
                 <th className="num">Base</th>
                 <th className="num">IVA</th>
                 <th className="num">Total</th>
                 <th>Estado</th>
-                <th></th>
+                <th style={{ width: 1 }}></th>
               </tr>
             </thead>
             <tbody>
@@ -635,13 +639,9 @@ export function OcrUpload({ empresaId, modo = "gasto" }: { empresaId: string; mo
                 const linked = e.factura_id || e.gasto_id;
                 return (
                   <tr key={e.id}>
-                    <td style={{ fontFamily: "var(--mono)", fontSize: 12, maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {e.filename ?? e.id.slice(0, 8)}
-                    </td>
                     <td><strong>{d.vendor_name ?? "—"}</strong></td>
                     <td style={{ fontFamily: "var(--mono)", fontSize: 12 }}>{d.vendor_nif ?? "—"}</td>
                     <td style={{ fontFamily: "var(--mono)", fontSize: 12 }}>{d.issue_date ?? "—"}</td>
-                    <td style={{ fontFamily: "var(--mono)", fontSize: 12 }}>{d.invoice_number ?? "—"}</td>
                     <td className="num">{d.base != null ? EUR(d.base) : "—"}</td>
                     <td className="num">{d.iva != null ? EUR(d.iva) : "—"}</td>
                     <td className="num" style={{ fontWeight: 600 }}>{d.total != null ? EUR(d.total) : "—"}</td>
@@ -657,62 +657,72 @@ export function OcrUpload({ empresaId, modo = "gasto" }: { empresaId: string; mo
                       )}
                     </td>
                     <td>
-                      <div className="button-row" style={{ gap: 4, flexWrap: "wrap" }}>
-                        {e.storage_path ? (
-                          <button className="button ghost compact" onClick={() => visualizar(e.id)} title="Ver archivo original" style={{ padding: "4px 8px" }}>
-                            <Eye size={13} strokeWidth={1.8} />
-                          </button>
-                        ) : null}
+                      <div style={{ display: "inline-flex", gap: 4, alignItems: "center", whiteSpace: "nowrap" }}>
+                        {/* Acción primaria (varía según estado) */}
                         {linked ? (
-                          <span className="pill good" style={{ fontSize: 11 }}>guardado</span>
+                          <span
+                            className="pill good"
+                            style={{ fontSize: 11, display: "inline-flex", alignItems: "center", gap: 4 }}
+                            title="Ya está en tu listado de gastos"
+                          >
+                            <Check size={11} /> Guardado
+                          </span>
                         ) : e.status === "rejected" ? (
-                          <span className="muted" style={{ fontSize: 11 }}>deshecho</span>
+                          <span className="muted" style={{ fontSize: 11 }}>Deshecho</span>
                         ) : e.status === "queued" ? (
                           <span className="pill warn" style={{ fontSize: 11 }} title={`Reintento ${(e.retry_count ?? 0) + 1}`}>
-                            en espera · ETA ~{Math.max(1, Math.round((e.eta_seconds ?? 1800) / 60))} min
+                            en espera · ~{Math.max(1, Math.round((e.eta_seconds ?? 1800) / 60))}min
                           </span>
-                        ) : e.status === "needs_manual_review" ? (
-                          <>
-                            <span className="pill bad" style={{ fontSize: 11 }} title={(e.match_warnings ?? []).join(" · ")}>
-                              revisar manual
-                            </span>
-                            <button
-                              className="button compact"
-                              onClick={() => confirmar(e.id, modo === "ingreso" ? "factura" : "gasto")}
-                              title="Forzar guardar a pesar del aviso"
-                            >
-                              Arreglar y guardar
-                            </button>
-                            <button
-                              className="button ghost compact"
-                              onClick={() => borrar(e.id)}
-                              title="Borrar (no es de esta empresa)"
-                              style={{ padding: "4px 10px", color: "var(--bad)" }}
-                            >
-                              Borrar
-                            </button>
-                          </>
                         ) : (
-                          <>
-                            <button
-                              className="button compact"
-                              onClick={() => confirmar(e.id, modo === "ingreso" ? "factura" : "gasto")}
-                              title={`Guardar como ${modo === "ingreso" ? "ingreso" : "gasto"} y generar asiento contable`}
-                            >
-                              Guardar
-                            </button>
-                            <button
-                              className="button ghost compact"
-                              onClick={() => descartar(e.id)}
-                              title="Deshacer (puedes recuperarlo desde el histórico)"
-                              style={{ padding: "4px 10px" }}
-                            >
-                              Deshacer
-                            </button>
-                          </>
+                          <button
+                            className="button compact"
+                            onClick={() => confirmar(e.id, modo === "ingreso" ? "factura" : "gasto")}
+                            title={
+                              e.status === "needs_manual_review"
+                                ? `Guardar pese al aviso · ${(e.match_warnings ?? []).join(" · ") || "datos no coinciden"}`
+                                : "Guardar y generar asiento contable"
+                            }
+                            style={{
+                              padding: "4px 12px",
+                              fontWeight: 600,
+                              ...(e.status === "needs_manual_review"
+                                ? { background: "color-mix(in srgb, #f59e0b 15%, transparent)", border: "1px solid #f59e0b66", color: "#f59e0b" }
+                                : null),
+                            }}
+                          >
+                            Guardar
+                          </button>
                         )}
-                        <button className="button ghost compact" onClick={() => borrar(e.id)} title="Borrar definitivamente" style={{ padding: "4px 8px", color: "var(--bad)" }}>
-                          <Trash2 size={13} strokeWidth={1.8} />
+                        {/* Acciones secundarias en iconos */}
+                        {e.storage_path && (
+                          <button
+                            className="icon-btn"
+                            onClick={() => visualizar(e.id)}
+                            title="Ver factura"
+                            aria-label="Ver factura"
+                          >
+                            <Eye size={14} strokeWidth={1.8} />
+                          </button>
+                        )}
+                        {!linked && e.status !== "rejected" && (
+                          <button
+                            className="icon-btn"
+                            onClick={() => descartar(e.id)}
+                            title="Deshacer (no borra)"
+                            aria-label="Deshacer"
+                            style={{ opacity: 0.7 }}
+                          >
+                            <X size={14} strokeWidth={2} />
+                          </button>
+                        )}
+                        <button
+                          className="icon-btn"
+                          onClick={() => borrar(e.id)}
+                          title="Borrar definitivamente"
+                          aria-label="Borrar"
+                          style={{ color: "var(--bad, #ef4444)" }}
+                        >
+                          <Trash2 size={14} strokeWidth={1.8} />
                         </button>
                       </div>
                     </td>
@@ -850,6 +860,69 @@ export function OcrUpload({ empresaId, modo = "gasto" }: { empresaId: string; mo
           .ocr-tile[data-state="uploading"] { animation: none; }
         }
       `}</style>
+
+      {/* Modal de previsualización del archivo (pequeño, integrado) */}
+      {previewUrl && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setPreviewUrl(null)}
+          style={{
+            position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)",
+            display: "grid", placeItems: "center", padding: 16, zIndex: 1000,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: "min(560px, 100%)",
+              maxHeight: "82vh",
+              background: "var(--card, #fff)",
+              borderRadius: 12,
+              border: "1px solid color-mix(in srgb, currentColor 14%, transparent)",
+              padding: 12,
+              display: "grid",
+              gap: 8,
+              boxShadow: "0 20px 50px -10px rgba(0,0,0,0.40)",
+            }}
+          >
+            <header style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <strong style={{ fontSize: 13 }}>Vista previa</strong>
+              <div style={{ display: "flex", gap: 6 }}>
+                <a
+                  href={previewUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="button ghost compact"
+                  style={{ fontSize: 11 }}
+                >
+                  Abrir grande
+                </a>
+                <button
+                  onClick={() => setPreviewUrl(null)}
+                  aria-label="Cerrar"
+                  className="icon-btn"
+                  style={{ width: 28, height: 28 }}
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            </header>
+            <div style={{ overflow: "auto", maxHeight: "74vh", background: "color-mix(in srgb, currentColor 4%, transparent)", borderRadius: 8 }}>
+              {previewMime?.startsWith("image/") || (!previewMime && /\.(png|jpe?g|webp|heic)$/i.test(previewUrl)) ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={previewUrl} alt="Factura" style={{ display: "block", width: "100%", height: "auto" }} />
+              ) : (
+                <iframe
+                  src={previewUrl}
+                  title="Vista previa"
+                  style={{ width: "100%", height: "70vh", border: 0, display: "block" }}
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
