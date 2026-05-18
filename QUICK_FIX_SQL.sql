@@ -512,7 +512,171 @@ alter table public.trabajadores add column if not exists categoria_convenio text
 -- Empresa: Código Cuenta Cotización
 alter table public.empresas add column if not exists ccc text;
 alter table public.empresas add column if not exists cnae text;
-alter table public.empresas add column if not exists ccaa text;   -- ISO ES-XX para festivos
+alter table public.empresas add column if not exists ccaa text;
+alter table public.empresas add column if not exists email text;
+
+-- =========================================================================
+-- SPRINT 27: PRL (Prevención de Riesgos Laborales)
+-- =========================================================================
+create table if not exists public.prl_reconocimientos (
+  id uuid primary key default gen_random_uuid(),
+  empresa_id uuid not null references public.empresas(id) on delete cascade,
+  trabajador_id uuid not null references public.trabajadores(id) on delete cascade,
+  gestor_id uuid references auth.users(id) on delete set null,
+  fecha date not null,
+  tipo text not null default 'periodico',           -- inicial | periodico | tras_baja | cambio_puesto
+  servicio_prevencion text,
+  resultado text not null default 'pendiente',      -- apto | apto_con_restricciones | no_apto | pendiente
+  restricciones text,
+  proxima_revision date,
+  observaciones text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index if not exists idx_prl_recon_empresa on public.prl_reconocimientos(empresa_id, fecha desc);
+create index if not exists idx_prl_recon_trabajador on public.prl_reconocimientos(trabajador_id);
+drop trigger if exists set_updated_at_prl_recon on public.prl_reconocimientos;
+create trigger set_updated_at_prl_recon before update on public.prl_reconocimientos
+  for each row execute function public.set_updated_at();
+alter table public.prl_reconocimientos enable row level security;
+
+create table if not exists public.prl_formaciones (
+  id uuid primary key default gen_random_uuid(),
+  empresa_id uuid not null references public.empresas(id) on delete cascade,
+  trabajador_id uuid not null references public.trabajadores(id) on delete cascade,
+  gestor_id uuid references auth.users(id) on delete set null,
+  curso text not null,
+  horas numeric(5, 2) not null default 0,
+  fecha_realizada date not null,
+  fecha_caducidad date,
+  centro_formador text,
+  diploma_url text,
+  modalidad text not null default 'presencial',     -- presencial | online | mixta
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index if not exists idx_prl_form_empresa on public.prl_formaciones(empresa_id, fecha_realizada desc);
+create index if not exists idx_prl_form_trabajador on public.prl_formaciones(trabajador_id);
+drop trigger if exists set_updated_at_prl_form on public.prl_formaciones;
+create trigger set_updated_at_prl_form before update on public.prl_formaciones
+  for each row execute function public.set_updated_at();
+alter table public.prl_formaciones enable row level security;
+
+create table if not exists public.prl_epis (
+  id uuid primary key default gen_random_uuid(),
+  empresa_id uuid not null references public.empresas(id) on delete cascade,
+  trabajador_id uuid not null references public.trabajadores(id) on delete cascade,
+  gestor_id uuid references auth.users(id) on delete set null,
+  fecha_entrega date not null,
+  epi text not null,
+  cantidad integer not null default 1,
+  talla text,
+  marca_modelo text,
+  certificacion text,
+  vida_util_meses integer,
+  observaciones text,
+  created_at timestamptz not null default now()
+);
+create index if not exists idx_prl_epis_empresa on public.prl_epis(empresa_id, fecha_entrega desc);
+create index if not exists idx_prl_epis_trabajador on public.prl_epis(trabajador_id);
+alter table public.prl_epis enable row level security;
+
+-- =========================================================================
+-- SPRINT 29: INMOVILIZADO + amortización
+-- =========================================================================
+create table if not exists public.inmovilizado (
+  id uuid primary key default gen_random_uuid(),
+  empresa_id uuid not null references public.empresas(id) on delete cascade,
+  gestor_id uuid references auth.users(id) on delete set null,
+  descripcion text not null,
+  tipo text not null,
+  precio_adquisicion numeric(14, 2) not null,
+  valor_residual numeric(14, 2) not null default 0,
+  fecha_alta date not null,
+  vida_util_anyos integer not null,
+  metodo text not null default 'lineal',            -- lineal | degresivo
+  porcentaje_degresivo numeric(5, 2),
+  proveedor text,
+  ubicacion text,
+  factura_id uuid references public.facturas(id) on delete set null,
+  cuenta_inmov text,
+  cuenta_am_acum text,
+  cuenta_dotacion text,
+  estado text not null default 'en_uso',            -- en_uso | baja | vendido
+  fecha_baja date,
+  importe_venta numeric(14, 2),
+  metadata jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index if not exists idx_inmov_empresa on public.inmovilizado(empresa_id, fecha_alta desc);
+drop trigger if exists set_updated_at_inmov on public.inmovilizado;
+create trigger set_updated_at_inmov before update on public.inmovilizado
+  for each row execute function public.set_updated_at();
+alter table public.inmovilizado enable row level security;
+
+-- =========================================================================
+-- SPRINT 38: GASTOS RECURRENTES
+-- =========================================================================
+create table if not exists public.gastos_recurrentes (
+  id uuid primary key default gen_random_uuid(),
+  empresa_id uuid not null references public.empresas(id) on delete cascade,
+  gestor_id uuid references auth.users(id) on delete set null,
+  proveedor text not null,
+  proveedor_nif text,
+  concepto text not null,
+  cuenta_pgc text,
+  base numeric(12, 2) not null default 0,
+  iva numeric(12, 2) not null default 0,
+  iva_pct numeric(5, 2) not null default 21,
+  irpf numeric(12, 2) not null default 0,
+  irpf_pct numeric(5, 2) not null default 0,
+  total numeric(12, 2) not null default 0,
+  periodicidad text not null default 'mensual',     -- mensual | trimestral | semestral | anual
+  dia_emision integer not null default 1,
+  fecha_inicio date not null,
+  fecha_fin date,
+  proximo_envio date not null default current_date,
+  ultima_generacion date,
+  iban_cargo text,
+  activo boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index if not exists idx_grec_empresa on public.gastos_recurrentes(empresa_id, activo, proximo_envio);
+drop trigger if exists set_updated_at_grec on public.gastos_recurrentes;
+create trigger set_updated_at_grec before update on public.gastos_recurrentes
+  for each row execute function public.set_updated_at();
+alter table public.gastos_recurrentes enable row level security;
+
+-- =========================================================================
+-- SPRINT 31: cola reintentos OCR + matching
+-- =========================================================================
+alter table public.facturas_recibidas_extracciones add column if not exists match_score integer;
+alter table public.facturas_recibidas_extracciones add column if not exists match_warnings jsonb default '[]'::jsonb;
+alter table public.facturas_recibidas_extracciones add column if not exists retry_count integer not null default 0;
+alter table public.facturas_recibidas_extracciones add column if not exists next_retry_at timestamptz;
+alter table public.facturas_recibidas_extracciones add column if not exists eta_seconds integer;
+
+-- =========================================================================
+-- SPRINT 33: firma electrónica (audit trail)
+-- =========================================================================
+alter table public.firma_docs add column if not exists metadata jsonb default '{}'::jsonb;
+alter table public.aeat_declaraciones add column if not exists firmado_at timestamptz;
+alter table public.aeat_declaraciones add column if not exists firmado_por uuid references auth.users(id) on delete set null;
+alter table public.aeat_declaraciones add column if not exists firma_path text;
+alter table public.aeat_declaraciones add column if not exists firma_hash text;
+
+-- =========================================================================
+-- TRABAJADORES: campos adicionales para PRL / SILTRA / convenios
+-- =========================================================================
+alter table public.trabajadores add column if not exists fecha_nacimiento date;
+alter table public.trabajadores add column if not exists discapacidad_pct numeric(5, 2);
+alter table public.trabajadores add column if not exists ascendientes_mayor_65 integer default 0;
+alter table public.trabajadores add column if not exists ascendientes_mayor_75 integer default 0;
+alter table public.trabajadores add column if not exists hijos_menor_3 integer default 0;
+alter table public.trabajadores add column if not exists pension_compensatoria numeric(12, 2);
+alter table public.trabajadores add column if not exists anualidad_alimentos numeric(12, 2);
 
 -- =========================================================================
 -- SPRINT 14: anticipos de nómina
