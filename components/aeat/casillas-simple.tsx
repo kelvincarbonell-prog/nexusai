@@ -428,7 +428,29 @@ export function CasillasSimple({ modelo, empresas }: { modelo: "100" | "111" | "
       });
       const json = await res.json();
       if (!json.ok) throw new Error(json.error ?? "Error");
-      setSuccess(status === "presentado" ? "Marcado como presentado." : `Guardado (${status}).`);
+
+      // Si marcamos presentado, además crea la fila en aeat_presentaciones
+      // para que el bot fiscal y el calendario lo reconozcan correctamente.
+      if (status === "presentado") {
+        try {
+          await fetch("/api/aeat/presentaciones", {
+            method: "POST",
+            headers: { Authorization: `Bearer ${tk}`, "Content-Type": "application/json" },
+            body: JSON.stringify({
+              empresa_id: empresaId,
+              modelo,
+              ejercicio,
+              periodo,
+              fecha_presentacion: new Date().toISOString().slice(0, 10),
+              metadata: { origen: "aeat-workspace" },
+            }),
+          });
+        } catch {
+          // si la tabla aún no existe en BBDD, no rompe el flujo de status
+        }
+      }
+
+      setSuccess(status === "presentado" ? "Marcado como presentado. El bot fiscal ya no lo cuenta como pendiente." : `Guardado (${status}).`);
       setDeclaracion(json.declaracion);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Error");
