@@ -1,5 +1,6 @@
 import { AppShell } from "@/components/app-shell";
 import { InteligenciaDashboard } from "@/components/inteligencia/inteligencia-dashboard";
+import { IntelOps } from "@/components/inteligencia/intel-ops";
 import { AgentRunsHistory } from "@/components/inteligencia/agent-runs-history";
 import { SetupRequired } from "@/components/setup-required";
 import { hasSupabaseConfig } from "@/lib/env";
@@ -38,6 +39,11 @@ export default async function InteligenciaPage() {
         </p>
       </header>
       <InteligenciaDashboard />
+
+      <section className="grid" style={{ marginTop: 24 }}>
+        <IntelOps />
+      </section>
+
       {empresas.length > 0 ? (
         <section className="grid" style={{ marginTop: 24 }}>
           <AgentRunsHistory empresas={empresas} />
