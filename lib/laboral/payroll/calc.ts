@@ -14,7 +14,15 @@ export type ConceptoExtraInput = { codigo: string; importe: number };
 
 export type NominaInputs = {
   salario_bruto_anual: number;        // bruto anual del trabajador
-  pagas_anuales: number;              // 12 o 14 (default 12 con prorrata)
+  pagas_anuales: number;              // 12 o 14
+  /** Si pagas=14: true = prorrateadas, false = se cobran en su mes (jun/dic). */
+  pagas_prorrateadas?: boolean;
+  /** Mes del periodo (1..12) — sólo se usa si pagas=14 y NO prorrateadas. */
+  mes_periodo?: number;
+  /** Importe anual de un trienio (por convenio). Se prorratea /12. */
+  trienio_importe_anual?: number;
+  /** Número de trienios devengados (calculado fuera con fecha_alta). */
+  trienios?: number;
   irpf_pct_override?: number;         // si la empresa fija un % concreto
   hijos?: number;                     // hijos a cargo (a efectos IRPF, simplificado)
   base_extras?: number;               // pluses/variables del mes (van al bruto del mes)
@@ -150,7 +158,21 @@ const round2 = (n: number) => Math.round(n * 100) / 100;
 export function calcularNomina(input: NominaInputs): NominaResult {
   const pagas = input.pagas_anuales ?? 12;
   const brutoAnual = input.salario_bruto_anual;
-  const brutoMensual = round2(brutoAnual / pagas);
+  // Si el trabajador cobra en 14 pagas y NO están prorrateadas, el bruto
+  // mensual normal es brutoAnual/14 y en jun/dic se le suma 1 paga entera.
+  // Si están prorrateadas, sumamos brutoAnual/12 cada mes (default seguro).
+  const pagasProrrateadas = input.pagas_prorrateadas !== false; // default true
+  const brutoMensual = round2(brutoAnual / (pagas === 14 && !pagasProrrateadas ? 14 : 12));
+
+  // Paga extra en su mes (jun=6, dic=12) si pagas=14 y no prorrateadas
+  const importePagaExtra = pagas === 14 && !pagasProrrateadas ? round2(brutoAnual / 14) : 0;
+  const mes = input.mes_periodo ?? 0;
+  const pagaExtraMes = importePagaExtra > 0 && (mes === 6 || mes === 12) ? importePagaExtra : 0;
+
+  // Antigüedad / trienios: prorrateado a /12
+  const trienios = Math.max(0, input.trienios ?? 0);
+  const trienioImporteAnual = Math.max(0, input.trienio_importe_anual ?? 0);
+  const antiguedadMensual = round2((trienios * trienioImporteAnual) / 12);
 
   // Conceptos extras del catálogo A3NOM (devengos/deducciones puntuales)
   let devengosExtra = 0;
@@ -176,10 +198,17 @@ export function calcularNomina(input: NominaInputs): NominaResult {
     }
   }
 
-  const brutoMes = round2(brutoMensual + (input.base_extras ?? 0) + devengosExtra);
+  const brutoMes = round2(brutoMensual + antiguedadMensual + pagaExtraMes + (input.base_extras ?? 0) + devengosExtra);
 
-  // Bases de cotización: con prorrata de pagas extras (sin tope MIN/MAX simplificado)
-  const brutoConProrrata = round2((brutoAnual + (input.base_extras ?? 0) * 12) / 12 + cotizableExtra);
+  // Bases de cotización: SIEMPRE con prorrata anual / 12 (también si pagas=14
+  // no prorrateadas: la cotización del mes refleja 1/12 del coste anual).
+  // Esto evita picos de cotización en jun/dic.
+  const totalAnualCotizable =
+    brutoAnual +                                  // sueldo (12 o 14 pagas)
+    trienios * trienioImporteAnual +              // antigüedad anual
+    (input.base_extras ?? 0) * 12 +               // pluses recurrentes
+    cotizableExtra * 12;                          // conceptos extras cotizables (anualizados)
+  const brutoConProrrata = round2(totalAnualCotizable / 12);
   const baseCC = brutoConProrrata;
   const baseATyEPyFormacion = brutoConProrrata;
 
@@ -194,10 +223,15 @@ export function calcularNomina(input: NominaInputs): NominaResult {
     baseATyEPyFormacion * (SS_EMPRESA.desempleo + SS_EMPRESA.fogasa + SS_EMPRESA.formacion + SS_EMPRESA.at_ep) +
     baseCC * SS_EMPRESA.mei;
 
-  const baseIrpfAnual = brutoAnual + (input.base_extras ?? 0) * 12 + irpfImponibleExtra * 12;
+  const baseIrpfAnual =
+    brutoAnual +
+    trienios * trienioImporteAnual +
+    (input.base_extras ?? 0) * 12 +
+    irpfImponibleExtra * 12;
   const pctIrpf =
     input.irpf_pct_override != null ? input.irpf_pct_override : calcularIrpfPct(baseIrpfAnual, input.hijos ?? 0);
-  const baseIrpfMes = brutoMensual + (input.base_extras ?? 0) + irpfImponibleExtra;
+  // IRPF se aplica sobre el devengo real del mes (incluye paga extra si toca)
+  const baseIrpfMes = brutoMes;
   const irpfRetenido = baseIrpfMes * (pctIrpf / 100);
 
   const totalDeducciones = ssTrabajadorTotal + irpfRetenido + deduccionesExtra;
@@ -206,6 +240,12 @@ export function calcularNomina(input: NominaInputs): NominaResult {
   const conceptos: ConceptoLinea[] = [
     { concepto: "Salario base", importe: round2(brutoMensual), tipo: "devengo" },
   ];
+  if (antiguedadMensual > 0) {
+    conceptos.push({ concepto: `Antigüedad (${trienios} trienio${trienios === 1 ? "" : "s"})`, importe: antiguedadMensual, tipo: "devengo" });
+  }
+  if (pagaExtraMes > 0) {
+    conceptos.push({ concepto: `Paga extra ${mes === 6 ? "junio" : "diciembre"}`, importe: pagaExtraMes, tipo: "devengo" });
+  }
   if (input.base_extras && input.base_extras > 0) {
     conceptos.push({ concepto: "Pluses / variables", importe: round2(input.base_extras), tipo: "devengo" });
   }

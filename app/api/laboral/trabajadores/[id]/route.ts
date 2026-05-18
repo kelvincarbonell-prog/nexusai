@@ -23,6 +23,9 @@ const UpdateSchema = z.object({
   irpf_pct: z.number().min(0).max(60).optional(),
   convenio: z.string().max(180).optional(),
   activo: z.boolean().optional(),
+  pagas_anuales: z.union([z.literal(12), z.literal(14)]).optional(),
+  pagas_prorrateadas: z.boolean().optional(),
+  trienio_importe: z.number().min(0).max(50_000).optional(),
 });
 
 export async function PATCH(request: NextRequest, ctx: { params: Promise<{ id: string }> }) {

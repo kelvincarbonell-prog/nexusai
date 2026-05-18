@@ -30,6 +30,9 @@ const TrabajadorSchema = z.object({
   sexo: z.enum(["1", "6"]).optional(),
   hijos: z.number().int().min(0).max(20).optional(),
   activo: z.boolean().optional(),
+  pagas_anuales: z.union([z.literal(12), z.literal(14)]).optional(),
+  pagas_prorrateadas: z.boolean().optional(),
+  trienio_importe: z.number().min(0).max(50_000).optional(),
 });
 
 export async function GET(request: NextRequest) {

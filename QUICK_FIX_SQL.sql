@@ -815,7 +815,6 @@ alter table public.perfiles add constraint perfiles_especialidad_chk
 -- SPRINT 23: vista_config — el gestor activa/desactiva módulos por vista
 --   alcance = 'asesor' | 'cliente'
 --   modulos = jsonb { "<feature_key>": true|false, ... }
--- =========================================================================
 create table if not exists public.vista_config (
   id uuid primary key default gen_random_uuid(),
   nombre_gestoria text not null,
@@ -847,6 +846,21 @@ create policy vista_config_rw on public.vista_config
         and p.rol in ('admin', 'gestor')
     )
   );
+
+-- =========================================================================
+-- SPRINT 24: pagas extras + antigüedad (trienios) configurable por trabajador
+--   pagas_anuales        12 (prorrateadas en mensual) o 14 (con paga jun+dic)
+--   pagas_prorrateadas   si true y pagas=14, las pagas extras se prorratean
+--                        cada mes; si false, se cobran enteras en junio y
+--                        diciembre.
+--   trienio_importe      importe anual de un trienio (por convenio). Se
+--                        prorratea /12 en cada nómina.
+-- =========================================================================
+alter table public.trabajadores add column if not exists pagas_anuales integer default 12;
+alter table public.trabajadores add column if not exists pagas_prorrateadas boolean default true;
+alter table public.trabajadores add column if not exists trienio_importe numeric(12, 2);
+alter table public.trabajadores add constraint trabajadores_pagas_anuales_chk
+  check (pagas_anuales in (12, 14)) not valid;
 
 -- =========================================================================
 -- ÚLTIMO PASO: refresca el cache de PostgREST sin reiniciar

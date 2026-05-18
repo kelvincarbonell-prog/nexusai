@@ -5,6 +5,7 @@ import { getUserFromRequest } from "@/lib/supabase/auth";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { isGestorOrAdmin } from "@/lib/laboral/access";
 import { calcularNomina } from "@/lib/laboral/payroll/calc";
+import { trieniosDevengados } from "@/lib/laboral/payroll/pagas-extra";
 import { calcularBonificaciones } from "@/lib/laboral/payroll/bonificaciones";
 import { calcularEmbargoLegal } from "@/lib/laboral/embargos";
 
@@ -31,7 +32,7 @@ export async function POST(request: NextRequest) {
 
   const { data: trabajadores } = await admin
     .from("trabajadores")
-    .select("id,nombre,salario_bruto_anual,irpf_pct,hijos,activo,fecha_alta,fecha_nacimiento,tipo_contrato,sexo,metadata")
+    .select("id,nombre,salario_bruto_anual,irpf_pct,hijos,activo,fecha_alta,fecha_nacimiento,tipo_contrato,sexo,metadata,pagas_anuales,pagas_prorrateadas,trienio_importe")
     .eq("empresa_id", parsed.data.empresa_id)
     .eq("activo", true)
     .limit(500);
@@ -109,9 +110,19 @@ export async function POST(request: NextRequest) {
       continue;
     }
     try {
+      const mesPeriodo = Number(parsed.data.periodo.split("-")[1]);
+      const trienios = t.fecha_alta
+        ? trieniosDevengados(t.fecha_alta as string, `${parsed.data.periodo}-01`)
+        : 0;
       const calc = calcularNomina({
         salario_bruto_anual: Number(t.salario_bruto_anual),
-        pagas_anuales: 12,
+        pagas_anuales: (t as { pagas_anuales?: number | null }).pagas_anuales ?? 12,
+        pagas_prorrateadas: (t as { pagas_prorrateadas?: boolean | null }).pagas_prorrateadas ?? true,
+        mes_periodo: mesPeriodo,
+        trienio_importe_anual: (t as { trienio_importe?: number | null }).trienio_importe
+          ? Number((t as { trienio_importe?: number | null }).trienio_importe)
+          : 0,
+        trienios,
         irpf_pct_override: t.irpf_pct ? Number(t.irpf_pct) : undefined,
         hijos: t.hijos ? Number(t.hijos) : 0,
       });

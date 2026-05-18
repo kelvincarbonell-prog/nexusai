@@ -76,6 +76,9 @@ export function WorkerManager({ empresas, initialTab = "trabajadores" }: { empre
     convenio_codigo: "",
     categoria_convenio: "",
     grupo_cotizacion: 0,
+    pagas_anuales: 12 as 12 | 14,
+    pagas_prorrateadas: true,
+    trienio_importe: 0,
   });
 
   const [convenios, setConvenios] = useState<Array<{ codigo: string; nombre: string; categorias: Array<{ code: string; nombre: string; bruto_anual: number; grupo_cotizacion: number }>; jornada_semanal: number }>>([]);
@@ -325,6 +328,34 @@ export function WorkerManager({ empresas, initialTab = "trabajadores" }: { empre
                   </option>
                 ))}
               </select>
+              <select
+                className="input"
+                title="Pagas anuales"
+                value={String(nuevo.pagas_anuales)}
+                onChange={(e) => setNuevo({ ...nuevo, pagas_anuales: Number(e.target.value) as 12 | 14 })}
+              >
+                <option value="12">12 pagas (prorrateadas)</option>
+                <option value="14">14 pagas (extra jun + dic)</option>
+              </select>
+              <label className="label" style={{ flexDirection: "row", alignItems: "center", gap: 6, fontSize: 12 }}>
+                <input
+                  type="checkbox"
+                  checked={nuevo.pagas_prorrateadas}
+                  onChange={(e) => setNuevo({ ...nuevo, pagas_prorrateadas: e.target.checked })}
+                  disabled={nuevo.pagas_anuales === 12}
+                />
+                Prorratear pagas extras
+              </label>
+              <input
+                className="input"
+                type="number"
+                min={0}
+                step="0.01"
+                placeholder="Trienio anual (€)"
+                title="Importe anual de UN trienio (según convenio). Se prorratea /12."
+                value={nuevo.trienio_importe}
+                onChange={(e) => setNuevo({ ...nuevo, trienio_importe: Number(e.target.value) })}
+              />
               <div className="span-form">
                 <button className="button" onClick={altaTrabajador}>Crear trabajador</button>
               </div>

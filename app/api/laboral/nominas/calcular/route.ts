@@ -5,6 +5,7 @@ import { getUserFromRequest } from "@/lib/supabase/auth";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { isGestorOrAdmin } from "@/lib/laboral/access";
 import { calcularNomina } from "@/lib/laboral/payroll/calc";
+import { trieniosDevengados } from "@/lib/laboral/payroll/pagas-extra";
 
 const Schema = z.object({
   empresa_id: z.string().uuid(),
@@ -32,7 +33,7 @@ export async function POST(request: NextRequest) {
 
   const { data: trabajador } = await admin
     .from("trabajadores")
-    .select("id,empresa_id,nombre,salario_bruto_anual,irpf_pct,activo")
+    .select("id,empresa_id,nombre,salario_bruto_anual,irpf_pct,activo,fecha_alta,pagas_anuales,pagas_prorrateadas,trienio_importe")
     .eq("id", parsed.data.trabajador_id)
     .single();
   if (!trabajador || trabajador.empresa_id !== parsed.data.empresa_id) {
@@ -42,9 +43,18 @@ export async function POST(request: NextRequest) {
     return jsonError("El trabajador no tiene salario bruto anual definido", 400);
   }
 
+  const mesPeriodo = Number(parsed.data.periodo.split("-")[1]);
+  const trienios = trabajador.fecha_alta
+    ? trieniosDevengados(trabajador.fecha_alta, `${parsed.data.periodo}-01`)
+    : 0;
+
   const result = calcularNomina({
     salario_bruto_anual: Number(trabajador.salario_bruto_anual),
-    pagas_anuales: 12,
+    pagas_anuales: trabajador.pagas_anuales ?? 12,
+    pagas_prorrateadas: trabajador.pagas_prorrateadas ?? true,
+    mes_periodo: mesPeriodo,
+    trienio_importe_anual: trabajador.trienio_importe ? Number(trabajador.trienio_importe) : 0,
+    trienios,
     base_extras: parsed.data.base_extras,
     irpf_pct_override: parsed.data.irpf_pct_override ?? (trabajador.irpf_pct ? Number(trabajador.irpf_pct) : undefined),
     hijos: parsed.data.hijos,
