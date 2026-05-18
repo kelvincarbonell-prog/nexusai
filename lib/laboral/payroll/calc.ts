@@ -60,23 +60,55 @@ const IRPF_BRACKETS_2026 = [
   { max: Infinity, pct: 47 },
 ];
 
-// Minoración mínima personal (simplificado)
-function minoracionPersonal(hijos: number) {
-  // Mínimo personal: 5.550 €
-  // +2.400 por primer hijo, +2.700 segundo, +4.000 tercero, +4.500 cuarto y siguientes
+export type CircunstanciasIRPF = {
+  hijos?: number;                            // hijos a cargo <25 años (o discapacitados)
+  hijos_menor_3?: number;                    // de los hijos, cuántos <3 años (suplemento)
+  ascendientes_mayor_65?: number;            // ascendientes >65 a cargo
+  ascendientes_mayor_75?: number;            // de los anteriores, cuántos >75 (extra)
+  discapacidad_pct?: number;                 // del trabajador (0..100)
+  pension_compensatoria?: number;            // anual pagada
+  anualidad_alimentos?: number;              // anual hijos divorcio
+  edad?: number;                             // del trabajador (para mínimos)
+};
+
+// Minoración mínima personal según IRPF (orientativo 2026)
+function minoracionPersonal(c: CircunstanciasIRPF) {
+  // Mínimo personal base: 5.550 €
   let suma = 5550;
+  // Incremento por edad
+  if ((c.edad ?? 0) >= 65) suma += 1150;
+  if ((c.edad ?? 0) >= 75) suma += 1400;
+  // Mínimo por descendientes
+  const hijos = c.hijos ?? 0;
   if (hijos >= 1) suma += 2400;
   if (hijos >= 2) suma += 2700;
   if (hijos >= 3) suma += 4000;
   if (hijos >= 4) suma += 4500 * (hijos - 3);
+  // Suplemento por hijo <3 años
+  suma += 2800 * Math.max(0, c.hijos_menor_3 ?? 0);
+  // Mínimo por ascendientes
+  suma += 1150 * Math.max(0, c.ascendientes_mayor_65 ?? 0);
+  suma += 1400 * Math.max(0, c.ascendientes_mayor_75 ?? 0);
+  // Mínimo por discapacidad del trabajador
+  const disc = c.discapacidad_pct ?? 0;
+  if (disc >= 33 && disc < 65) suma += 3000;
+  else if (disc >= 65) suma += 9000;
   return suma;
 }
 
-export function calcularIrpfPct(bruto: number, hijos = 0): number {
-  // Base liquidable simplificada: bruto - SS estimada (~6%) - reducción 2000 (rendimientos del trabajo)
+export function calcularIrpfPct(bruto: number, hijosOrCirc: number | CircunstanciasIRPF = 0): number {
+  const c: CircunstanciasIRPF = typeof hijosOrCirc === "number" ? { hijos: hijosOrCirc } : hijosOrCirc;
+
+  // Base liquidable simplificada
   const ssEstim = bruto * 0.0648;
-  const reduccion = 2000;
-  const base = Math.max(0, bruto - ssEstim - reduccion);
+  const reduccion = 2000; // rendimientos del trabajo
+
+  // Pensión compensatoria al ex-cónyuge: reduce la base general
+  const pensionComp = Math.max(0, c.pension_compensatoria ?? 0);
+  // Anualidades por alimentos: van a una escala independiente (simplificado: las descontamos también)
+  const alimentos = Math.max(0, c.anualidad_alimentos ?? 0);
+
+  const base = Math.max(0, bruto - ssEstim - reduccion - pensionComp - alimentos);
 
   // Cuota íntegra escalonada
   let cuota = 0;
@@ -91,7 +123,7 @@ export function calcularIrpfPct(bruto: number, hijos = 0): number {
     }
   }
   // Aplicar minoración a la cuota (simplificado, lineal)
-  const minoracion = minoracionPersonal(hijos);
+  const minoracion = minoracionPersonal(c);
   let cuotaMin = 0;
   let prev2 = 0;
   let restante = minoracion;

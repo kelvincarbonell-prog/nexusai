@@ -7,6 +7,8 @@ import { NominasMasivasPanel } from "@/components/laboral/nominas-masivas-panel"
 import { SiltraFanPanel } from "@/components/laboral/siltra-fan-panel";
 import { WorkerActionsModal } from "@/components/laboral/worker-actions-modal";
 import { CuadrantePanel } from "@/components/laboral/cuadrante-panel";
+import { VacacionesSaldoPanel } from "@/components/laboral/vacaciones-saldo-panel";
+import { DeduccionesActivasPanel } from "@/components/laboral/deducciones-activas-panel";
 import { CalendarioLaboral } from "@/components/laboral/calendario-laboral";
 import { FiniquitoModal } from "@/components/laboral/finiquito-modal";
 import { BonificacionesModal } from "@/components/laboral/bonificaciones-modal";
@@ -387,6 +389,7 @@ export function WorkerManager({ empresas, initialTab = "trabajadores" }: { empre
 
       {tab === "ausencias" ? (
         <div style={{ display: "grid", gap: 18 }}>
+          <VacacionesSaldoPanel empresaId={empresaId} />
           <div className="form two-cols">
             <select className="input" value={nuevaAusencia.trabajador_id} onChange={(e) => setNuevaAusencia({ ...nuevaAusencia, trabajador_id: e.target.value })}>
               <option value="">Trabajador…</option>
@@ -494,6 +497,7 @@ export function WorkerManager({ empresas, initialTab = "trabajadores" }: { empre
 
       {tab === "nominas" ? (
         <div style={{ display: "grid", gap: 18 }}>
+          <DeduccionesActivasPanel empresaId={empresaId} trabajadores={trabajadores} />
           <NominasMasivasPanel empresaId={empresaId} />
           <SiltraFanPanel empresaId={empresaId} />
           <PayrollPanel empresaId={empresaId} trabajadores={trabajadores} />
