@@ -1,7 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { Plus, X } from "lucide-react";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
+import { CONCEPTOS_NOMINA } from "@/lib/laboral/conceptos";
 
 type Trabajador = {
   id: string;
@@ -40,6 +42,7 @@ export function PayrollPanel({ empresaId, trabajadores }: { empresaId: string; t
   const [baseExtras, setBaseExtras] = useState(0);
   const [hijos, setHijos] = useState(0);
   const [overrideIrpf, setOverrideIrpf] = useState<number | "">("");
+  const [conceptosExtras, setConceptosExtras] = useState<Array<{ codigo: string; importe: number }>>([]);
   const [result, setResult] = useState<NominaResult | null>(null);
   const [savedId, setSavedId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -77,6 +80,7 @@ export function PayrollPanel({ empresaId, trabajadores }: { empresaId: string; t
           base_extras: Number(baseExtras) || 0,
           hijos: Number(hijos) || 0,
           irpf_pct_override: overrideIrpf === "" ? undefined : Number(overrideIrpf),
+          conceptos_extras: conceptosExtras.filter((c) => c.codigo && c.importe > 0),
           persist,
         }),
       });
@@ -166,6 +170,81 @@ export function PayrollPanel({ empresaId, trabajadores }: { empresaId: string; t
             />
           </label>
         </div>
+
+        <fieldset style={{ marginTop: 14, border: "1px solid var(--line, #e5e7eb)", borderRadius: 10, padding: 12 }}>
+          <legend style={{ padding: "0 6px", fontSize: 12, opacity: 0.7 }}>Conceptos extra del mes (catálogo A3NOM)</legend>
+          {conceptosExtras.length === 0 ? (
+            <p className="muted" style={{ fontSize: 12, margin: "0 0 8px" }}>
+              Sin conceptos extra. Añade dietas, plus de nocturnidad, comisiones, anticipos, etc.
+            </p>
+          ) : (
+            <div style={{ display: "grid", gap: 6, marginBottom: 8 }}>
+              {conceptosExtras.map((ce, i) => {
+                const cat = CONCEPTOS_NOMINA.find((c) => c.codigo === ce.codigo);
+                return (
+                  <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr 140px auto", gap: 8, alignItems: "center" }}>
+                    <select
+                      className="input compact"
+                      value={ce.codigo}
+                      onChange={(e) => {
+                        const next = [...conceptosExtras];
+                        next[i] = { ...next[i], codigo: e.target.value };
+                        setConceptosExtras(next);
+                      }}
+                    >
+                      <option value="">— Selecciona —</option>
+                      <optgroup label="Devengos">
+                        {CONCEPTOS_NOMINA.filter((c) => c.tipo === "devengo").map((c) => (
+                          <option key={c.codigo} value={c.codigo}>{c.codigo} · {c.nombre}</option>
+                        ))}
+                      </optgroup>
+                      <optgroup label="Deducciones">
+                        {CONCEPTOS_NOMINA.filter((c) => c.tipo === "deduccion").map((c) => (
+                          <option key={c.codigo} value={c.codigo}>{c.codigo} · {c.nombre}</option>
+                        ))}
+                      </optgroup>
+                    </select>
+                    <input
+                      className="input compact"
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      placeholder="Importe €"
+                      value={ce.importe || ""}
+                      onChange={(e) => {
+                        const next = [...conceptosExtras];
+                        next[i] = { ...next[i], importe: Number(e.target.value) || 0 };
+                        setConceptosExtras(next);
+                      }}
+                    />
+                    <button
+                      type="button"
+                      className="button ghost compact"
+                      onClick={() => setConceptosExtras(conceptosExtras.filter((_, j) => j !== i))}
+                      title="Quitar"
+                      style={{ color: "var(--bad)" }}
+                    >
+                      <X size={13} />
+                    </button>
+                    {cat?.exencion_anual ? (
+                      <small className="muted" style={{ gridColumn: "1 / -1", fontSize: 10 }}>
+                        Exención anual hasta {new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR" }).format(cat.exencion_anual)} (≈ {EUR(cat.exencion_anual / 12)} / mes). El exceso cotiza y tributa.
+                      </small>
+                    ) : null}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          <button
+            type="button"
+            className="button secondary compact"
+            onClick={() => setConceptosExtras([...conceptosExtras, { codigo: "", importe: 0 }])}
+            style={{ display: "inline-flex", alignItems: "center", gap: 4 }}
+          >
+            <Plus size={12} /> Añadir concepto
+          </button>
+        </fieldset>
 
         <div className="button-row" style={{ marginTop: 14 }}>
           <button className="button secondary" onClick={() => run(false)} disabled={busy || !trabajadorId}>

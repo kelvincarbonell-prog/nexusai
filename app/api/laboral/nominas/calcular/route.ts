@@ -13,6 +13,10 @@ const Schema = z.object({
   base_extras: z.number().min(0).max(50_000).default(0),
   irpf_pct_override: z.number().min(0).max(60).optional(),
   hijos: z.number().min(0).max(20).default(0),
+  conceptos_extras: z.array(z.object({
+    codigo: z.string().min(1),
+    importe: z.number().positive(),
+  })).max(30).optional(),
   persist: z.boolean().default(false),
 });
 
@@ -44,6 +48,7 @@ export async function POST(request: NextRequest) {
     base_extras: parsed.data.base_extras,
     irpf_pct_override: parsed.data.irpf_pct_override ?? (trabajador.irpf_pct ? Number(trabajador.irpf_pct) : undefined),
     hijos: parsed.data.hijos,
+    conceptos_extras: parsed.data.conceptos_extras,
   });
 
   let saved: { id: string } | null = null;
