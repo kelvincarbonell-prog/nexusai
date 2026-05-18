@@ -49,11 +49,18 @@ export async function UpcomingObligations({ empresas }: { empresas: Empresa[] })
           <span className="card-eyebrow">Calendario fiscal</span>
           <div style={{ fontFamily: "var(--mono)", fontSize: 12, color: "var(--muted)" }}>Próximas obligaciones · 45 días</div>
         </div>
-        <div className="button-row">
-          {criticas > 0 && <span className="pill bad">{criticas} críticas</span>}
-          {proximas > 0 && <span className="pill warn">{proximas} próximas</span>}
-          {criticas === 0 && proximas === 0 && rows.length === 0 && (
+        <div className="button-row" style={{ minHeight: 28, alignItems: "center" }}>
+          {criticas > 0 ? (
+            <span className="pill bad">{criticas} críticas</span>
+          ) : proximas > 0 ? (
+            <span className="pill warn">{proximas} próximas</span>
+          ) : rows.length > 0 ? (
+            <span className="pill good">{rows.length} en horizonte</span>
+          ) : (
             <span className="pill good">al día</span>
+          )}
+          {criticas > 0 && proximas > 0 && (
+            <span className="pill warn">{proximas} próximas</span>
           )}
           <Link href="/aeat" className="button ghost compact">Ir a modelos →</Link>
         </div>

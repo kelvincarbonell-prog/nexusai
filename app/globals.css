@@ -3486,3 +3486,8 @@ html { scroll-behavior: smooth; }
 
 /* Reduce composite layers en hover de Link prefetched (evita repaint) */
 a, button { -webkit-tap-highlight-color: transparent; }
+
+@keyframes nav-link-shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}

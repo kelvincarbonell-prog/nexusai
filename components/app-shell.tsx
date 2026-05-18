@@ -22,6 +22,7 @@ import { StorageBadge } from "@/components/storage/storage-badge";
 import { CommandPalette } from "@/components/command-palette";
 import { AppTopbar } from "@/components/app-topbar";
 import { GestorAsistente } from "@/components/dashboard/gestor-asistente";
+import { NavLink } from "@/components/ui/nav-link";
 
 type NavItem = {
   href: string;
@@ -105,21 +106,30 @@ export function AppShell({
             const isActive = item.href === active;
             const Icon = item.icon;
             return (
-              <Link key={item.href} href={item.href} prefetch className={isActive ? "active" : undefined} aria-current={isActive ? "page" : undefined}>
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+              <NavLink
+                key={item.href}
+                href={item.href}
+                prefetch
+                className={isActive ? "active" : undefined}
+                ariaCurrent={isActive ? "page" : undefined}
+                active={isActive}
+                icon={
                   <Icon
                     size={15}
                     strokeWidth={1.8}
                     aria-hidden="true"
                     style={{ flexShrink: 0, color: isActive ? "var(--accent)" : "var(--muted)" }}
                   />
-                  <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{item.label}</span>
-                </span>
-                <span style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                  {item.count != null ? <span className="count">{item.count}</span> : null}
-                  {item.kbd ? <span className="kbd">{item.kbd}</span> : null}
-                </span>
-              </Link>
+                }
+                rightSlot={
+                  <span style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                    {item.count != null ? <span className="count">{item.count}</span> : null}
+                    {item.kbd ? <span className="kbd">{item.kbd}</span> : null}
+                  </span>
+                }
+              >
+                <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{item.label}</span>
+              </NavLink>
             );
           })}
         </nav>

@@ -1,8 +1,10 @@
+import Link from "next/link";
 import { AppShell } from "@/components/app-shell";
 import { UpcomingObligations } from "@/components/dashboard/upcoming-obligations";
 import { TareasWidget } from "@/components/dashboard/tareas-widget";
 import { OnboardingWizard } from "@/components/dashboard/onboarding-wizard";
 import { CarteraClientes } from "@/components/dashboard/cartera-clientes";
+import { PendingActions } from "@/components/dashboard/pending-actions";
 import { SetupRequired } from "@/components/setup-required";
 import { hasSupabaseConfig } from "@/lib/env";
 import { createServerSupabase } from "@/lib/supabase/server";
@@ -101,8 +103,8 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
           </p>
         </div>
         <div className="button-row" style={{ alignItems: "flex-start", marginTop: 24 }}>
-          <button className="button secondary">Modo silencio</button>
-          <button className="button">Firmar las 5 →</button>
+          <Link href="/aeat" className="button secondary">Modelos AEAT</Link>
+          <Link href="/solicitudes" className="button">Bandeja de solicitudes →</Link>
         </div>
       </header>
 
@@ -112,47 +114,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         </section>
       ) : null}
 
-      <section className="action-row">
-        <article className="action-card">
-          <div className="head"><span className="pill">IVA · 2T</span><span>99%</span></div>
-          <strong>Innova Apps S.L.</strong>
-          <small className="muted">Modelo 303</small>
-          <div className="amount">€ 4.230</div>
-          <div className="delta">+12% vs 1T</div>
-          <button className="button compact" style={{ justifyContent: "center", marginTop: "auto" }}>Firmar</button>
-        </article>
-        <article className="action-card">
-          <div className="head"><span className="pill">Nóminas</span><span>98%</span></div>
-          <strong>Reditorial Iberia</strong>
-          <small className="muted">Marzo · 12 emp.</small>
-          <div className="amount">€ 38.420</div>
-          <div className="delta">variables OK</div>
-          <button className="button compact" style={{ justifyContent: "center", marginTop: "auto" }}>Firmar</button>
-        </article>
-        <article className="action-card">
-          <div className="head"><span className="pill">IRPF</span><span>99%</span></div>
-          <strong>J. Romero</strong>
-          <small className="muted">Modelo 130 1T</small>
-          <div className="amount">€ 912</div>
-          <div className="delta">+18% vs 1T·25</div>
-          <button className="button compact" style={{ justifyContent: "center", marginTop: "auto" }}>Firmar</button>
-        </article>
-        <article className="action-card">
-          <div className="head"><span className="pill warn">Atención</span><span>—</span></div>
-          <strong>Vertical Studio</strong>
-          <small className="muted">M115 vencido</small>
-          <div className="delta">hace 1 día</div>
-          <button className="button secondary compact" style={{ justifyContent: "center", marginTop: "auto" }}>Resolver</button>
-        </article>
-        <article className="action-card">
-          <div className="head"><span className="pill good">Propongo</span><span>auto</span></div>
-          <strong>+2 nuevos clientes</strong>
-          <small className="muted">desde Cl@ve</small>
-          <div className="amount">+€840/mes</div>
-          <div className="delta">onboarding listo</div>
-          <button className="button secondary compact" style={{ justifyContent: "center", marginTop: "auto" }}>Revisar</button>
-        </article>
-      </section>
+      <PendingActions />
 
       <section className="grid">
         <UpcomingObligations empresas={empresas} />
