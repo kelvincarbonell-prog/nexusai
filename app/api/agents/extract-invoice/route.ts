@@ -69,7 +69,57 @@ export async function POST(request: NextRequest) {
 
   const datos = extraction.ok ? extraction.data ?? {} : {};
   const confidence = extraction.ok ? confidenceScore(datos) : 0;
-  const status = extraction.ok && confidence >= 50 ? "extracted" : extraction.ok ? "pending" : "failed";
+
+  // Detecta saturación de red / rate limit → encola y reintenta en 30 min
+  const errStr = (extraction.error ?? "").toLowerCase();
+  const isRateLimit = !extraction.ok && (
+    errStr.includes("rate") || errStr.includes("429") || errStr.includes("timeout") ||
+    errStr.includes("network") || errStr.includes("quota") || errStr.includes("unavailable")
+  );
+
+  // Match con la empresa (solo si tenemos algo extraído)
+  let matchWarnings: string[] = [];
+  let matchScore = 0;
+  let needsManualReview = false;
+  if (extraction.ok && confidence > 0) {
+    const { matchFacturaEmpresa } = await import("@/lib/extraction/matching");
+    const { data: empresa } = await admin.from("empresas").select("nif,nombre").eq("id", parsed.data.empresa_id).maybeSingle();
+    if (empresa) {
+      const m = matchFacturaEmpresa(datos as Record<string, unknown>, { nif: empresa.nif, nombre: empresa.nombre });
+      matchScore = m.score;
+      matchWarnings = m.warnings;
+      needsManualReview = !m.ok;
+    }
+  }
+
+  // Resolución del status final:
+  //   - failed por rate-limit → queued (reintento)
+  //   - extracted pero no matchea → needs_manual_review
+  //   - extracted y matchea → extracted
+  //   - extracted con baja confianza → pending
+  //   - fallo distinto a rate-limit → failed
+  let status: "extracted" | "pending" | "failed" | "queued" | "needs_manual_review";
+  let nextRetryAt: string | null = null;
+  let etaSeconds: number | null = null;
+  if (isRateLimit) {
+    status = "queued";
+    // Cuenta intentos posicionales en la cola para estimar ETA
+    const { count: posicion } = await admin
+      .from("facturas_recibidas_extracciones")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "queued");
+    const minutos = 30 + (posicion ?? 0) * 2;
+    nextRetryAt = new Date(Date.now() + minutos * 60_000).toISOString();
+    etaSeconds = minutos * 60;
+  } else if (extraction.ok && needsManualReview) {
+    status = "needs_manual_review";
+  } else if (extraction.ok && confidence >= 50) {
+    status = "extracted";
+  } else if (extraction.ok) {
+    status = "pending";
+  } else {
+    status = "failed";
+  }
 
   // Sube el archivo original a storage (ocr-uploads) para poder visualizarlo después.
   let storagePath = parsed.data.storage_path ?? null;
@@ -103,6 +153,11 @@ export async function POST(request: NextRequest) {
       status,
       confidence,
       error: extraction.ok ? null : extraction.error,
+      match_score: matchScore,
+      match_warnings: matchWarnings,
+      retry_count: 0,
+      next_retry_at: nextRetryAt,
+      eta_seconds: etaSeconds,
     })
     .select("*")
     .single();

@@ -27,11 +27,16 @@ type Extraction = {
   empresa_id: string;
   filename: string | null;
   storage_path: string | null;
-  status: "pending" | "extracted" | "reviewed" | "rejected" | "failed";
+  status: "pending" | "extracted" | "reviewed" | "rejected" | "failed" | "queued" | "needs_manual_review";
   confidence: number | null;
   datos_extraidos: ExtractedInvoice;
   factura_id: string | null;
   gasto_id: string | null;
+  match_score?: number | null;
+  match_warnings?: string[] | null;
+  retry_count?: number | null;
+  next_retry_at?: string | null;
+  eta_seconds?: number | null;
   created_at: string;
 };
 
@@ -662,6 +667,31 @@ export function OcrUpload({ empresaId, modo = "gasto" }: { empresaId: string; mo
                           <span className="pill good" style={{ fontSize: 11 }}>guardado</span>
                         ) : e.status === "rejected" ? (
                           <span className="muted" style={{ fontSize: 11 }}>deshecho</span>
+                        ) : e.status === "queued" ? (
+                          <span className="pill warn" style={{ fontSize: 11 }} title={`Reintento ${(e.retry_count ?? 0) + 1}`}>
+                            en espera · ETA ~{Math.max(1, Math.round((e.eta_seconds ?? 1800) / 60))} min
+                          </span>
+                        ) : e.status === "needs_manual_review" ? (
+                          <>
+                            <span className="pill bad" style={{ fontSize: 11 }} title={(e.match_warnings ?? []).join(" · ")}>
+                              revisar manual
+                            </span>
+                            <button
+                              className="button compact"
+                              onClick={() => confirmar(e.id, modo === "ingreso" ? "factura" : "gasto")}
+                              title="Forzar guardar a pesar del aviso"
+                            >
+                              Arreglar y guardar
+                            </button>
+                            <button
+                              className="button ghost compact"
+                              onClick={() => borrar(e.id)}
+                              title="Borrar (no es de esta empresa)"
+                              style={{ padding: "4px 10px", color: "var(--bad)" }}
+                            >
+                              Borrar
+                            </button>
+                          </>
                         ) : (
                           <>
                             <button
