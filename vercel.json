@@ -20,7 +20,7 @@
     },
     {
       "path": "/api/cron/extraction-retry",
-      "schedule": "*/30 * * * *"
+      "schedule": "15 9 * * *"
     },
     {
       "path": "/api/cron/recordatorios-cobro",
