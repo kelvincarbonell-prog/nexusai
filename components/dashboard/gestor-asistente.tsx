@@ -63,9 +63,16 @@ export function GestorAsistente() {
       <header style={panelHead}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <Sparkles size={16} color="var(--accent, #6366f1)" />
-          <strong style={{ fontSize: 14 }}>Asistente del gestor</strong>
+          <strong style={{ fontSize: 14, color: "var(--ink, #111)" }}>Asistente del gestor</strong>
         </div>
-        <button onClick={() => setOpen(false)} aria-label="Cerrar" style={iconBtn}><X size={14} /></button>
+        <button
+          onClick={() => setOpen(false)}
+          aria-label="Cerrar asistente"
+          title="Cerrar"
+          style={closeBtn}
+        >
+          <X size={16} />
+        </button>
       </header>
 
       <div style={messagesBox}>
@@ -182,13 +189,15 @@ const panelFoot: React.CSSProperties = {
 const textarea: React.CSSProperties = {
   flex: 1,
   resize: "none",
-  padding: "8px 10px",
+  padding: "10px 12px",
   borderRadius: 10,
-  border: "1px solid color-mix(in srgb, currentColor 16%, transparent)",
-  background: "color-mix(in srgb, currentColor 4%, transparent)",
-  color: "inherit",
-  fontSize: 13,
+  border: "1px solid var(--line, #d1d5db)",
+  background: "var(--bg, #fff)",
+  color: "var(--ink, #111)",
+  fontSize: 14,
+  lineHeight: 1.45,
   fontFamily: "inherit",
+  outline: "none",
 };
 
 const sendBtn: React.CSSProperties = {
@@ -206,6 +215,19 @@ const iconBtn: React.CSSProperties = {
   cursor: "pointer",
   padding: 4,
   color: "inherit",
+};
+
+const closeBtn: React.CSSProperties = {
+  border: "1px solid var(--line, #d1d5db)",
+  background: "var(--card, #fff)",
+  cursor: "pointer",
+  width: 30,
+  height: 30,
+  borderRadius: 8,
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  color: "var(--ink, #111)",
 };
 
 const chip: React.CSSProperties = {

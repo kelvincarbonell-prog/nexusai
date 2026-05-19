@@ -24,6 +24,7 @@ import { AppTopbar } from "@/components/app-topbar";
 import { GestorAsistente } from "@/components/dashboard/gestor-asistente";
 import { NavLink } from "@/components/ui/nav-link";
 import { GlobalDropzone } from "@/components/effects/global-dropzone";
+import { HelpFab } from "@/components/effects/help-fab";
 import { loadVistaConfigForCurrentUser } from "@/lib/vista-config/server";
 
 type NavItem = {
@@ -156,6 +157,9 @@ export async function AppShell({
       </main>
 
       {rightRail}
+
+      {/* FAB ayuda: abre el modal de atajos y guía rápida desde cualquier sitio */}
+      <HelpFab />
 
       {/* FAB asistente del gestor: presente en toda la app autenticada */}
       <GestorAsistente />

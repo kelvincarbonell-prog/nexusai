@@ -7,6 +7,8 @@ import { CarteraClientes } from "@/components/dashboard/cartera-clientes";
 import { PendingActions } from "@/components/dashboard/pending-actions";
 import { MiDia } from "@/components/dashboard/mi-dia";
 import { HistoricoSalarialWidget } from "@/components/dashboard/historico-salarial-widget";
+import { WowAutomations } from "@/components/dashboard/wow-automations";
+import { FileSignature, Banknote, Receipt, Landmark } from "lucide-react";
 import { SetupRequired } from "@/components/setup-required";
 import { hasSupabaseConfig } from "@/lib/env";
 import { createServerSupabase } from "@/lib/supabase/server";
@@ -40,16 +42,40 @@ function greeting() {
   return "Buenas noches";
 }
 
-function Sparkline({ values, color = "var(--ink)" }: { values: number[]; color?: string }) {
+function Sparkline({ values }: { values: number[] }) {
+  const W = 600;
+  const H = 140;
+  const pad = 8;
   const max = Math.max(...values);
   const min = Math.min(...values);
   const range = max - min || 1;
-  const pts = values
-    .map((v, i) => `${(i / (values.length - 1)) * 100},${100 - ((v - min) / range) * 100}`)
-    .join(" ");
+  const pts = values.map((v, i) => {
+    const x = pad + (i / (values.length - 1)) * (W - pad * 2);
+    const y = pad + (1 - (v - min) / range) * (H - pad * 2);
+    return [x, y] as const;
+  });
+  const linePath = pts.map(([x, y], i) => (i === 0 ? `M${x},${y}` : `L${x},${y}`)).join(" ");
+  const areaPath = `${linePath} L${pts[pts.length - 1][0]},${H} L${pts[0][0]},${H} Z`;
+  const lastX = pts[pts.length - 1][0];
+  const lastY = pts[pts.length - 1][1];
   return (
-    <svg className="chart-svg" viewBox="0 0 100 100" preserveAspectRatio="none" height={80}>
-      <polyline fill="none" stroke={color} strokeWidth="1.5" points={pts} />
+    <svg
+      viewBox={`0 0 ${W} ${H}`}
+      preserveAspectRatio="none"
+      style={{ width: "100%", height: 120, display: "block" }}
+      role="img"
+      aria-label="Evolución de honorarios"
+    >
+      <defs>
+        <linearGradient id="sparkFill" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stopColor="var(--accent)" stopOpacity="0.28" />
+          <stop offset="100%" stopColor="var(--accent)" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <path d={areaPath} fill="url(#sparkFill)" />
+      <path d={linePath} fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx={lastX} cy={lastY} r="3.5" fill="var(--accent)" />
+      <circle cx={lastX} cy={lastY} r="6" fill="var(--accent)" opacity="0.18" />
     </svg>
   );
 }
@@ -120,13 +146,17 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         <MiDia nombre={profile?.nombre ?? undefined} />
       </section>
 
+      <section className="grid">
+        <WowAutomations />
+      </section>
+
       <PendingActions />
 
       <section className="grid">
         <UpcomingObligations empresas={empresas} />
         <TareasWidget />
 
-        <article className="card span-7">
+        <article className="card span-7" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           <div className="topbar" style={{ border: 0, padding: 0, margin: 0 }}>
             <span className="card-eyebrow">Honorarios YTD</span>
             <div className="chart-tabs">
@@ -135,32 +165,41 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
               <button>12M</button>
             </div>
           </div>
-          <div className="metric">€ 84.620</div>
-          <div className="metric-foot good">+14% vs 2025 &nbsp;·&nbsp; meta Q4 · € 180k</div>
-          <Sparkline values={[40, 44, 50, 48, 55, 60, 64, 70, 73, 78, 80, 84]} />
+          <div>
+            <div className="metric" style={{ margin: 0 }}>€ 84.620</div>
+            <div className="metric-foot good">+14 % vs 2025 · meta Q4 · € 180.000</div>
+          </div>
+          <div style={{ marginTop: "auto" }}>
+            <Sparkline values={[40, 44, 50, 48, 55, 60, 64, 70, 73, 78, 80, 84]} />
+          </div>
         </article>
 
         <article className="card span-5">
           <span className="card-eyebrow">Esta semana</span>
-          <div style={{ display: "grid", gap: 10, marginTop: 8 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-              <span style={{ fontSize: 13 }}>Modelos firmados</span>
-              <strong style={{ fontSize: 18, fontFamily: "var(--mono, monospace)" }}>12</strong>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-              <span style={{ fontSize: 13 }}>Nóminas generadas</span>
-              <strong style={{ fontSize: 18, fontFamily: "var(--mono, monospace)" }}>47</strong>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-              <span style={{ fontSize: 13 }}>Facturas procesadas</span>
-              <strong style={{ fontSize: 18, fontFamily: "var(--mono, monospace)" }}>318</strong>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-              <span style={{ fontSize: 13 }}>Conciliación bancaria</span>
-              <strong style={{ fontSize: 18, fontFamily: "var(--mono, monospace)", color: "var(--good)" }}>98%</strong>
-            </div>
-          </div>
-          <div className="metric-foot accent" style={{ marginTop: 12 }}>≈ 31 h 12 min ahorradas</div>
+          <ul style={{ listStyle: "none", padding: 0, margin: "10px 0 0", display: "grid", gap: 0 }}>
+            {[
+              { Icon: FileSignature, label: "Modelos firmados", value: "12" },
+              { Icon: Banknote, label: "Nóminas generadas", value: "47" },
+              { Icon: Receipt, label: "Facturas procesadas", value: "318" },
+              { Icon: Landmark, label: "Conciliación bancaria", value: "98 %", tone: "good" as const },
+            ].map(({ Icon, label, value, tone }, i, arr) => (
+              <li
+                key={label}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  padding: "10px 0",
+                  borderBottom: i < arr.length - 1 ? "1px solid var(--line, #e5e7eb)" : "none",
+                }}
+              >
+                <Icon size={14} style={{ opacity: 0.55 }} />
+                <span style={{ flex: 1, fontSize: 13 }}>{label}</span>
+                <strong style={{ fontFamily: "var(--mono, monospace)", color: tone === "good" ? "var(--good)" : "var(--ink)" }}>{value}</strong>
+              </li>
+            ))}
+          </ul>
+          <div className="metric-foot accent" style={{ marginTop: 12 }}>≈ 31 h 12 min ahorradas con el copiloto</div>
         </article>
 
         <article className="card span-12">

@@ -33,6 +33,14 @@ export function KeyboardShortcuts() {
   const [waitingG, setWaitingG] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
 
+  // Permite abrir el modal de ayuda desde cualquier sitio
+  // disparando window.dispatchEvent(new Event('m26:open-help')).
+  useEffect(() => {
+    const onOpen = () => setShowHelp(true);
+    window.addEventListener("m26:open-help", onOpen);
+    return () => window.removeEventListener("m26:open-help", onOpen);
+  }, []);
+
   useEffect(() => {
     function isTyping(target: EventTarget | null) {
       if (!target) return false;
