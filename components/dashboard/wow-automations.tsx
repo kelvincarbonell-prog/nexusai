@@ -12,12 +12,15 @@ import {
   Zap,
   ShieldAlert,
   Wallet,
+  CalendarClock,
   ArrowRight,
 } from "lucide-react";
 import { DuplicadosModal } from "@/components/dashboard/duplicados-modal";
 import { Borrador303Modal } from "@/components/dashboard/borrador-303-modal";
 import { RiesgoAeatModal } from "@/components/dashboard/riesgo-aeat-modal";
 import { TesoreriaModal } from "@/components/dashboard/tesoreria-modal";
+import { AutocierreNominasModal } from "@/components/dashboard/autocierre-nominas-modal";
+import { CalendarioAeatModal } from "@/components/dashboard/calendario-aeat-modal";
 
 /**
  * Atajos automáticos para gestor fiscal: las acciones de mayor impacto
@@ -29,7 +32,7 @@ type Wow = {
   titulo: string;
   descripcion: string;
   accent: boolean;
-} & ({ href: string; action?: undefined } | { action: "duplicados" | "borrador303" | "riesgo-aeat" | "tesoreria"; href?: undefined });
+} & ({ href: string; action?: undefined } | { action: "duplicados" | "borrador303" | "riesgo-aeat" | "tesoreria" | "cierre-nominas" | "calendario-aeat"; href?: undefined });
 
 const WOWS: Wow[] = [
   {
@@ -49,8 +52,8 @@ const WOWS: Wow[] = [
   {
     Icon: Banknote,
     titulo: "Cerrar nóminas del mes",
-    descripcion: "Generar 47 nóminas a la vez con sus cotizaciones, TC1/TC2 y SEPA.",
-    href: "/laboral",
+    descripcion: "Genera las nóminas de toda tu cartera en un click. Resumen ejecutivo con totales.",
+    action: "cierre-nominas",
     accent: true,
   },
   {
@@ -88,10 +91,17 @@ const WOWS: Wow[] = [
     action: "tesoreria",
     accent: true,
   },
+  {
+    Icon: CalendarClock,
+    titulo: "Calendario AEAT unificado",
+    descripcion: "Todas las obligaciones AEAT de tu cartera por fecha. Pendientes y vencidas marcadas.",
+    action: "calendario-aeat",
+    accent: false,
+  },
 ];
 
 export function WowAutomations() {
-  const [openModal, setOpenModal] = useState<null | "duplicados" | "borrador303" | "riesgo-aeat" | "tesoreria">(null);
+  const [openModal, setOpenModal] = useState<null | "duplicados" | "borrador303" | "riesgo-aeat" | "tesoreria" | "cierre-nominas" | "calendario-aeat">(null);
 
   const cardStyle = (accent: boolean): React.CSSProperties => ({
     display: "grid",
@@ -157,7 +167,7 @@ export function WowAutomations() {
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 10 }}>
         {WOWS.map((w) => {
-          if (w.action === "duplicados" || w.action === "borrador303" || w.action === "riesgo-aeat" || w.action === "tesoreria") {
+          if (w.action === "duplicados" || w.action === "borrador303" || w.action === "riesgo-aeat" || w.action === "tesoreria" || w.action === "cierre-nominas" || w.action === "calendario-aeat") {
             return (
               <button
                 key={w.titulo}
@@ -190,6 +200,8 @@ export function WowAutomations() {
       {openModal === "borrador303" && <Borrador303Modal onClose={() => setOpenModal(null)} />}
       {openModal === "riesgo-aeat" && <RiesgoAeatModal onClose={() => setOpenModal(null)} />}
       {openModal === "tesoreria" && <TesoreriaModal onClose={() => setOpenModal(null)} />}
+      {openModal === "cierre-nominas" && <AutocierreNominasModal onClose={() => setOpenModal(null)} />}
+      {openModal === "calendario-aeat" && <CalendarioAeatModal onClose={() => setOpenModal(null)} />}
     </article>
   );
 }
