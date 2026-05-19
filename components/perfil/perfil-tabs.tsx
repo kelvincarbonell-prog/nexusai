@@ -41,11 +41,16 @@ export function PerfilTabs({ perfil, canManage }: { perfil: Perfil; canManage: b
         role="tablist"
         aria-label="Configuración"
         style={{
-          display: "flex",
+          display: "inline-flex",
           gap: 4,
-          borderBottom: "1px solid var(--line, #e5e7eb)",
+          padding: 4,
+          borderRadius: 10,
+          background: "color-mix(in srgb, currentColor 5%, transparent)",
+          border: "1px solid var(--line, #e5e7eb)",
+          alignSelf: "flex-start",
           overflowX: "auto",
           flexWrap: "nowrap",
+          maxWidth: "100%",
         }}
       >
         {tabs.filter((t) => t.visible).map((t) => {
@@ -60,16 +65,16 @@ export function PerfilTabs({ perfil, canManage }: { perfil: Perfil; canManage: b
                 display: "inline-flex",
                 alignItems: "center",
                 gap: 6,
-                padding: "10px 14px",
-                background: "transparent",
-                border: 0,
-                borderBottom: `2px solid ${active ? "var(--accent)" : "transparent"}`,
-                color: active ? "var(--ink)" : "var(--muted)",
+                padding: "8px 14px",
+                borderRadius: 8,
+                border: active ? "1px solid color-mix(in srgb, var(--accent) 35%, transparent)" : "1px solid transparent",
+                background: active ? "color-mix(in srgb, var(--accent) 18%, transparent)" : "transparent",
+                color: active ? "var(--accent)" : "var(--ink, #111)",
                 fontWeight: active ? 600 : 500,
                 fontSize: 13,
                 cursor: "pointer",
                 whiteSpace: "nowrap",
-                transition: "color 0.15s, border-color 0.15s",
+                transition: "background 0.15s, color 0.15s, border-color 0.15s",
               }}
             >
               {t.icon}
