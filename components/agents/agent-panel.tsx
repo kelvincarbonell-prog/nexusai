@@ -568,7 +568,7 @@ function ResultadoAmable({ agent, result, empresaId }: { agent: AgentSpec; resul
           {lineas.map((l, i) => {
             const color = l.tono === "bad" ? "#ef4444" : l.tono === "ok" ? "#10b981" : l.tono === "warn" ? "#f59e0b" : "var(--ink)";
             return (
-              <div key={i} style={{ padding: 10, borderRadius: 10, background: "var(--card, #fff)", border: "1px solid var(--line, #e5e7eb)" }}>
+              <div key={i} style={{ padding: 10, borderRadius: 10, background: "var(--panel, #fff)", border: "1px solid var(--line, #e5e7eb)" }}>
                 <div style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.4, color: "var(--muted)" }}>{l.label}</div>
                 <div style={{ fontSize: 18, fontWeight: 700, color, marginTop: 2 }}>{l.valor}</div>
               </div>

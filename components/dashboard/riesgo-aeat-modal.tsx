@@ -253,7 +253,7 @@ function ScoreBadge({ score, nivel }: { score: number; nivel: CarteraItem["nivel
     }}>
       <div style={{
         width: 40, height: 40, borderRadius: "50%",
-        background: "var(--card, #fff)",
+        background: "var(--panel, #fff)",
         display: "grid", placeItems: "center",
         fontSize: 13, fontWeight: 700, color,
       }}>{score}</div>

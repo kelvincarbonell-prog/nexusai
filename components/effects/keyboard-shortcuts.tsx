@@ -148,7 +148,7 @@ export function KeyboardShortcuts() {
           display: "grid", placeItems: "center", padding: 16, zIndex: 9999,
         }}>
           <div onClick={(e) => e.stopPropagation()} style={{
-            width: "min(540px, 100%)", background: "var(--card, #fff)", borderRadius: 14,
+            width: "min(540px, 100%)", background: "var(--panel, #fff)", borderRadius: 14,
             border: "1px solid color-mix(in srgb, currentColor 14%, transparent)",
             padding: 20, display: "grid", gap: 14,
           }}>

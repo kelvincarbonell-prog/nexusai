@@ -160,8 +160,8 @@ export function SolicitudesGestorPanel() {
                 style={{
                   padding: 12,
                   borderRadius: 10,
-                  border: `1px solid ${isUrg ? "#ef444466" : "var(--border, #e5e7eb)"}`,
-                  background: isUrg ? "#ef444408" : "var(--card, #fff)",
+                  border: `1px solid ${isUrg ? "#ef444466" : "var(--line, #e5e7eb)"}`,
+                  background: isUrg ? "#ef444408" : "var(--panel, #fff)",
                   display: "grid",
                   gap: 8,
                 }}

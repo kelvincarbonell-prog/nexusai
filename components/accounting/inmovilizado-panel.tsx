@@ -324,7 +324,7 @@ function alert(tone: "error" | "warn"): React.CSSProperties {
 }
 
 const overlay: React.CSSProperties = { position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", display: "grid", placeItems: "center", padding: 16, zIndex: 1000 };
-const dialog: React.CSSProperties = { width: "min(560px, 100%)", maxHeight: "90vh", overflow: "auto", background: "var(--card, #fff)", borderRadius: 14, border: "1px solid var(--border, #e5e7eb)", padding: 18, display: "grid", gap: 12 };
+const dialog: React.CSSProperties = { width: "min(560px, 100%)", maxHeight: "90vh", overflow: "auto", background: "var(--panel, #fff)", borderRadius: 14, border: "1px solid var(--line, #e5e7eb)", padding: 18, display: "grid", gap: 12 };
 const grid: React.CSSProperties = { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 };
 const input: React.CSSProperties = { padding: "8px 10px", borderRadius: 8, border: "1px solid color-mix(in srgb, currentColor 16%, transparent)", background: "color-mix(in srgb, currentColor 4%, transparent)", color: "inherit", fontSize: 13, width: "100%", boxSizing: "border-box" };
 const iconBtn: React.CSSProperties = { marginLeft: "auto", border: "none", background: "transparent", cursor: "pointer", padding: 4, color: "inherit" };

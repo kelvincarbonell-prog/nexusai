@@ -347,7 +347,7 @@ const overlay: React.CSSProperties = {
 };
 const dialog: React.CSSProperties = {
   width: "min(640px, 100%)", maxHeight: "90vh", overflow: "auto",
-  background: "var(--card, #fff)", borderRadius: 14, border: "1px solid var(--border, #e5e7eb)",
+  background: "var(--panel, #fff)", borderRadius: 14, border: "1px solid var(--line, #e5e7eb)",
   padding: 18, display: "grid", gap: 12,
 };
 const iconBtn: React.CSSProperties = {
@@ -358,6 +358,6 @@ const grid: React.CSSProperties = {
   display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10,
 };
 const input: React.CSSProperties = {
-  padding: "8px 10px", borderRadius: 8, border: "1px solid var(--border, #e5e7eb)",
+  padding: "8px 10px", borderRadius: 8, border: "1px solid var(--line, #e5e7eb)",
   background: "var(--card-bg, #fff)", fontSize: 13, width: "100%", boxSizing: "border-box",
 };

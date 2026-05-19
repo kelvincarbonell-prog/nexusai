@@ -207,7 +207,7 @@ export function NominasMasivasPanel({ empresaId }: { empresaId: string }) {
           style={{
             padding: "8px 14px",
             borderRadius: 8,
-            border: "1px solid var(--border, #e5e7eb)",
+            border: "1px solid var(--line, #e5e7eb)",
             background: "transparent",
             cursor: publishing ? "wait" : "pointer",
             display: "inline-flex",
@@ -227,7 +227,7 @@ export function NominasMasivasPanel({ empresaId }: { empresaId: string }) {
           style={{
             padding: "8px 14px",
             borderRadius: 8,
-            border: "1px solid var(--border, #e5e7eb)",
+            border: "1px solid var(--line, #e5e7eb)",
             background: "transparent",
             cursor: sepaBusy ? "wait" : "pointer",
             display: "inline-flex",
@@ -247,7 +247,7 @@ export function NominasMasivasPanel({ empresaId }: { empresaId: string }) {
           style={{
             padding: "8px 14px",
             borderRadius: 8,
-            border: "1px solid var(--border, #e5e7eb)",
+            border: "1px solid var(--line, #e5e7eb)",
             background: "transparent",
             cursor: tcBusy ? "wait" : "pointer",
             display: "inline-flex",
@@ -290,7 +290,7 @@ export function NominasMasivasPanel({ empresaId }: { empresaId: string }) {
             <Mini titulo="Coste total empresa" valor={EUR(result.totales.coste_total_empresa)} tono="ok" />
           </div>
 
-          <div style={{ overflow: "auto", border: "1px solid var(--border, #e5e7eb)", borderRadius: 10 }}>
+          <div style={{ overflow: "auto", border: "1px solid var(--line, #e5e7eb)", borderRadius: 10 }}>
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
               <thead>
                 <tr style={{ background: "var(--card-bg, #f9fafb)", textAlign: "left" }}>
@@ -304,7 +304,7 @@ export function NominasMasivasPanel({ empresaId }: { empresaId: string }) {
               </thead>
               <tbody>
                 {result.resultados.map((r) => (
-                  <tr key={r.trabajador_id} style={{ borderTop: "1px solid var(--border, #e5e7eb)" }}>
+                  <tr key={r.trabajador_id} style={{ borderTop: "1px solid var(--line, #e5e7eb)" }}>
                     <td style={td}><StatusBadge status={r.status} /></td>
                     <td style={td}>{r.nombre ?? "—"}</td>
                     <td style={tdNum}>{r.bruto ? EUR(r.bruto) : "—"}</td>
@@ -346,8 +346,8 @@ function StatusBadge({ status }: { status: Resultado["status"] }) {
 }
 
 function Mini({ titulo, valor, tono }: { titulo: string; valor: string; tono?: "ok" | "error" }) {
-  const border = tono === "ok" ? "#10b98155" : tono === "error" ? "#ef444455" : "var(--border, #e5e7eb)";
-  const bg = tono === "ok" ? "#10b98108" : tono === "error" ? "#ef444408" : "var(--card, #fff)";
+  const border = tono === "ok" ? "#10b98155" : tono === "error" ? "#ef444455" : "var(--line, #e5e7eb)";
+  const bg = tono === "ok" ? "#10b98108" : tono === "error" ? "#ef444408" : "var(--panel, #fff)";
   return (
     <div style={{ padding: 12, borderRadius: 10, border: `1px solid ${border}`, background: bg, display: "grid", gap: 2 }}>
       <span style={{ fontSize: 11, opacity: 0.7, textTransform: "uppercase", letterSpacing: 0.4 }}>{titulo}</span>
@@ -359,8 +359,8 @@ function Mini({ titulo, valor, tono }: { titulo: string; valor: string; tono?: "
 const input: React.CSSProperties = {
   padding: "6px 10px",
   borderRadius: 8,
-  border: "1px solid var(--border, #e5e7eb)",
-  background: "var(--card, #fff)",
+  border: "1px solid var(--line, #e5e7eb)",
+  background: "var(--panel, #fff)",
   fontSize: 13,
 };
 const th: React.CSSProperties = { padding: "10px 12px", fontWeight: 600, fontSize: 12, textTransform: "uppercase", letterSpacing: 0.4, opacity: 0.7 };

@@ -94,7 +94,7 @@ export function BotFiscalPanel({ empresaId }: { empresaId: string }) {
             marginLeft: "auto",
             padding: "6px 12px",
             borderRadius: 8,
-            border: "1px solid var(--border, #e5e7eb)",
+            border: "1px solid var(--line, #e5e7eb)",
             background: "transparent",
             cursor: loading ? "wait" : "pointer",
             display: "inline-flex",

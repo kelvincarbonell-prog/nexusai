@@ -23,7 +23,7 @@ export function HelpFab() {
         height: 44,
         borderRadius: 999,
         border: "1px solid var(--line, #d1d5db)",
-        background: "var(--card, #fff)",
+        background: "var(--panel, #fff)",
         color: "var(--ink, #111)",
         cursor: "pointer",
         display: "inline-flex",

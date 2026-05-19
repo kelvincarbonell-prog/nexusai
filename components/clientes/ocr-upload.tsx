@@ -993,7 +993,7 @@ export function OcrUpload({ empresaId, modo = "gasto" }: { empresaId: string; mo
             style={{
               width: "min(560px, 100%)",
               maxHeight: "82vh",
-              background: "var(--card, #fff)",
+              background: "var(--panel, #fff)",
               borderRadius: 12,
               border: "1px solid color-mix(in srgb, currentColor 14%, transparent)",
               padding: 12,

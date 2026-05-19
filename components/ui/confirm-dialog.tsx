@@ -63,7 +63,7 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
             tabIndex={-1}
             ref={(el) => el?.focus()}
             style={{
-              width: "min(440px, 100%)", background: "var(--card, #fff)",
+              width: "min(440px, 100%)", background: "var(--panel, #fff)",
               borderRadius: 14, border: "1px solid color-mix(in srgb, currentColor 14%, transparent)",
               padding: 18, display: "grid", gap: 12,
               boxShadow: "0 20px 60px -10px rgba(0,0,0,0.45)",

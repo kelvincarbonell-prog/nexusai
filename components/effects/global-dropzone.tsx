@@ -190,7 +190,7 @@ export function GlobalDropzone() {
               style={{
                 padding: "10px 12px",
                 borderRadius: 10,
-                background: u.status === "done" ? "#10b98112" : u.status === "error" ? "#ef444412" : "var(--card, #fff)",
+                background: u.status === "done" ? "#10b98112" : u.status === "error" ? "#ef444412" : "var(--panel, #fff)",
                 border: `1px solid ${u.status === "done" ? "#10b98155" : u.status === "error" ? "#ef444455" : "color-mix(in srgb, currentColor 12%, transparent)"}`,
                 display: "flex",
                 alignItems: "center",
@@ -217,7 +217,7 @@ export function GlobalDropzone() {
       {/* Picker de empresa si no hay contexto */}
       {pickerOpen && (
         <div role="dialog" aria-modal="true" onClick={() => setPickerOpen(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", display: "grid", placeItems: "center", zIndex: 9999, padding: 16 }}>
-          <div onClick={(e) => e.stopPropagation()} style={{ width: "min(420px, 100%)", background: "var(--card, #fff)", borderRadius: 14, border: "1px solid color-mix(in srgb, currentColor 14%, transparent)", padding: 16, display: "grid", gap: 10 }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ width: "min(420px, 100%)", background: "var(--panel, #fff)", borderRadius: 14, border: "1px solid color-mix(in srgb, currentColor 14%, transparent)", padding: 16, display: "grid", gap: 10 }}>
             <header style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <strong style={{ fontSize: 14 }}>¿A qué cliente lo subimos?</strong>
               <button onClick={() => setPickerOpen(false)} aria-label="Cerrar" style={{ background: "transparent", border: "none", cursor: "pointer", color: "inherit" }}><X size={14} /></button>

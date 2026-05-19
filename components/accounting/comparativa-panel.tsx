@@ -179,7 +179,7 @@ function KpiCard({
   invertColors?: boolean;
 }) {
   return (
-    <div style={{ padding: 14, borderRadius: 12, border: "1px solid var(--border, #e5e7eb)", background: "var(--card, #fff)", display: "grid", gap: 8 }}>
+    <div style={{ padding: 14, borderRadius: 12, border: "1px solid var(--line, #e5e7eb)", background: "var(--panel, #fff)", display: "grid", gap: 8 }}>
       <span style={{ fontSize: 12, opacity: 0.7, textTransform: "uppercase", letterSpacing: 0.5 }}>{titulo}</span>
       <strong style={{ fontSize: 22 }}>{EUR(actual)}</strong>
       <span style={{ fontSize: 11, opacity: 0.6 }}>{labelActual}</span>
@@ -207,8 +207,8 @@ function DeltaRow({ label, delta, invertColors }: { label: string; delta: Delta;
 }
 
 function MiniCard({ titulo, valor, tono, sub }: { titulo: string; valor: string; tono?: "ok" | "warning"; sub?: string }) {
-  const borderColor = tono === "warning" ? "#f59e0b55" : tono === "ok" ? "#10b98155" : "var(--border, #e5e7eb)";
-  const bg = tono === "warning" ? "#f59e0b08" : tono === "ok" ? "#10b98108" : "var(--card, #fff)";
+  const borderColor = tono === "warning" ? "#f59e0b55" : tono === "ok" ? "#10b98155" : "var(--line, #e5e7eb)";
+  const bg = tono === "warning" ? "#f59e0b08" : tono === "ok" ? "#10b98108" : "var(--panel, #fff)";
   return (
     <div style={{ padding: 12, borderRadius: 10, border: `1px solid ${borderColor}`, background: bg, display: "grid", gap: 4 }}>
       <span style={{ fontSize: 11, opacity: 0.7, textTransform: "uppercase", letterSpacing: 0.5 }}>{titulo}</span>
@@ -220,7 +220,7 @@ function MiniCard({ titulo, valor, tono, sub }: { titulo: string; valor: string;
 
 function TopList({ icon, titulo, items }: { icon: React.ReactNode; titulo: string; items: Top[] }) {
   return (
-    <div style={{ padding: 14, borderRadius: 12, border: "1px solid var(--border, #e5e7eb)", background: "var(--card, #fff)", display: "grid", gap: 10 }}>
+    <div style={{ padding: 14, borderRadius: 12, border: "1px solid var(--line, #e5e7eb)", background: "var(--panel, #fff)", display: "grid", gap: 10 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
         {icon}
         <strong style={{ fontSize: 13 }}>{titulo}</strong>
@@ -246,7 +246,7 @@ function TopList({ icon, titulo, items }: { icon: React.ReactNode; titulo: strin
 const selectStyle: React.CSSProperties = {
   padding: "6px 10px",
   borderRadius: 8,
-  border: "1px solid var(--border, #e5e7eb)",
-  background: "var(--card, #fff)",
+  border: "1px solid var(--line, #e5e7eb)",
+  background: "var(--panel, #fff)",
   fontSize: 13,
 };

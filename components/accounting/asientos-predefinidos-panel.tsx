@@ -170,8 +170,8 @@ export function AsientosPredefinidosPanel({ empresaId }: { empresaId: string }) 
                       textAlign: "left",
                       padding: 12,
                       borderRadius: 10,
-                      border: "1px solid color-mix(in srgb, var(--border, #e5e7eb) 100%, transparent)",
-                      background: "color-mix(in srgb, var(--card, #fff) 100%, transparent)",
+                      border: "1px solid color-mix(in srgb, var(--line, #e5e7eb) 100%, transparent)",
+                      background: "color-mix(in srgb, var(--panel, #fff) 100%, transparent)",
                       cursor: "pointer",
                       display: "grid",
                       gap: 6,
@@ -220,9 +220,9 @@ export function AsientosPredefinidosPanel({ empresaId }: { empresaId: string }) 
               width: "min(560px, 100%)",
               maxHeight: "90vh",
               overflow: "auto",
-              background: "var(--card, #fff)",
+              background: "var(--panel, #fff)",
               borderRadius: 14,
-              border: "1px solid var(--border, #e5e7eb)",
+              border: "1px solid var(--line, #e5e7eb)",
               padding: 18,
               display: "grid",
               gap: 12,
@@ -273,7 +273,7 @@ export function AsientosPredefinidosPanel({ empresaId }: { empresaId: string }) 
                 <button
                   type="button"
                   onClick={cerrar}
-                  style={{ marginTop: 4, justifySelf: "end", padding: "6px 12px", borderRadius: 8, border: "1px solid var(--border, #e5e7eb)", background: "transparent", cursor: "pointer" }}
+                  style={{ marginTop: 4, justifySelf: "end", padding: "6px 12px", borderRadius: 8, border: "1px solid var(--line, #e5e7eb)", background: "transparent", cursor: "pointer" }}
                 >
                   Cerrar
                 </button>
@@ -322,7 +322,7 @@ export function AsientosPredefinidosPanel({ empresaId }: { empresaId: string }) 
                   <button
                     type="button"
                     onClick={cerrar}
-                    style={{ padding: "8px 14px", borderRadius: 8, border: "1px solid var(--border, #e5e7eb)", background: "transparent", cursor: "pointer" }}
+                    style={{ padding: "8px 14px", borderRadius: 8, border: "1px solid var(--line, #e5e7eb)", background: "transparent", cursor: "pointer" }}
                   >
                     Cancelar
                   </button>
@@ -359,7 +359,7 @@ export function AsientosPredefinidosPanel({ empresaId }: { empresaId: string }) 
 const inputStyle: React.CSSProperties = {
   padding: "8px 10px",
   borderRadius: 8,
-  border: "1px solid var(--border, #e5e7eb)",
+  border: "1px solid var(--line, #e5e7eb)",
   background: "var(--card-bg, #fff)",
   fontSize: 13,
   width: "100%",

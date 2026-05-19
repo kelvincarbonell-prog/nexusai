@@ -179,8 +179,8 @@ export function SiltraFanPanel({ empresaId }: { empresaId: string }) {
 }
 
 function Mini({ titulo, valor, tono }: { titulo: string; valor: string; tono?: "warn" }) {
-  const border = tono === "warn" ? "#f59e0b55" : "var(--border, #e5e7eb)";
-  const bg = tono === "warn" ? "#f59e0b08" : "var(--card, #fff)";
+  const border = tono === "warn" ? "#f59e0b55" : "var(--line, #e5e7eb)";
+  const bg = tono === "warn" ? "#f59e0b08" : "var(--panel, #fff)";
   return (
     <div style={{ padding: 12, borderRadius: 10, border: `1px solid ${border}`, background: bg, display: "grid", gap: 2 }}>
       <span style={{ fontSize: 11, opacity: 0.7, textTransform: "uppercase", letterSpacing: 0.4 }}>{titulo}</span>
@@ -192,7 +192,7 @@ function Mini({ titulo, valor, tono }: { titulo: string; valor: string; tono?: "
 const input: React.CSSProperties = {
   padding: "6px 10px",
   borderRadius: 8,
-  border: "1px solid var(--border, #e5e7eb)",
-  background: "var(--card, #fff)",
+  border: "1px solid var(--line, #e5e7eb)",
+  background: "var(--panel, #fff)",
   fontSize: 13,
 };

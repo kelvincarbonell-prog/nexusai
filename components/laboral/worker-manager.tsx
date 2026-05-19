@@ -436,7 +436,7 @@ export function WorkerManager({ empresas, initialTab = "trabajadores" }: { empre
                             right: 0,
                             top: "calc(100% + 4px)",
                             zIndex: 50,
-                            background: "var(--card, #fff)",
+                            background: "var(--panel, #fff)",
                             border: "1px solid var(--line, #e5e7eb)",
                             borderRadius: 10,
                             boxShadow: "0 18px 40px -24px rgba(0,0,0,0.35)",

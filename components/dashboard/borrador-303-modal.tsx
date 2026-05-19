@@ -97,7 +97,7 @@ export function Borrador303Modal({ onClose }: { onClose: () => void }) {
           </div>
           <button onClick={onClose} aria-label="Cerrar"
             style={{
-              border: "1px solid var(--line, #d1d5db)", background: "var(--card, #fff)", cursor: "pointer",
+              border: "1px solid var(--line, #d1d5db)", background: "var(--panel, #fff)", cursor: "pointer",
               width: 32, height: 32, borderRadius: 8, display: "inline-flex", alignItems: "center", justifyContent: "center",
               color: "var(--ink, #111)",
             }}><X size={16} /></button>

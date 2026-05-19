@@ -155,7 +155,7 @@ export function VistaConfigPanel({ alcance, especialidad }: { alcance: Alcance; 
                       title={isExp ? "Cerrar sub-pestañas" : "Editar sub-pestañas"}
                       aria-label={isExp ? "Cerrar sub-pestañas" : "Editar sub-pestañas"}
                       style={{
-                        background: "var(--card, #fff)",
+                        background: "var(--panel, #fff)",
                         border: "1px solid var(--line, #e5e7eb)",
                         borderRadius: 8,
                         width: 30, height: 30,
