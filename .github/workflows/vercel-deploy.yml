@@ -1,0 +1,26 @@
+name: Trigger Vercel deploy
+
+on:
+  push:
+    branches:
+      - main
+
+# El proyecto tiene "Trusted IPs / Host allowlist" en Vercel que bloquea
+# llamadas al deploy hook desde IPs externas. GitHub Actions usa rangos
+# de IP que Vercel reconoce, así que el hook funciona desde aquí aunque
+# rechace llamadas directas desde mi sandbox.
+jobs:
+  trigger-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call Vercel deploy hook
+        env:
+          HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$HOOK_URL" ]; then
+            echo "::error::Falta el secret VERCEL_DEPLOY_HOOK_URL"
+            exit 1
+          fi
+          curl -fsS -X POST "$HOOK_URL" | tee /tmp/resp.json
+          echo
+          echo "Deploy disparado para commit ${GITHUB_SHA}"
