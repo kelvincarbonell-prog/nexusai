@@ -1,4 +1,6 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
+import { Scale, ArrowDown, ArrowUp, TrendingUp, Building2, FileCheck2, BookOpen } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { JournalEntryForm } from "@/components/accounting/journal-entry-form";
 import { ContabilidadMulti } from "@/components/accounting/contabilidad-multi";
@@ -17,7 +19,6 @@ export default async function AccountingPage() {
 
   const data = await getAccountingOverview(user.id);
 
-  // Lista completa de empresas que el gestor puede ver, para el selector.
   const supabase = await createServerSupabase();
   const isAdmin = isSuperAdmin(profile);
   const empresasRes = isAdmin
@@ -29,37 +30,83 @@ export default async function AccountingPage() {
         .order("nombre");
   const empresas = empresasRes.data ?? [];
 
+  const cuadra = Math.abs(data.totals.debit - data.totals.credit) < 0.01;
+  const resultadoTono: "ok" | "bad" | "neutral" = data.totals.result > 0 ? "ok" : data.totals.result < 0 ? "bad" : "neutral";
+
   return (
     <AppShell active="/contabilidad" showSuperAdmin={isAdmin}>
-      <header className="topbar">
+      <header style={{ display: "flex", justifyContent: "space-between", gap: 16, flexWrap: "wrap", alignItems: "baseline" }}>
         <div>
-          <div className="eyebrow">Plan General Contable · todos los clientes</div>
-          <h1 className="title">Contabilidad 360</h1>
-          <p className="subtitle">
-            Selecciona el cliente y trabaja su diario, mayor, sumas y saldos, PyG, balance, libro de IVA,
-            asientos automáticos y cierre. Todo por empresa, no compartido.
+          <span className="eyebrow">Plan General Contable</span>
+          <h1 className="title" style={{ fontSize: 28, margin: "4px 0 0" }}>Contabilidad 360</h1>
+          <p className="muted" style={{ fontSize: 13, margin: "4px 0 0" }}>
+            Diario, mayor, balances, libro IVA, conciliación y cierre · todos los clientes en un solo sitio.
           </p>
+        </div>
+        <div className="button-row" style={{ alignItems: "center" }}>
+          <Link href="/aeat" className="button secondary compact">Modelos AEAT</Link>
+          <Link href="/aeat/calendario" className="button compact">Calendario fiscal →</Link>
         </div>
       </header>
 
       <section className="grid">
-        <StatCard label="Debe" value={eur(data.totals.debit)} hint="Total registrado en diario (primer cliente)" />
-        <StatCard label="Haber" value={eur(data.totals.credit)} hint="Debe cuadrar con el debe" />
-        <StatCard label="Resultado" value={eur(data.totals.result)} hint="Ingresos menos gastos" />
-        <StatCard label="Clientes" value={String(empresas.length)} hint="Total con contabilidad activa" />
+        <StatCard
+          label="Debe"
+          value={eur(data.totals.debit)}
+          hint={cuadra ? "Cuadra con haber ✓" : "⚠ No cuadra con haber"}
+          Icon={ArrowDown}
+          tono={cuadra ? "neutral" : "warn"}
+        />
+        <StatCard
+          label="Haber"
+          value={eur(data.totals.credit)}
+          hint={cuadra ? "Asientos balanceados" : "Revisa los asientos"}
+          Icon={ArrowUp}
+          tono={cuadra ? "neutral" : "warn"}
+        />
+        <StatCard
+          label="Resultado"
+          value={eur(data.totals.result)}
+          hint={data.totals.result >= 0 ? "Ingresos > gastos" : "Pérdidas en el ejercicio"}
+          Icon={TrendingUp}
+          tono={resultadoTono}
+        />
+        <StatCard
+          label="Clientes"
+          value={String(empresas.length)}
+          hint="Con contabilidad activa"
+          Icon={Building2}
+          tono="neutral"
+        />
+      </section>
 
-        {!data.selectedCompany || empresas.length === 0 ? (
-          <article className="card span-12">
-            <h2>No hay empresa seleccionable</h2>
-            <p className="muted">Crea una empresa o autónomo antes de activar el módulo contable.</p>
+      {!data.selectedCompany || empresas.length === 0 ? (
+        <section className="grid">
+          <article className="card span-12" style={{ display: "grid", gap: 10, placeItems: "center", textAlign: "center", padding: 32 }}>
+            <BookOpen size={36} strokeWidth={1.5} color="var(--muted)" />
+            <h2 style={{ margin: 0, fontSize: 18 }}>No hay empresa seleccionable</h2>
+            <p className="muted" style={{ margin: 0, fontSize: 13 }}>
+              Crea una empresa o autónomo antes de activar el módulo contable.
+            </p>
+            <Link href="/dashboard" className="button compact" style={{ marginTop: 6 }}>
+              Ir al dashboard →
+            </Link>
           </article>
-        ) : (
-          <article className="card span-12" style={{ display: "grid", gap: 16 }}>
+        </section>
+      ) : (
+        <section className="grid">
+          <article className="card span-12" style={{ display: "grid", gap: 18 }}>
             <ContabilidadMulti empresas={empresas} initialId={data.selectedCompany.id} />
+          </article>
+          <article className="card span-12" style={{ display: "grid", gap: 10 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <FileCheck2 size={16} color="var(--accent)" />
+              <span className="card-eyebrow" style={{ margin: 0 }}>Nuevo asiento manual</span>
+            </div>
             <JournalEntryForm empresaId={data.selectedCompany.id} accounts={data.accounts} />
           </article>
-        )}
-      </section>
+        </section>
+      )}
     </AppShell>
   );
 }
