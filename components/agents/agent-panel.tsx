@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import * as Icons from "lucide-react";
-import { Sparkles, Check, AlertCircle, ChevronRight } from "lucide-react";
+import { Sparkles, Check, AlertCircle, ChevronRight, ArrowRight } from "lucide-react";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 import { AGENT_CATALOG, agentsByCategory, type AgentSpec } from "@/lib/agents/catalogo";
 
@@ -16,6 +17,95 @@ const CAT_LABELS: Record<AgentSpec["category"], string> = {
   contabilidad: "Contabilidad",
   analisis: "Análisis e inteligencia",
 };
+
+/** Mensajes rotativos durante la fase "ejecutando" — uno cada 1.2s. */
+const TRABAJANDO_FRASES: Record<AgentSpec["category"], string[]> = {
+  fiscal: ["Cargando facturas y gastos del periodo…", "Calculando IVA repercutido y soportado…", "Comprobando casillas y avisos…", "Preparando el borrador…"],
+  laboral: ["Leyendo convenio y datos del trabajador…", "Calculando bases SS y retención IRPF…", "Aplicando bonificaciones…", "Cerrando la nómina…"],
+  facturacion: ["Generando el documento…", "Calculando totales y desglose IVA…", "Aplicando plantilla del cliente…"],
+  contabilidad: ["Revisando saldos del ejercicio…", "Generando asientos automáticos…", "Comprobando la regularización…"],
+  analisis: ["Reuniendo datos de la cartera…", "Cruzando indicadores…", "Calculando el score…"],
+};
+
+const EUR = (n: number) => new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR" }).format(n);
+
+type ResultView = { label: string; href: string };
+type ResumenLinea = { label: string; valor: string; tono?: "ok" | "warn" | "bad" };
+type ResumenAmable = { lineas: ResumenLinea[]; view: ResultView | null };
+
+/**
+ * Convierte el `result` crudo de un agente en KPIs legibles + un link
+ * a la pantalla donde se ve el trabajo terminado.
+ */
+function resumenAmable(agent: AgentSpec, result: unknown, empresaId: string): ResumenAmable {
+  const r = (result ?? {}) as Record<string, unknown>;
+  const lineas: ResumenLinea[] = [];
+
+  // --- KPIs por id de agente ---
+  if (agent.id === "fiscal-calcular-modelo") {
+    const cas = (r.casillas ?? {}) as Record<string, number>;
+    const cuotaRep = cas.c27 ?? cas.c03 ?? 0;
+    const cuotaSop = cas.c45 ?? cas.c40 ?? 0;
+    const resultado = cas.c71 ?? cas.c66 ?? 0;
+    if (cuotaRep) lineas.push({ label: "IVA repercutido", valor: EUR(Number(cuotaRep)) });
+    if (cuotaSop) lineas.push({ label: "IVA soportado", valor: EUR(Number(cuotaSop)) });
+    lineas.push({ label: "Resultado", valor: EUR(Number(resultado)), tono: Number(resultado) > 0 ? "bad" : Number(resultado) < 0 ? "ok" : undefined });
+    const warns = (r.warnings as unknown[] | undefined) ?? [];
+    if (warns.length) lineas.push({ label: "Avisos", valor: String(warns.length), tono: "warn" });
+    const ejercicio = (r.ejercicio as number | undefined) ?? new Date().getUTCFullYear();
+    const periodo = (r.periodo as string | undefined) ?? "1T";
+    return { lineas, view: { label: "Abrir borrador en AEAT", href: `/aeat?empresa=${empresaId}&modelo=303&ejercicio=${ejercicio}&periodo=${periodo}` } };
+  }
+
+  if (agent.id === "laboral-calcular-nomina") {
+    const calc = (r.result ?? r) as Record<string, number>;
+    if (calc.devengo_bruto) lineas.push({ label: "Bruto", valor: EUR(Number(calc.devengo_bruto)) });
+    if (calc.liquido) lineas.push({ label: "Líquido a percibir", valor: EUR(Number(calc.liquido)), tono: "ok" });
+    if (calc.ss_empresa) lineas.push({ label: "SS empresa", valor: EUR(Number(calc.ss_empresa)) });
+    if (calc.irpf_retenido) lineas.push({ label: "IRPF retenido", valor: EUR(Number(calc.irpf_retenido)) });
+    return { lineas, view: { label: "Ver nóminas del cliente", href: `/clientes/${empresaId}?tab=laboral` } };
+  }
+
+  if (agent.id === "laboral-calcular-finiquito") {
+    const f = (r.result ?? r) as Record<string, number>;
+    if (f.bruto) lineas.push({ label: "Bruto", valor: EUR(Number(f.bruto)) });
+    if (f.neto) lineas.push({ label: "Neto a abonar", valor: EUR(Number(f.neto)), tono: "ok" });
+    if (f.indemnizacion) lineas.push({ label: "Indemnización", valor: EUR(Number(f.indemnizacion)) });
+    return { lineas, view: { label: "Ver área laboral del cliente", href: `/clientes/${empresaId}?tab=laboral` } };
+  }
+
+  if (agent.id === "laboral-alta-trabajador") {
+    if (r.id) lineas.push({ label: "Trabajador creado", valor: String(r.nombre ?? "✓"), tono: "ok" });
+    return { lineas, view: { label: "Ver plantilla", href: `/clientes/${empresaId}?tab=laboral` } };
+  }
+
+  if (agent.id === "fiscal-cerrar-ejercicio") {
+    if (r.asientos_creados) lineas.push({ label: "Asientos creados", valor: String(r.asientos_creados) });
+    if (r.resultado) lineas.push({ label: "Resultado ejercicio", valor: EUR(Number(r.resultado)) });
+    return { lineas, view: { label: "Abrir contabilidad", href: `/clientes/${empresaId}?tab=contabilidad` } };
+  }
+
+  if (agent.id === "fiscal-presentar-modelo") {
+    if (r.csv) lineas.push({ label: "Justificante AEAT", valor: String(r.csv), tono: "ok" });
+    return { lineas, view: { label: "Ver historial AEAT", href: "/aeat" } };
+  }
+
+  if (agent.id === "fiscal-calendario" || agent.id === "laboral-calendario") {
+    const items = (r.items as unknown[] | undefined) ?? [];
+    lineas.push({ label: "Eventos próximos", valor: String(items.length) });
+    return { lineas, view: { label: "Ver calendario completo", href: agent.id === "fiscal-calendario" ? "/aeat" : "/laboral" } };
+  }
+
+  // --- Fallback por categoría ---
+  const byCat: Record<AgentSpec["category"], { label: string; href: string }> = {
+    fiscal: { label: "Ir a Modelos AEAT", href: "/aeat" },
+    laboral: { label: "Ir a Laboral", href: "/laboral" },
+    facturacion: { label: "Ir a Facturación", href: "/facturacion" },
+    contabilidad: { label: "Ir a Contabilidad", href: "/contabilidad" },
+    analisis: { label: "Ver inteligencia", href: "/inteligencia" },
+  };
+  return { lineas, view: byCat[agent.category] };
+}
 
 const CAT_COLORS: Record<AgentSpec["category"], string> = {
   fiscal: "var(--accent)",
@@ -235,7 +325,11 @@ export function AgentPanel({ empresas }: { empresas: Empresa[] }) {
               <button className="button ghost compact" onClick={cerrar} aria-label="Cerrar">✕</button>
             </div>
 
-            {activeAgent.inputs.length > 0 ? (
+            {phase === "ejecutando" ? (
+              <TrabajandoAnim category={activeAgent.category} />
+            ) : phase === "ok" && result ? (
+              <ResultadoAmable agent={activeAgent} result={result} empresaId={empresaId} />
+            ) : activeAgent.inputs.length > 0 ? (
               <div className="form two-cols">
                 {activeAgent.inputs.map((i) => (
                   <label key={i.name} className="label">
@@ -267,21 +361,7 @@ export function AgentPanel({ empresas }: { empresas: Empresa[] }) {
               <p className="muted" style={{ fontSize: 13 }}>Este agente no necesita datos. Pulsa Ejecutar.</p>
             )}
 
-            {errorMsg ? <p role="alert" style={{ color: "var(--bad)" }}>{errorMsg}</p> : null}
-
-            {phase === "ok" && result ? (
-              <article className="card" style={{ background: "color-mix(in srgb, var(--good) 8%, transparent)", borderColor: "var(--good)" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                  <div style={{ width: 28, height: 28, borderRadius: "50%", background: "var(--good)", color: "white", display: "grid", placeItems: "center", animation: "agent-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)" }}>
-                    <Check size={16} strokeWidth={2.6} />
-                  </div>
-                  <strong>Ejecutado con éxito</strong>
-                </div>
-                <pre style={{ fontFamily: "var(--mono)", fontSize: 11, maxHeight: 280, overflow: "auto", background: "var(--bg-soft, transparent)", padding: 10, borderRadius: 8, margin: 0 }}>
-                  {JSON.stringify(result, null, 2)}
-                </pre>
-              </article>
-            ) : null}
+            {errorMsg && phase !== "ejecutando" ? <p role="alert" style={{ color: "var(--bad)" }}>{errorMsg}</p> : null}
 
             {phase === "error" ? (
               <article className="card" style={{ background: "color-mix(in srgb, var(--bad) 8%, transparent)", borderColor: "var(--bad)" }}>
@@ -339,5 +419,141 @@ export function AgentPanel({ empresas }: { empresas: Empresa[] }) {
         }
       `}</style>
     </section>
+  );
+}
+
+/* ============================================================
+   Animación «el agente está trabajando» — durante phase === ejecutando
+   ============================================================ */
+function TrabajandoAnim({ category }: { category: AgentSpec["category"] }) {
+  const frases = TRABAJANDO_FRASES[category] ?? ["Trabajando…"];
+  const [idx, setIdx] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setIdx((i) => (i + 1) % frases.length), 1300);
+    return () => clearInterval(t);
+  }, [frases.length]);
+
+  return (
+    <div
+      style={{
+        display: "grid", placeItems: "center", gap: 14,
+        padding: "32px 16px",
+        borderRadius: 12,
+        background: "color-mix(in srgb, var(--accent) 5%, transparent)",
+        border: "1px solid color-mix(in srgb, var(--accent) 18%, transparent)",
+        textAlign: "center",
+      }}
+    >
+      <div style={{ position: "relative", width: 80, height: 80 }}>
+        <span aria-hidden style={{ position: "absolute", inset: 0, borderRadius: "50%", background: "color-mix(in srgb, var(--accent) 20%, transparent)", animation: "agent-pulse 1.6s ease-out infinite" }} />
+        <span aria-hidden style={{ position: "absolute", inset: 0, borderRadius: "50%", background: "color-mix(in srgb, var(--accent) 25%, transparent)", animation: "agent-pulse 1.6s ease-out 0.5s infinite" }} />
+        <span aria-hidden style={{ position: "absolute", inset: 14, borderRadius: "50%", background: "var(--accent)", color: "white", display: "grid", placeItems: "center" }}>
+          <Sparkles size={26} strokeWidth={1.8} className="agent-spin" />
+        </span>
+      </div>
+      <div>
+        <strong style={{ fontSize: 14, display: "block" }}>El agente está trabajando…</strong>
+        <span className="muted" style={{ fontSize: 12.5, marginTop: 4, display: "block", minHeight: 18 }}>{frases[idx]}</span>
+      </div>
+      <div style={{ display: "flex", gap: 4 }}>
+        {frases.map((_, i) => (
+          <span
+            key={i}
+            aria-hidden
+            style={{
+              width: 6, height: 6, borderRadius: "50%",
+              background: i <= idx ? "var(--accent)" : "color-mix(in srgb, currentColor 16%, transparent)",
+              transition: "background 0.3s",
+            }}
+          />
+        ))}
+      </div>
+      <style jsx>{`
+        @keyframes agent-pulse {
+          0% { transform: scale(0.6); opacity: 0.55; }
+          100% { transform: scale(1.4); opacity: 0; }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+/* ============================================================
+   Resultado amable — KPIs limpios + botón «Ver trabajo»
+   ============================================================ */
+function ResultadoAmable({ agent, result, empresaId }: { agent: AgentSpec; result: unknown; empresaId: string }) {
+  const [verJson, setVerJson] = useState(false);
+  const { lineas, view } = useMemo(() => resumenAmable(agent, result, empresaId), [agent, result, empresaId]);
+
+  return (
+    <div
+      style={{
+        padding: 16, borderRadius: 12,
+        background: "color-mix(in srgb, var(--good) 6%, transparent)",
+        border: "1px solid color-mix(in srgb, var(--good) 30%, transparent)",
+        display: "grid", gap: 12,
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <span style={{
+          width: 36, height: 36, borderRadius: "50%",
+          background: "var(--good)", color: "white",
+          display: "grid", placeItems: "center",
+          animation: "agent-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)",
+          flexShrink: 0,
+        }}>
+          <Check size={18} strokeWidth={2.6} />
+        </span>
+        <div>
+          <strong style={{ fontSize: 14, display: "block" }}>Trabajo terminado</strong>
+          <span className="muted" style={{ fontSize: 12 }}>{agent.title}</span>
+        </div>
+      </div>
+
+      {lineas.length > 0 && (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 10 }}>
+          {lineas.map((l, i) => {
+            const color = l.tono === "bad" ? "#ef4444" : l.tono === "ok" ? "#10b981" : l.tono === "warn" ? "#f59e0b" : "var(--ink)";
+            return (
+              <div key={i} style={{ padding: 10, borderRadius: 10, background: "var(--card, #fff)", border: "1px solid var(--line, #e5e7eb)" }}>
+                <div style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.4, color: "var(--muted)" }}>{l.label}</div>
+                <div style={{ fontSize: 18, fontWeight: 700, color, marginTop: 2 }}>{l.valor}</div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {view && (
+        <Link
+          href={view.href}
+          className="button"
+          style={{ alignSelf: "flex-start", display: "inline-flex", alignItems: "center", gap: 6 }}
+        >
+          {view.label} <ArrowRight size={14} />
+        </Link>
+      )}
+
+      <button
+        type="button"
+        onClick={() => setVerJson((v) => !v)}
+        style={{
+          background: "transparent", border: 0, padding: 0, cursor: "pointer",
+          color: "var(--muted)", fontSize: 11, textAlign: "left",
+        }}
+      >
+        {verJson ? "▴ Ocultar" : "▾ Ver detalles técnicos"}
+      </button>
+      {verJson && (
+        <pre style={{
+          fontFamily: "var(--mono, monospace)", fontSize: 10.5,
+          maxHeight: 240, overflow: "auto",
+          background: "color-mix(in srgb, currentColor 4%, transparent)",
+          padding: 10, borderRadius: 8, margin: 0,
+        }}>
+          {JSON.stringify(result, null, 2)}
+        </pre>
+      )}
+    </div>
   );
 }
