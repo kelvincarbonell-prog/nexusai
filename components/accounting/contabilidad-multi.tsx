@@ -107,36 +107,60 @@ export function ContabilidadMulti({
       <div style={{ display: "grid", gap: 18 }}>
         {tab === "resumen" && (
           <>
-            <BotFiscalPanel key={`bf-${empresaId}`} empresaId={empresaId} />
-            <ComparativaPanel key={`cmp-${empresaId}`} empresaId={empresaId} />
+            <PanelCard><BotFiscalPanel key={`bf-${empresaId}`} empresaId={empresaId} /></PanelCard>
+            <PanelCard><ComparativaPanel key={`cmp-${empresaId}`} empresaId={empresaId} /></PanelCard>
           </>
         )}
         {tab === "asientos" && (
           <>
-            <AutoAsientosPanel key={`aa-${empresaId}`} empresaId={empresaId} />
-            <AsientosPredefinidosPanel key={`ap-${empresaId}`} empresaId={empresaId} />
+            <PanelCard><AutoAsientosPanel key={`aa-${empresaId}`} empresaId={empresaId} /></PanelCard>
+            <PanelCard><AsientosPredefinidosPanel key={`ap-${empresaId}`} empresaId={empresaId} /></PanelCard>
           </>
         )}
         {tab === "informes" && (
           <>
-            <PyGBalancePanel key={`pyg-${empresaId}`} empresaId={empresaId} />
-            <LibroIvaPanel key={`liva-${empresaId}`} empresaId={empresaId} />
+            <PanelCard><PyGBalancePanel key={`pyg-${empresaId}`} empresaId={empresaId} /></PanelCard>
+            <PanelCard><LibroIvaPanel key={`liva-${empresaId}`} empresaId={empresaId} /></PanelCard>
           </>
         )}
         {tab === "operaciones" && (
           <>
-            <M347Panel key={`m347-${empresaId}`} empresaId={empresaId} />
-            <ConciliacionPanel key={`con-${empresaId}`} empresaId={empresaId} />
+            <PanelCard><M347Panel key={`m347-${empresaId}`} empresaId={empresaId} /></PanelCard>
+            <PanelCard><ConciliacionPanel key={`con-${empresaId}`} empresaId={empresaId} /></PanelCard>
           </>
         )}
         {tab === "cierre" && (
-          <CierreAperturaPanel
-            key={`ca-${empresaId}`}
-            empresaId={empresaId}
-            defaultEjercicio={new Date().getUTCFullYear() - 1}
-          />
+          <PanelCard>
+            <CierreAperturaPanel
+              key={`ca-${empresaId}`}
+              empresaId={empresaId}
+              defaultEjercicio={new Date().getUTCFullYear() - 1}
+            />
+          </PanelCard>
         )}
       </div>
+    </div>
+  );
+}
+
+/**
+ * Wrapper visible que da fondo + borde + padding a cada panel hijo, sin
+ * depender de las clases .card .span-12 (que requieren un .grid padre
+ * inexistente aquí). Garantiza que ningún panel se vea «en blanco»
+ * cualquiera que sea su markup interno (section, article…).
+ */
+function PanelCard({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      style={{
+        background: "var(--card, #ffffff)",
+        border: "1px solid var(--line, #e5e7eb)",
+        borderRadius: 12,
+        padding: 16,
+        boxShadow: "0 1px 3px -2px rgba(0, 0, 0, 0.08)",
+      }}
+    >
+      {children}
     </div>
   );
 }
