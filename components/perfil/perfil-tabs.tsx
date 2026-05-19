@@ -119,14 +119,13 @@ export function PerfilTabs({ perfil, canManage }: { perfil: Perfil; canManage: b
                   style={{
                     padding: "6px 14px",
                     borderRadius: 8,
-                    border: 0,
+                    border: active ? "1px solid color-mix(in srgb, var(--accent) 35%, transparent)" : "1px solid transparent",
                     fontSize: 13,
                     fontWeight: active ? 600 : 500,
                     cursor: "pointer",
-                    background: active ? "var(--card, #fff)" : "transparent",
-                    color: active ? "var(--ink)" : "var(--muted)",
-                    boxShadow: active ? "0 1px 4px -2px rgba(0,0,0,0.18)" : "none",
-                    transition: "background 0.15s, color 0.15s",
+                    background: active ? "color-mix(in srgb, var(--accent) 18%, transparent)" : "transparent",
+                    color: active ? "var(--accent)" : "var(--muted)",
+                    transition: "background 0.15s, color 0.15s, border-color 0.15s",
                   }}
                 >
                   {e.label}

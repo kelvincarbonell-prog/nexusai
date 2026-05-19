@@ -13,6 +13,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { DuplicadosModal } from "@/components/dashboard/duplicados-modal";
+import { Borrador303Modal } from "@/components/dashboard/borrador-303-modal";
 
 /**
  * Atajos automáticos para gestor fiscal: las acciones de mayor impacto
@@ -24,14 +25,14 @@ type Wow = {
   titulo: string;
   descripcion: string;
   accent: boolean;
-} & ({ href: string; action?: undefined } | { action: "duplicados"; href?: undefined });
+} & ({ href: string; action?: undefined } | { action: "duplicados" | "borrador303"; href?: undefined });
 
 const WOWS: Wow[] = [
   {
     Icon: FileCheck2,
     titulo: "Borrador 303 del trimestre",
-    descripcion: "Reúne todo el IVA del Q vigente y prepara el modelo. Tú solo firmas.",
-    href: "/aeat?modelo=303",
+    descripcion: "Reúne todo el IVA del Q vigente para toda tu cartera. Tú solo firmas cada cliente.",
+    action: "borrador303",
     accent: true,
   },
   {
@@ -72,7 +73,7 @@ const WOWS: Wow[] = [
 ];
 
 export function WowAutomations() {
-  const [openModal, setOpenModal] = useState<null | "duplicados">(null);
+  const [openModal, setOpenModal] = useState<null | "duplicados" | "borrador303">(null);
 
   const cardStyle = (accent: boolean): React.CSSProperties => ({
     display: "grid",
@@ -138,12 +139,12 @@ export function WowAutomations() {
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 10 }}>
         {WOWS.map((w) => {
-          if (w.action === "duplicados") {
+          if (w.action === "duplicados" || w.action === "borrador303") {
             return (
               <button
                 key={w.titulo}
                 type="button"
-                onClick={() => setOpenModal("duplicados")}
+                onClick={() => setOpenModal(w.action!)}
                 style={cardStyle(w.accent)}
                 onMouseEnter={onEnter}
                 onMouseLeave={onLeave}
@@ -152,10 +153,11 @@ export function WowAutomations() {
               </button>
             );
           }
+          const href = w.href!;
           return (
             <Link
-              key={w.href}
-              href={w.href}
+              key={href}
+              href={href}
               style={cardStyle(w.accent)}
               onMouseEnter={onEnter}
               onMouseLeave={onLeave}
@@ -167,6 +169,7 @@ export function WowAutomations() {
       </div>
 
       {openModal === "duplicados" && <DuplicadosModal onClose={() => setOpenModal(null)} />}
+      {openModal === "borrador303" && <Borrador303Modal onClose={() => setOpenModal(null)} />}
     </article>
   );
 }
