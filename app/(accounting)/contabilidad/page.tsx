@@ -96,15 +96,13 @@ export default async function AccountingPage() {
       ) : (
         <>
           <ContabilidadMulti empresas={empresas} initialId={data.selectedCompany.id} />
-          <section className="grid">
-            <article className="card span-12" style={{ display: "grid", gap: 10 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <FileCheck2 size={16} color="var(--accent)" />
-                <span className="card-eyebrow" style={{ margin: 0 }}>Nuevo asiento manual</span>
-              </div>
-              <JournalEntryForm empresaId={data.selectedCompany.id} accounts={data.accounts} />
-            </article>
-          </section>
+          <article className="card" style={{ display: "grid", gap: 10 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <FileCheck2 size={16} color="var(--accent)" />
+              <span className="card-eyebrow" style={{ margin: 0 }}>Nuevo asiento manual</span>
+            </div>
+            <JournalEntryForm empresaId={data.selectedCompany.id} accounts={data.accounts} />
+          </article>
         </>
       )}
     </AppShell>

@@ -144,23 +144,10 @@ export function ContabilidadMulti({
 }
 
 /**
- * Wrapper visible que da fondo + borde + padding a cada panel hijo, sin
- * depender de las clases .card .span-12 (que requieren un .grid padre
- * inexistente aquí). Garantiza que ningún panel se vea «en blanco»
- * cualquiera que sea su markup interno (section, article…).
+ * Wrapper que usa la clase .card del sistema de diseño global. Así se
+ * adapta solo a light/dark theme (var(--panel) + var(--line)) y no
+ * tenemos riesgo de blanco-puro sobre fondos oscuros.
  */
 function PanelCard({ children }: { children: React.ReactNode }) {
-  return (
-    <div
-      style={{
-        background: "var(--card, #ffffff)",
-        border: "1px solid var(--line, #e5e7eb)",
-        borderRadius: 12,
-        padding: 16,
-        boxShadow: "0 1px 3px -2px rgba(0, 0, 0, 0.08)",
-      }}
-    >
-      {children}
-    </div>
-  );
+  return <div className="card">{children}</div>;
 }
