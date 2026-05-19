@@ -6,6 +6,7 @@ import { OnboardingWizard } from "@/components/dashboard/onboarding-wizard";
 import { CarteraClientes } from "@/components/dashboard/cartera-clientes";
 import { PendingActions } from "@/components/dashboard/pending-actions";
 import { MiDia } from "@/components/dashboard/mi-dia";
+import { HistoricoSalarialWidget } from "@/components/dashboard/historico-salarial-widget";
 import { SetupRequired } from "@/components/setup-required";
 import { hasSupabaseConfig } from "@/lib/env";
 import { createServerSupabase } from "@/lib/supabase/server";
@@ -182,6 +183,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         </article>
 
         <CarteraClientes initialCount={companyCount ?? empresas.length} />
+        <HistoricoSalarialWidget />
         {activeView !== "panel" ? (
           <p className="muted span-12" style={{ marginTop: 0, fontSize: 13 }}>
             Vista activa: <strong>{activeView}</strong> — pulsa en un cliente para abrir su ficha.

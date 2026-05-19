@@ -929,6 +929,37 @@ create policy salario_hist_write on public.salario_historico
   );
 
 -- =========================================================================
+-- SPRINT 26: vista_config por especialidad del asesor
+--   Permite tener configuraciones distintas para asesores generalistas,
+--   laborales y fiscales. Para alcance='cliente' la especialidad es null.
+-- =========================================================================
+alter table public.vista_config add column if not exists especialidad text;
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'vista_config_especialidad_chk' and conrelid = 'public.vista_config'::regclass
+  ) then
+    alter table public.vista_config add constraint vista_config_especialidad_chk
+      check (especialidad is null or especialidad in ('generalista','laboral','fiscal')) not valid;
+  end if;
+end$$;
+-- La unique anterior (nombre_gestoria, alcance) deja de servir cuando hay
+-- 3 filas para alcance='asesor'. La sustituimos por una expresión que trata
+-- el null como una tupla más.
+do $$
+begin
+  if exists (
+    select 1 from pg_constraint
+    where conname = 'vista_config_nombre_gestoria_alcance_key' and conrelid = 'public.vista_config'::regclass
+  ) then
+    alter table public.vista_config drop constraint vista_config_nombre_gestoria_alcance_key;
+  end if;
+end$$;
+create unique index if not exists vista_config_unq_idx
+  on public.vista_config(nombre_gestoria, alcance, coalesce(especialidad, ''));
+
+-- =========================================================================
 -- ÚLTIMO PASO: refresca el cache de PostgREST sin reiniciar
 -- =========================================================================
 notify pgrst, 'reload schema';

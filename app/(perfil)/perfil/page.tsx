@@ -1,13 +1,12 @@
 import { AppShell } from "@/components/app-shell";
 import { PerfilForm } from "@/components/perfil/perfil-form";
-import { EquipoPanel } from "@/components/perfil/equipo-panel";
-import { VistaConfigPanel } from "@/components/perfil/vista-config-panel";
+import { PerfilTabs } from "@/components/perfil/perfil-tabs";
 import { SetupRequired } from "@/components/setup-required";
 import { hasSupabaseConfig } from "@/lib/env";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 
-export const metadata = { title: "Mi perfil · Modelo 26" };
+export const metadata = { title: "Configuración · Modelo 26" };
 
 export default async function PerfilPage() {
   if (!hasSupabaseConfig()) {
@@ -25,7 +24,6 @@ export default async function PerfilPage() {
     .maybeSingle();
 
   if (!perfil) {
-    // Crea el perfil mínimo si no existe (primera entrada vía email-only signup)
     const stub = {
       id: auth.user.id,
       email: auth.user.email ?? "",
@@ -38,9 +36,9 @@ export default async function PerfilPage() {
       created_at: new Date().toISOString(),
     };
     return (
-      <AppShell active="/perfil" showSuperAdmin={false} espacio={{ nombre: stub.email, tipo: "Mi perfil" }}>
+      <AppShell active="/perfil" showSuperAdmin={false} espacio={{ nombre: stub.email, tipo: "Mi configuración" }}>
         <header style={{ marginBottom: 8 }}>
-          <span className="eyebrow">Perfil</span>
+          <span className="eyebrow">Configuración</span>
           <h1 className="title">
             Configura <span className="brand-text">tu perfil</span>.
           </h1>
@@ -54,29 +52,22 @@ export default async function PerfilPage() {
   }
 
   const isAdmin = perfil.rol === "admin";
+  const canManage = perfil.rol === "admin" || perfil.rol === "gestor";
 
   return (
     <AppShell active="/perfil" showSuperAdmin={isAdmin} espacio={{ nombre: perfil.nombre ?? perfil.email, tipo: perfil.rol }}>
-      <header style={{ marginBottom: 8 }}>
-        <span className="eyebrow">Perfil</span>
+      <header style={{ marginBottom: 18 }}>
+        <span className="eyebrow">Configuración</span>
         <h1 className="title">
-          Configura <span className="brand-text">tu perfil</span>.
+          {canManage ? <>Configura tu <span className="brand-text">despacho</span>.</> : <>Configura <span className="brand-text">tu perfil</span>.</>}
         </h1>
         <p className="subtitle">
-          Personaliza tu nombre, foto y nombre de despacho. Tus clientes verán esta identidad cuando firmes o emitas comunicaciones.
+          {canManage
+            ? "Datos personales, equipo, vistas de cliente y de asesor en un solo sitio."
+            : "Personaliza tu nombre, foto y datos de contacto."}
         </p>
       </header>
-      <PerfilForm initial={perfil} />
-      {(perfil.rol === "admin" || perfil.rol === "gestor") ? (
-        <>
-          <div style={{ marginTop: 24 }}>
-            <EquipoPanel />
-          </div>
-          <div style={{ marginTop: 24 }}>
-            <VistaConfigPanel />
-          </div>
-        </>
-      ) : null}
+      <PerfilTabs perfil={perfil} canManage={canManage} />
     </AppShell>
   );
 }

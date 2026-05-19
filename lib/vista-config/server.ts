@@ -3,9 +3,13 @@ import { defaultModulos, mergeWithDefaults, type Alcance } from "@/lib/vista-con
 
 /**
  * Carga la config de módulos activos para la gestoría del usuario actual.
- * Si no hay usuario o gestoría, devuelve los defaults del catálogo.
  *
- * Pensado para ser llamado desde Server Components (AppShell, layouts).
+ * - alcance=asesor: usa la especialidad del propio asesor (perfiles.especialidad).
+ *   Si no la tiene, asume «generalista».
+ * - alcance=cliente: única config por gestoría (especialidad = null).
+ *
+ * Si no hay usuario / gestoría / la tabla aún no existe, devuelve los
+ * defaults del catálogo sin romper la página.
  */
 export async function loadVistaConfigForCurrentUser(alcance: Alcance): Promise<Record<string, boolean>> {
   try {
@@ -15,17 +19,21 @@ export async function loadVistaConfigForCurrentUser(alcance: Alcance): Promise<R
 
     const { data: perfil } = await supabase
       .from("perfiles")
-      .select("nombre_gestoria")
+      .select("nombre_gestoria,especialidad")
       .eq("id", auth.user.id)
       .maybeSingle();
     if (!perfil?.nombre_gestoria) return defaultModulos(alcance);
 
-    const { data: row } = await supabase
+    const esp = alcance === "asesor" ? ((perfil.especialidad as string | null) ?? "generalista") : null;
+
+    const baseQ = supabase
       .from("vista_config")
       .select("modulos")
       .eq("nombre_gestoria", perfil.nombre_gestoria)
-      .eq("alcance", alcance)
-      .maybeSingle();
+      .eq("alcance", alcance);
+    const filteredQ = esp ? baseQ.eq("especialidad", esp) : baseQ.is("especialidad", null);
+    const { data: row } = await filteredQ.maybeSingle();
+
     return mergeWithDefaults(alcance, (row?.modulos ?? null) as Record<string, boolean> | null);
   } catch {
     return defaultModulos(alcance);

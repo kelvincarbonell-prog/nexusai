@@ -54,7 +54,7 @@ const accountNav: NavItem[] = [
   { href: "/inteligencia", label: "Inteligencia", icon: LineChart },
   { href: "/crm", label: "CRM", icon: Target },
   { href: "/equipo", label: "Equipo", icon: UsersRound },
-  { href: "/perfil", label: "Mi perfil", icon: UserCircle },
+  { href: "/perfil", label: "Configuración", icon: UserCircle },
 ];
 
 const adminExtras: NavItem[] = [
