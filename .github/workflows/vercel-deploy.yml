@@ -1,4 +1,4 @@
-name: Trigger Vercel deploy
+name: Vercel deploy (CLI con token)
 
 on:
   push:
@@ -7,35 +7,84 @@ on:
   workflow_dispatch:
 
 jobs:
-  trigger-deploy:
+  deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Call Vercel deploy hook
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
+
+      - name: List teams + projects (diagnóstico)
         env:
-          HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: |
-          set -euo pipefail
-          if [ -z "${HOOK_URL:-}" ]; then
-            echo "::error::Falta el secret VERCEL_DEPLOY_HOOK_URL"
-            exit 1
-          fi
-          # Limpiamos cualquier espacio / salto de línea / comillas que se
-          # haya colado al pegar el secret.
-          HOOK_URL_CLEAN=$(printf '%s' "$HOOK_URL" | tr -d '[:space:]"' )
-          echo "URL length: ${#HOOK_URL_CLEAN} chars"
-          echo "URL prefix: ${HOOK_URL_CLEAN:0:45}..."
-          if ! [[ "$HOOK_URL_CLEAN" =~ ^https://api\.vercel\.com/v1/integrations/deploy/ ]]; then
-            echo "::error::El secret no tiene el formato esperado (https://api.vercel.com/v1/integrations/deploy/...)"
-            exit 1
-          fi
-          HTTP_CODE=$(curl -sS -o /tmp/resp -w "%{http_code}" -X POST "$HOOK_URL_CLEAN")
-          echo "HTTP $HTTP_CODE"
-          echo "--- response body ---"
-          cat /tmp/resp
+          echo "=== TEAMS ==="
+          vercel teams ls --token=$VERCEL_TOKEN || true
           echo
-          echo "---"
-          if [ "$HTTP_CODE" -ge 400 ]; then
-            echo "::error::Deploy hook devolvió $HTTP_CODE"
-            exit 1
+          echo "=== PROJECTS (default scope) ==="
+          vercel projects ls --token=$VERCEL_TOKEN || true
+
+      - name: Find the right scope for prj_ocdNYAYiJr2uXC3gUk0m16YDAMKO
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        id: find
+        run: |
+          # Buscamos el project por ID en todos los teams
+          TARGET="prj_ocdNYAYiJr2uXC3gUk0m16YDAMKO"
+
+          # Lista de teams (incluye "personal" cuando no se filtra)
+          TEAMS_JSON=$(curl -fsS -H "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v2/teams" || echo '{"teams":[]}')
+          echo "$TEAMS_JSON" | head -c 800
+          echo
+
+          # Personal scope (sin teamId)
+          PROJ=$(curl -fsS -H "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v9/projects/$TARGET" || true)
+          if echo "$PROJ" | grep -q "\"id\":\"$TARGET\""; then
+            NAME=$(echo "$PROJ" | python3 -c "import sys,json;print(json.load(sys.stdin)['name'])")
+            echo "FOUND in PERSONAL scope: name=$NAME"
+            echo "scope_arg=" >> $GITHUB_OUTPUT
+            echo "project_name=$NAME" >> $GITHUB_OUTPUT
+            exit 0
           fi
-          echo "Deploy disparado para commit ${GITHUB_SHA}"
+
+          for tid in $(echo "$TEAMS_JSON" | python3 -c "import sys,json;[print(t['id']) for t in json.load(sys.stdin).get('teams',[])]"); do
+            PROJ=$(curl -fsS -H "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v9/projects/$TARGET?teamId=$tid" || true)
+            if echo "$PROJ" | grep -q "\"id\":\"$TARGET\""; then
+              NAME=$(echo "$PROJ" | python3 -c "import sys,json;print(json.load(sys.stdin)['name'])")
+              SLUG=$(curl -fsS -H "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v2/teams/$tid" | python3 -c "import sys,json;print(json.load(sys.stdin).get('slug',''))")
+              echo "FOUND in TEAM $SLUG ($tid): name=$NAME"
+              echo "scope_arg=--scope=$SLUG" >> $GITHUB_OUTPUT
+              echo "project_name=$NAME" >> $GITHUB_OUTPUT
+              echo "team_id=$tid" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+          done
+          echo "::error::Project $TARGET no encontrado en tu cuenta"
+          exit 1
+
+      - name: Link & Deploy production
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_PROJECT_ID: prj_ocdNYAYiJr2uXC3gUk0m16YDAMKO
+          VERCEL_ORG_ID: ${{ steps.find.outputs.team_id }}
+        run: |
+          mkdir -p .vercel
+          if [ -n "${VERCEL_ORG_ID:-}" ]; then
+            echo "{\"orgId\":\"$VERCEL_ORG_ID\",\"projectId\":\"$VERCEL_PROJECT_ID\"}" > .vercel/project.json
+          else
+            # Personal scope: orgId = userId, lo obtenemos
+            UID=$(curl -fsS -H "Authorization: Bearer $VERCEL_TOKEN" https://api.vercel.com/v2/user | python3 -c "import sys,json;print(json.load(sys.stdin)['user']['id'])")
+            echo "{\"orgId\":\"$UID\",\"projectId\":\"$VERCEL_PROJECT_ID\"}" > .vercel/project.json
+          fi
+          cat .vercel/project.json
+
+          vercel pull --yes --environment=production --token=$VERCEL_TOKEN
+          vercel build --prod --token=$VERCEL_TOKEN
+          URL=$(vercel deploy --prebuilt --prod --token=$VERCEL_TOKEN)
+          echo "DEPLOYED: $URL"
+          echo "::notice::Deploy completado en $URL"
