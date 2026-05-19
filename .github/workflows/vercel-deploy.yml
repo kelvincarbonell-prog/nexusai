@@ -4,11 +4,8 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
-# El proyecto tiene "Trusted IPs / Host allowlist" en Vercel que bloquea
-# llamadas al deploy hook desde IPs externas. GitHub Actions usa rangos
-# de IP que Vercel reconoce, así que el hook funciona desde aquí aunque
-# rechace llamadas directas desde mi sandbox.
 jobs:
   trigger-deploy:
     runs-on: ubuntu-latest
@@ -17,10 +14,28 @@ jobs:
         env:
           HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
         run: |
-          if [ -z "$HOOK_URL" ]; then
+          set -euo pipefail
+          if [ -z "${HOOK_URL:-}" ]; then
             echo "::error::Falta el secret VERCEL_DEPLOY_HOOK_URL"
             exit 1
           fi
-          curl -fsS -X POST "$HOOK_URL" | tee /tmp/resp.json
+          # Limpiamos cualquier espacio / salto de línea / comillas que se
+          # haya colado al pegar el secret.
+          HOOK_URL_CLEAN=$(printf '%s' "$HOOK_URL" | tr -d '[:space:]"' )
+          echo "URL length: ${#HOOK_URL_CLEAN} chars"
+          echo "URL prefix: ${HOOK_URL_CLEAN:0:45}..."
+          if ! [[ "$HOOK_URL_CLEAN" =~ ^https://api\.vercel\.com/v1/integrations/deploy/ ]]; then
+            echo "::error::El secret no tiene el formato esperado (https://api.vercel.com/v1/integrations/deploy/...)"
+            exit 1
+          fi
+          HTTP_CODE=$(curl -sS -o /tmp/resp -w "%{http_code}" -X POST "$HOOK_URL_CLEAN")
+          echo "HTTP $HTTP_CODE"
+          echo "--- response body ---"
+          cat /tmp/resp
           echo
+          echo "---"
+          if [ "$HTTP_CODE" -ge 400 ]; then
+            echo "::error::Deploy hook devolvió $HTTP_CODE"
+            exit 1
+          fi
           echo "Deploy disparado para commit ${GITHUB_SHA}"
