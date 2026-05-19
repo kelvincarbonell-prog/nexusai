@@ -77,7 +77,11 @@ export function ClientesPageClient({ initialEmpresas, isAdmin, userId }: { initi
               {busy === "seed" ? "Creando…" : "✨ Crear 3 empresas demo"}
             </button>
           ) : null}
-          <button className="button" onClick={() => setShowNew((v) => !v)}>
+          <button
+            className="button"
+            data-cta-nuevo-cliente=""
+            onClick={() => setShowNew((v) => !v)}
+          >
             {showNew ? "Cancelar" : "+ Nuevo cliente"}
           </button>
         </div>

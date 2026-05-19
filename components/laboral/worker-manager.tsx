@@ -302,7 +302,7 @@ export function WorkerManager({ empresas, initialTab = "trabajadores" }: { empre
 
       {tab === "trabajadores" ? (
         <div style={{ display: "grid", gap: 18 }}>
-          <details>
+          <details data-trabajadores-alta="">
             <summary className="button compact" style={{ display: "inline-flex" }}>+ Alta de trabajador</summary>
             <div style={{ marginTop: 12, display: "grid", gap: 16 }}>
               <fieldset style={fsStyle}>
@@ -403,7 +403,36 @@ export function WorkerManager({ empresas, initialTab = "trabajadores" }: { empre
               <tr><th>Nombre</th><th>DNI</th><th>Puesto</th><th>Contrato</th><th>Salario</th><th>Estado</th><th style={{ width: 1, whiteSpace: "nowrap" }}>Acciones</th><th></th></tr>
             </thead>
             <tbody>
-              {trabajadores.length === 0 ? <tr><td colSpan={8} className="muted">Sin trabajadores aún.</td></tr> : null}
+              {trabajadores.length === 0 ? (
+                <tr><td colSpan={8} style={{ padding: 0 }}>
+                  <div style={{
+                    display: "grid", placeItems: "center", gap: 10,
+                    padding: "32px 24px", textAlign: "center",
+                  }}>
+                    <div style={{
+                      width: 44, height: 44, borderRadius: "50%",
+                      background: "color-mix(in srgb, var(--accent) 12%, transparent)",
+                      color: "var(--accent)",
+                      display: "grid", placeItems: "center", fontSize: 22,
+                    }}>👤</div>
+                    <strong style={{ fontSize: 14 }}>Aún no hay trabajadores</strong>
+                    <span className="muted" style={{ fontSize: 12, maxWidth: 360 }}>
+                      Da de alta el primer trabajador para empezar a calcular nóminas, vacaciones y modelos 111.
+                    </span>
+                    <button
+                      type="button"
+                      className="button compact"
+                      onClick={() => {
+                        const det = document.querySelector<HTMLDetailsElement>("[data-trabajadores-alta]");
+                        if (det) { det.open = true; det.scrollIntoView({ behavior: "smooth", block: "start" }); }
+                      }}
+                      style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
+                    >
+                      + Alta de trabajador
+                    </button>
+                  </div>
+                </td></tr>
+              ) : null}
               {trabajadores.map((t) => (
                 <tr key={t.id}>
                   <td>{t.nombre}</td>

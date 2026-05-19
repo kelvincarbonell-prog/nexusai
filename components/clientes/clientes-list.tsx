@@ -176,8 +176,50 @@ export function ClientesList({ initialEmpresas, isAdmin, userId }: { initialEmpr
           </thead>
           <tbody>
             {filtered.length === 0 ? (
-              <tr><td colSpan={7} className="muted" style={{ textAlign: "center", padding: 32 }}>
-                {search || filter !== "todos" ? "Ningún cliente coincide con el filtro." : "Aún no tienes clientes. Crea el primero."}
+              <tr><td colSpan={7} style={{ padding: 0 }}>
+                <div style={{
+                  display: "grid", placeItems: "center", gap: 10,
+                  padding: "40px 24px", textAlign: "center",
+                }}>
+                  <div style={{
+                    width: 48, height: 48, borderRadius: "50%",
+                    background: "color-mix(in srgb, var(--accent) 12%, transparent)",
+                    color: "var(--accent)",
+                    display: "grid", placeItems: "center", fontSize: 24,
+                  }}>🏢</div>
+                  {search || filter !== "todos" ? (
+                    <>
+                      <strong style={{ fontSize: 14 }}>Ningún cliente coincide con el filtro</strong>
+                      <span className="muted" style={{ fontSize: 12, maxWidth: 360 }}>
+                        Prueba a quitar la búsqueda o cambiar de pestaña.
+                      </span>
+                      <button
+                        type="button"
+                        className="button compact"
+                        onClick={() => { setSearch(""); setFilter("todos"); }}
+                      >Limpiar filtros</button>
+                    </>
+                  ) : (
+                    <>
+                      <strong style={{ fontSize: 14 }}>Aún no tienes clientes</strong>
+                      <span className="muted" style={{ fontSize: 12, maxWidth: 360 }}>
+                        Cuando crees el primer cliente o un autónomo se conecte, aparecerá aquí.
+                      </span>
+                      <button
+                        type="button"
+                        className="button compact"
+                        onClick={() => {
+                          const btn = document.querySelector<HTMLButtonElement>("[data-cta-nuevo-cliente]");
+                          btn?.click();
+                          btn?.scrollIntoView({ behavior: "smooth", block: "center" });
+                        }}
+                        style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
+                      >
+                        + Crear primer cliente
+                      </button>
+                    </>
+                  )}
+                </div>
               </td></tr>
             ) : filtered.map((e) => {
               const isEditing = editing === e.id;
