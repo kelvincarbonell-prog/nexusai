@@ -93,17 +93,41 @@ export function PerfilTabs({ perfil, canManage }: { perfil: Perfil; canManage: b
             Cada asesor verá la configuración que coincide con su especialidad asignada en
             la pestaña <strong>Equipo</strong>. Si no tiene especialidad, se aplica la de «Generalista».
           </p>
-          <div role="tablist" aria-label="Especialidad" style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+          <div
+            role="tablist"
+            aria-label="Especialidad"
+            style={{
+              display: "inline-flex",
+              gap: 4,
+              padding: 4,
+              borderRadius: 10,
+              background: "color-mix(in srgb, currentColor 6%, transparent)",
+              border: "1px solid var(--line, #e5e7eb)",
+              alignSelf: "flex-start",
+            }}
+          >
             {ESPECIALIDADES.map((e) => {
               const active = especialidad === e.key;
               return (
                 <button
                   key={e.key}
+                  type="button"
                   role="tab"
                   aria-selected={active}
                   onClick={() => setEspecialidad(e.key)}
                   title={e.descripcion}
-                  className={`button compact ${active ? "" : "ghost"}`}
+                  style={{
+                    padding: "6px 14px",
+                    borderRadius: 8,
+                    border: 0,
+                    fontSize: 13,
+                    fontWeight: active ? 600 : 500,
+                    cursor: "pointer",
+                    background: active ? "var(--card, #fff)" : "transparent",
+                    color: active ? "var(--ink)" : "var(--muted)",
+                    boxShadow: active ? "0 1px 4px -2px rgba(0,0,0,0.18)" : "none",
+                    transition: "background 0.15s, color 0.15s",
+                  }}
                 >
                   {e.label}
                 </button>
