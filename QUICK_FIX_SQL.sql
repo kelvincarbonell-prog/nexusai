@@ -960,6 +960,51 @@ create unique index if not exists vista_config_unq_idx
   on public.vista_config(nombre_gestoria, alcance, coalesce(especialidad, ''));
 
 -- =========================================================================
+-- SPRINT 27: Noticias (blog privado del gestor con info pública diaria)
+-- =========================================================================
+create table if not exists public.noticias (
+  id uuid primary key default gen_random_uuid(),
+  slug text not null unique,
+  titulo text not null,
+  resumen text not null,                    -- 1-2 frases (preview en listado)
+  contenido text not null,                  -- artículo completo (markdown)
+  fuente_codigo text not null,              -- aeat, boe, tgss, …
+  fuente_nombre text not null,
+  fuente_url text,                          -- link al boletín / nota original
+  categoria text not null,                  -- fiscal | contable | mercantil | laboral | ...
+  tags text[] not null default '{}',
+  importancia text not null default 'normal' check (importancia in ('alta','normal','baja')),
+  fecha_publicacion date not null default current_date,
+  generado_por text default 'cron',         -- cron | manual | scraper
+  vista_count integer not null default 0,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists idx_noticias_categoria_fecha
+  on public.noticias(categoria, fecha_publicacion desc);
+create index if not exists idx_noticias_fuente_fecha
+  on public.noticias(fuente_codigo, fecha_publicacion desc);
+create index if not exists idx_noticias_publi
+  on public.noticias(fecha_publicacion desc);
+
+drop trigger if exists set_updated_at_noticias on public.noticias;
+create trigger set_updated_at_noticias before update on public.noticias
+  for each row execute function public.set_updated_at();
+
+alter table public.noticias enable row level security;
+
+-- Cualquier usuario autenticado lee. Solo admin escribe (cron usa service role).
+drop policy if exists noticias_read on public.noticias;
+create policy noticias_read on public.noticias for select using (auth.uid() is not null);
+
+drop policy if exists noticias_admin_write on public.noticias;
+create policy noticias_admin_write on public.noticias
+  for all using (
+    exists (select 1 from public.perfiles p where p.id = auth.uid() and p.rol = 'admin')
+  );
+
+-- =========================================================================
 -- ÚLTIMO PASO: refresca el cache de PostgREST sin reiniciar
 -- =========================================================================
 notify pgrst, 'reload schema';

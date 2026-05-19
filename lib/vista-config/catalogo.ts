@@ -56,6 +56,7 @@ export const MODULOS_ASESOR: ModuloDef[] = [
   { key: "documentos", label: "Documentos", descripcion: "Repositorio de documentación del cliente.", rutas: ["/documentos"], default: true },
   { key: "recordatorios", label: "Recordatorios", descripcion: "Avisos automáticos y manuales.", rutas: ["/recordatorios"], default: true },
   { key: "agentes", label: "Agentes IA", descripcion: "Cobros, triaje de solicitudes, OCR, conciliación.", rutas: ["/agentes"], default: true },
+  { key: "noticias", label: "Noticias del gestor", descripcion: "Blog diario con actualidad fiscal, contable, mercantil y laboral.", rutas: ["/noticias"], default: true },
 ];
 
 /** Módulos visibles para clientes en el portal. */
