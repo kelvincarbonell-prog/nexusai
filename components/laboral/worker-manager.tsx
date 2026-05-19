@@ -304,69 +304,103 @@ export function WorkerManager({ empresas, initialTab = "trabajadores" }: { empre
         <div style={{ display: "grid", gap: 18 }}>
           <details>
             <summary className="button compact" style={{ display: "inline-flex" }}>+ Alta de trabajador</summary>
-            <div className="form two-cols" style={{ marginTop: 12 }}>
-              <input className="input" placeholder="Nombre y apellidos" value={nuevo.nombre} onChange={(e) => setNuevo({ ...nuevo, nombre: e.target.value })} />
-              <input className="input" placeholder="DNI / NIE" value={nuevo.dni} onChange={(e) => setNuevo({ ...nuevo, dni: e.target.value })} />
-              <input className="input" placeholder="Nº SS" value={nuevo.nss} onChange={(e) => setNuevo({ ...nuevo, nss: e.target.value })} />
-              <input className="input" placeholder="Puesto" value={nuevo.puesto} onChange={(e) => setNuevo({ ...nuevo, puesto: e.target.value })} />
-              <input className="input" placeholder="Email" type="email" value={nuevo.email} onChange={(e) => setNuevo({ ...nuevo, email: e.target.value })} />
-              <input className="input" placeholder="Teléfono" value={nuevo.telefono} onChange={(e) => setNuevo({ ...nuevo, telefono: e.target.value })} />
-              <select className="input" value={nuevo.tipo_contrato} onChange={(e) => setNuevo({ ...nuevo, tipo_contrato: e.target.value })}>
-                {TIPO_CONTRATO.map((t) => <option key={t} value={t}>{t}</option>)}
-              </select>
-              <input className="input" type="date" value={nuevo.fecha_alta} onChange={(e) => setNuevo({ ...nuevo, fecha_alta: e.target.value })} />
-              <input className="input" type="number" placeholder="Jornada (h/sem)" value={nuevo.jornada_horas} onChange={(e) => setNuevo({ ...nuevo, jornada_horas: Number(e.target.value) })} />
-              <input className="input" type="number" placeholder="Salario bruto anual" value={nuevo.salario_bruto_anual} onChange={(e) => setNuevo({ ...nuevo, salario_bruto_anual: Number(e.target.value) })} />
-              <input className="input" type="number" placeholder="IRPF %" value={nuevo.irpf_pct} onChange={(e) => setNuevo({ ...nuevo, irpf_pct: Number(e.target.value) })} step="0.1" />
-              <select className="input" value={nuevo.convenio_codigo} onChange={(e) => setNuevo({ ...nuevo, convenio_codigo: e.target.value, categoria_convenio: "" })}>
-                <option value="">— Convenio colectivo (opcional) —</option>
-                {convenios.map((c) => <option key={c.codigo} value={c.codigo}>{c.nombre}</option>)}
-              </select>
-              <select className="input" value={nuevo.categoria_convenio} onChange={(e) => aplicarCategoria(e.target.value)} disabled={!convenioSel}>
-                <option value="">{convenioSel ? "— Categoría del convenio —" : "Selecciona convenio primero"}</option>
-                {convenioSel?.categorias.map((cat) => (
-                  <option key={cat.code} value={cat.code}>
-                    {cat.nombre} · {new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(cat.bruto_anual)}
-                  </option>
-                ))}
-              </select>
-              <select
-                className="input"
-                title="Pagas anuales"
-                value={String(nuevo.pagas_anuales)}
-                onChange={(e) => setNuevo({ ...nuevo, pagas_anuales: Number(e.target.value) as 12 | 14 })}
-              >
-                <option value="12">12 pagas (prorrateadas)</option>
-                <option value="14">14 pagas (extra jun + dic)</option>
-              </select>
-              <label className="label" style={{ flexDirection: "row", alignItems: "center", gap: 6, fontSize: 12 }}>
-                <input
-                  type="checkbox"
-                  checked={nuevo.pagas_prorrateadas}
-                  onChange={(e) => setNuevo({ ...nuevo, pagas_prorrateadas: e.target.checked })}
-                  disabled={nuevo.pagas_anuales === 12}
-                />
-                Prorratear pagas extras
-              </label>
-              <input
-                className="input"
-                type="number"
-                min={0}
-                step="0.01"
-                placeholder="Trienio anual (€)"
-                title="Importe anual de UN trienio (según convenio). Se prorratea /12."
-                value={nuevo.trienio_importe}
-                onChange={(e) => setNuevo({ ...nuevo, trienio_importe: Number(e.target.value) })}
-              />
-              <div className="span-form">
+            <div style={{ marginTop: 12, display: "grid", gap: 16 }}>
+              <fieldset style={fsStyle}>
+                <legend style={legendStyle}>Datos personales</legend>
+                <div className="form two-cols">
+                  <input className="input" placeholder="Nombre y apellidos" value={nuevo.nombre} onChange={(e) => setNuevo({ ...nuevo, nombre: e.target.value })} />
+                  <input className="input" placeholder="DNI / NIE" value={nuevo.dni} onChange={(e) => setNuevo({ ...nuevo, dni: e.target.value })} />
+                  <input className="input" placeholder="Nº SS" value={nuevo.nss} onChange={(e) => setNuevo({ ...nuevo, nss: e.target.value })} />
+                  <input className="input" placeholder="Puesto" value={nuevo.puesto} onChange={(e) => setNuevo({ ...nuevo, puesto: e.target.value })} />
+                  <input className="input" placeholder="Email" type="email" value={nuevo.email} onChange={(e) => setNuevo({ ...nuevo, email: e.target.value })} />
+                  <input className="input" placeholder="Teléfono" value={nuevo.telefono} onChange={(e) => setNuevo({ ...nuevo, telefono: e.target.value })} />
+                </div>
+              </fieldset>
+
+              <fieldset style={fsStyle}>
+                <legend style={legendStyle}>Contrato y convenio</legend>
+                <div className="form two-cols">
+                  <select className="input" value={nuevo.tipo_contrato} onChange={(e) => setNuevo({ ...nuevo, tipo_contrato: e.target.value })}>
+                    {TIPO_CONTRATO.map((t) => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                  <label className="label">
+                    Fecha de alta
+                    <input className="input" type="date" value={nuevo.fecha_alta} onChange={(e) => setNuevo({ ...nuevo, fecha_alta: e.target.value })} />
+                  </label>
+                  <label className="label">
+                    Jornada (h/sem)
+                    <input className="input" type="number" value={nuevo.jornada_horas} onChange={(e) => setNuevo({ ...nuevo, jornada_horas: Number(e.target.value) })} />
+                  </label>
+                  <select className="input" value={nuevo.convenio_codigo} onChange={(e) => setNuevo({ ...nuevo, convenio_codigo: e.target.value, categoria_convenio: "" })}>
+                    <option value="">— Convenio colectivo (opcional) —</option>
+                    {convenios.map((c) => <option key={c.codigo} value={c.codigo}>{c.nombre}</option>)}
+                  </select>
+                  <select className="input span-form" value={nuevo.categoria_convenio} onChange={(e) => aplicarCategoria(e.target.value)} disabled={!convenioSel}>
+                    <option value="">{convenioSel ? "— Categoría del convenio —" : "Selecciona convenio primero"}</option>
+                    {convenioSel?.categorias.map((cat) => (
+                      <option key={cat.code} value={cat.code}>
+                        {cat.nombre} · {new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(cat.bruto_anual)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </fieldset>
+
+              <fieldset style={fsStyle}>
+                <legend style={legendStyle}>Nómina y retribución</legend>
+                <div className="form two-cols">
+                  <label className="label">
+                    Salario bruto anual (€)
+                    <input className="input" type="number" value={nuevo.salario_bruto_anual} onChange={(e) => setNuevo({ ...nuevo, salario_bruto_anual: Number(e.target.value) })} />
+                  </label>
+                  <label className="label">
+                    IRPF % (override)
+                    <input className="input" type="number" placeholder="auto" value={nuevo.irpf_pct} onChange={(e) => setNuevo({ ...nuevo, irpf_pct: Number(e.target.value) })} step="0.1" />
+                  </label>
+                  <label className="label">
+                    Pagas anuales
+                    <select
+                      className="input"
+                      value={String(nuevo.pagas_anuales)}
+                      onChange={(e) => setNuevo({ ...nuevo, pagas_anuales: Number(e.target.value) as 12 | 14 })}
+                    >
+                      <option value="12">12 pagas</option>
+                      <option value="14">14 pagas (jun + dic)</option>
+                    </select>
+                  </label>
+                  <label className="label">
+                    Trienio anual (€)
+                    <input
+                      className="input"
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      title="Importe anual de UN trienio (según convenio). Se prorratea /12."
+                      value={nuevo.trienio_importe}
+                      onChange={(e) => setNuevo({ ...nuevo, trienio_importe: Number(e.target.value) })}
+                    />
+                  </label>
+                  <label className="label span-form" style={{ flexDirection: "row", alignItems: "center", gap: 8, fontSize: 13, opacity: nuevo.pagas_anuales === 12 ? 0.5 : 1 }}>
+                    <input
+                      type="checkbox"
+                      checked={nuevo.pagas_prorrateadas}
+                      onChange={(e) => setNuevo({ ...nuevo, pagas_prorrateadas: e.target.checked })}
+                      disabled={nuevo.pagas_anuales === 12}
+                    />
+                    Prorratear pagas extras en las 12 mensualidades (si NO, se cobran en junio + diciembre)
+                  </label>
+                </div>
+              </fieldset>
+
+              <div style={{ display: "flex", justifyContent: "flex-end" }}>
                 <button className="button" onClick={altaTrabajador}>Crear trabajador</button>
               </div>
             </div>
           </details>
 
-          <table className="table">
+          <table className="table" style={{ tableLayout: "auto" }}>
             <thead>
-              <tr><th>Nombre</th><th>DNI</th><th>Puesto</th><th>Contrato</th><th>Salario</th><th>Estado</th><th>Documentos</th><th></th></tr>
+              <tr><th>Nombre</th><th>DNI</th><th>Puesto</th><th>Contrato</th><th>Salario</th><th>Estado</th><th style={{ width: 1, whiteSpace: "nowrap" }}>Acciones</th><th></th></tr>
             </thead>
             <tbody>
               {trabajadores.length === 0 ? <tr><td colSpan={8} className="muted">Sin trabajadores aún.</td></tr> : null}
@@ -379,51 +413,49 @@ export function WorkerManager({ empresas, initialTab = "trabajadores" }: { empre
                   <td>{t.salario_bruto_anual ? `${t.salario_bruto_anual} €` : "-"}</td>
                   <td><span className={`status ${t.activo ? "" : "warning"}`}>{t.activo ? "activo" : "baja"}</span></td>
                   <td style={{ whiteSpace: "nowrap" }}>
-                    <button
-                      className="button secondary compact"
-                      title="Descargar Modelo 145"
-                      onClick={() => descargarPdf(`/api/laboral/modelo-145?trabajador_id=${t.id}`, `modelo-145-${t.dni ?? t.id.slice(0, 8)}.pdf`)}
-                    >M-145</button>{" "}
-                    <button
-                      className="button secondary compact"
-                      title="Calcular finiquito"
-                      onClick={() => setFiniquitoTrabajador(t)}
-                    >Finiquito</button>{" "}
-                    <button
-                      className="button secondary compact"
-                      title="Bonificaciones SS"
-                      onClick={() => setBonisTrabajador(t)}
-                    >Bonis</button>{" "}
-                    <button
-                      className="button secondary compact"
-                      title="Atrasos retroactivos por subida salarial"
-                      onClick={() => setAtrasosTrabajador(t)}
-                    >Atrasos</button>{" "}
-                    <button
-                      className="button secondary compact"
-                      title="Histórico salarial del trabajador"
-                      onClick={() => setHistSalarioTrab(t)}
-                    >Histórico</button>{" "}
-                    <button
-                      className="button secondary compact"
-                      title="Generar XML Contrat@ (SEPE)"
-                      onClick={() => setAccionRapida({ trabajador: t, accion: "contrata" })}
-                    >Contrat@</button>{" "}
-                    <button
-                      className="button secondary compact"
-                      title="Comunicar parte IT (Delt@)"
-                      onClick={() => setAccionRapida({ trabajador: t, accion: "parte-it" })}
-                    >Parte IT</button>{" "}
-                    <button
-                      className="button secondary compact"
-                      title="Anticipo de nómina"
-                      onClick={() => setAccionRapida({ trabajador: t, accion: "anticipo" })}
-                    >Anticipo</button>{" "}
-                    <button
-                      className="button secondary compact"
-                      title="Registrar embargo judicial"
-                      onClick={() => setAccionRapida({ trabajador: t, accion: "embargo" })}
-                    >Embargo</button>
+                    <div style={{ display: "inline-flex", gap: 4, alignItems: "center" }}>
+                      <button
+                        className="button secondary compact"
+                        title="Calcular finiquito"
+                        onClick={() => setFiniquitoTrabajador(t)}
+                      >Finiquito</button>
+                      <button
+                        className="button secondary compact"
+                        title="Histórico salarial del trabajador"
+                        onClick={() => setHistSalarioTrab(t)}
+                      >Histórico</button>
+                      <details className="action-menu" style={{ position: "relative", display: "inline-block" }}>
+                        <summary
+                          className="button secondary compact"
+                          style={{ listStyle: "none", cursor: "pointer", userSelect: "none" }}
+                          title="Más acciones"
+                        >Más ▾</summary>
+                        <div
+                          style={{
+                            position: "absolute",
+                            right: 0,
+                            top: "calc(100% + 4px)",
+                            zIndex: 50,
+                            background: "var(--card, #fff)",
+                            border: "1px solid var(--line, #e5e7eb)",
+                            borderRadius: 10,
+                            boxShadow: "0 18px 40px -24px rgba(0,0,0,0.35)",
+                            padding: 6,
+                            display: "grid",
+                            gap: 2,
+                            minWidth: 200,
+                          }}
+                        >
+                          <MenuItem onClick={() => descargarPdf(`/api/laboral/modelo-145?trabajador_id=${t.id}`, `modelo-145-${t.dni ?? t.id.slice(0, 8)}.pdf`)}>📄 Descargar Modelo 145</MenuItem>
+                          <MenuItem onClick={() => setBonisTrabajador(t)}>💸 Bonificaciones SS</MenuItem>
+                          <MenuItem onClick={() => setAtrasosTrabajador(t)}>📈 Atrasos retroactivos</MenuItem>
+                          <MenuItem onClick={() => setAccionRapida({ trabajador: t, accion: "contrata" })}>📨 Generar Contrat@ (SEPE)</MenuItem>
+                          <MenuItem onClick={() => setAccionRapida({ trabajador: t, accion: "parte-it" })}>🏥 Parte IT (Delt@)</MenuItem>
+                          <MenuItem onClick={() => setAccionRapida({ trabajador: t, accion: "anticipo" })}>💰 Anticipo nómina</MenuItem>
+                          <MenuItem onClick={() => setAccionRapida({ trabajador: t, accion: "embargo" })}>⚖️ Embargo judicial</MenuItem>
+                        </div>
+                      </details>
+                    </div>
                   </td>
                   <td>
                     {t.activo ? <button className="button danger compact" onClick={() => bajaTrabajador(t.id)}>Dar de baja</button> : null}
@@ -597,5 +629,49 @@ export function WorkerManager({ empresas, initialTab = "trabajadores" }: { empre
         />
       ) : null}
     </section>
+  );
+}
+
+const fsStyle: React.CSSProperties = {
+  border: "1px solid var(--line, #e5e7eb)",
+  borderRadius: 10,
+  padding: 14,
+  margin: 0,
+};
+const legendStyle: React.CSSProperties = {
+  padding: "0 8px",
+  fontSize: 11,
+  textTransform: "uppercase",
+  letterSpacing: 0.6,
+  opacity: 0.7,
+  fontWeight: 600,
+};
+
+function MenuItem({ children, onClick }: { children: React.ReactNode; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={(e) => {
+        // Cierra el <details> padre tras click
+        const det = (e.currentTarget.closest("details") as HTMLDetailsElement | null);
+        if (det) det.open = false;
+        onClick();
+      }}
+      style={{
+        background: "transparent",
+        border: 0,
+        textAlign: "left",
+        padding: "8px 10px",
+        borderRadius: 6,
+        cursor: "pointer",
+        fontSize: 13,
+        color: "var(--ink, #111)",
+        width: "100%",
+      }}
+      onMouseEnter={(e) => (e.currentTarget.style.background = "color-mix(in srgb, var(--accent) 8%, transparent)")}
+      onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+    >
+      {children}
+    </button>
   );
 }
