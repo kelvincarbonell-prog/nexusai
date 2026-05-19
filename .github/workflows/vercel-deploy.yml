@@ -19,72 +19,74 @@ jobs:
       - name: Install Vercel CLI
         run: npm install -g vercel@latest
 
-      - name: List teams + projects (diagnóstico)
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-        run: |
-          echo "=== TEAMS ==="
-          vercel teams ls --token=$VERCEL_TOKEN || true
-          echo
-          echo "=== PROJECTS (default scope) ==="
-          vercel projects ls --token=$VERCEL_TOKEN || true
-
-      - name: Find the right scope for prj_ocdNYAYiJr2uXC3gUk0m16YDAMKO
+      - name: Resolve scope of prj_ocdNYAYiJr2uXC3gUk0m16YDAMKO
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         id: find
         run: |
-          # Buscamos el project por ID en todos los teams
+          set -euo pipefail
           TARGET="prj_ocdNYAYiJr2uXC3gUk0m16YDAMKO"
+          ORG_ID=""
 
-          # Lista de teams (incluye "personal" cuando no se filtra)
-          TEAMS_JSON=$(curl -fsS -H "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v2/teams" || echo '{"teams":[]}')
-          echo "$TEAMS_JSON" | head -c 800
-          echo
+          TEAMS_JSON=$(curl -fsS -H "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v2/teams")
 
-          # Personal scope (sin teamId)
-          PROJ=$(curl -fsS -H "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v9/projects/$TARGET" || true)
-          if echo "$PROJ" | grep -q "\"id\":\"$TARGET\""; then
-            NAME=$(echo "$PROJ" | python3 -c "import sys,json;print(json.load(sys.stdin)['name'])")
-            echo "FOUND in PERSONAL scope: name=$NAME"
-            echo "scope_arg=" >> $GITHUB_OUTPUT
-            echo "project_name=$NAME" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-
+          # Itera por todos los teams del usuario
           for tid in $(echo "$TEAMS_JSON" | python3 -c "import sys,json;[print(t['id']) for t in json.load(sys.stdin).get('teams',[])]"); do
-            PROJ=$(curl -fsS -H "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v9/projects/$TARGET?teamId=$tid" || true)
-            if echo "$PROJ" | grep -q "\"id\":\"$TARGET\""; then
-              NAME=$(echo "$PROJ" | python3 -c "import sys,json;print(json.load(sys.stdin)['name'])")
-              SLUG=$(curl -fsS -H "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v2/teams/$tid" | python3 -c "import sys,json;print(json.load(sys.stdin).get('slug',''))")
-              echo "FOUND in TEAM $SLUG ($tid): name=$NAME"
-              echo "scope_arg=--scope=$SLUG" >> $GITHUB_OUTPUT
+            HTTP=$(curl -s -o /tmp/proj.json -w '%{http_code}' -H "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v9/projects/$TARGET?teamId=$tid")
+            if [ "$HTTP" = "200" ]; then
+              NAME=$(python3 -c "import json;print(json.load(open('/tmp/proj.json'))['name'])")
+              SLUG=$(python3 -c "import sys,json;[print(t['slug']) for t in json.load(sys.stdin).get('teams',[]) if t['id']=='$tid']" <<< "$TEAMS_JSON")
+              echo "✓ Encontrado en team $SLUG ($tid) → project name=$NAME"
+              ORG_ID="$tid"
+              echo "org_id=$tid" >> $GITHUB_OUTPUT
+              echo "team_slug=$SLUG" >> $GITHUB_OUTPUT
               echo "project_name=$NAME" >> $GITHUB_OUTPUT
-              echo "team_id=$tid" >> $GITHUB_OUTPUT
-              exit 0
+              break
             fi
           done
-          echo "::error::Project $TARGET no encontrado en tu cuenta"
-          exit 1
 
-      - name: Link & Deploy production
+          if [ -z "$ORG_ID" ]; then
+            # Fallback: personal scope con userId
+            USER_ID=$(curl -fsS -H "Authorization: Bearer $VERCEL_TOKEN" https://api.vercel.com/v2/user | python3 -c "import sys,json;print(json.load(sys.stdin)['user']['id'])")
+            HTTP=$(curl -s -o /tmp/proj.json -w '%{http_code}' -H "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v9/projects/$TARGET")
+            if [ "$HTTP" = "200" ]; then
+              echo "✓ Encontrado en personal scope ($USER_ID)"
+              echo "org_id=$USER_ID" >> $GITHUB_OUTPUT
+              echo "project_name=$(python3 -c "import json;print(json.load(open('/tmp/proj.json'))['name'])")" >> $GITHUB_OUTPUT
+            else
+              echo "::error::Project $TARGET no encontrado"
+              exit 1
+            fi
+          fi
+
+      - name: Vercel pull + build + deploy production
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_PROJECT_ID: prj_ocdNYAYiJr2uXC3gUk0m16YDAMKO
-          VERCEL_ORG_ID: ${{ steps.find.outputs.team_id }}
         run: |
-          mkdir -p .vercel
-          if [ -n "${VERCEL_ORG_ID:-}" ]; then
-            echo "{\"orgId\":\"$VERCEL_ORG_ID\",\"projectId\":\"$VERCEL_PROJECT_ID\"}" > .vercel/project.json
-          else
-            # Personal scope: orgId = userId, lo obtenemos
-            UID=$(curl -fsS -H "Authorization: Bearer $VERCEL_TOKEN" https://api.vercel.com/v2/user | python3 -c "import sys,json;print(json.load(sys.stdin)['user']['id'])")
-            echo "{\"orgId\":\"$UID\",\"projectId\":\"$VERCEL_PROJECT_ID\"}" > .vercel/project.json
-          fi
-          cat .vercel/project.json
+          set -euo pipefail
+          ORG_ID="${{ steps.find.outputs.org_id }}"
+          PROJ_ID="prj_ocdNYAYiJr2uXC3gUk0m16YDAMKO"
 
+          mkdir -p .vercel
+          printf '{"orgId":"%s","projectId":"%s"}' "$ORG_ID" "$PROJ_ID" > .vercel/project.json
+          cat .vercel/project.json
+          echo
+
+          echo "::group::vercel pull"
           vercel pull --yes --environment=production --token=$VERCEL_TOKEN
+          echo "::endgroup::"
+
+          echo "::group::vercel build"
           vercel build --prod --token=$VERCEL_TOKEN
-          URL=$(vercel deploy --prebuilt --prod --token=$VERCEL_TOKEN)
-          echo "DEPLOYED: $URL"
-          echo "::notice::Deploy completado en $URL"
+          echo "::endgroup::"
+
+          echo "::group::vercel deploy"
+          DEPLOY_URL=$(vercel deploy --prebuilt --prod --token=$VERCEL_TOKEN)
+          echo "::endgroup::"
+
+          echo "🚀 DEPLOY URL: $DEPLOY_URL"
+          echo "::notice title=Deploy listo::$DEPLOY_URL"
+          echo "## ✅ Deploy listo" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "URL: <$DEPLOY_URL>" >> $GITHUB_STEP_SUMMARY
+          echo "Commit: \`${GITHUB_SHA::7}\`" >> $GITHUB_STEP_SUMMARY
