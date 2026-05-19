@@ -10,10 +10,12 @@ import {
   Receipt,
   Mail,
   Zap,
+  ShieldAlert,
   ArrowRight,
 } from "lucide-react";
 import { DuplicadosModal } from "@/components/dashboard/duplicados-modal";
 import { Borrador303Modal } from "@/components/dashboard/borrador-303-modal";
+import { RiesgoAeatModal } from "@/components/dashboard/riesgo-aeat-modal";
 
 /**
  * Atajos automáticos para gestor fiscal: las acciones de mayor impacto
@@ -25,7 +27,7 @@ type Wow = {
   titulo: string;
   descripcion: string;
   accent: boolean;
-} & ({ href: string; action?: undefined } | { action: "duplicados" | "borrador303"; href?: undefined });
+} & ({ href: string; action?: undefined } | { action: "duplicados" | "borrador303" | "riesgo-aeat"; href?: undefined });
 
 const WOWS: Wow[] = [
   {
@@ -70,10 +72,17 @@ const WOWS: Wow[] = [
     href: "/bancos",
     accent: true,
   },
+  {
+    Icon: ShieldAlert,
+    titulo: "Riesgo AEAT por cliente",
+    descripcion: "Score 0-100 y red flags por empresa para priorizar tus revisiones internas.",
+    action: "riesgo-aeat",
+    accent: false,
+  },
 ];
 
 export function WowAutomations() {
-  const [openModal, setOpenModal] = useState<null | "duplicados" | "borrador303">(null);
+  const [openModal, setOpenModal] = useState<null | "duplicados" | "borrador303" | "riesgo-aeat">(null);
 
   const cardStyle = (accent: boolean): React.CSSProperties => ({
     display: "grid",
@@ -139,7 +148,7 @@ export function WowAutomations() {
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 10 }}>
         {WOWS.map((w) => {
-          if (w.action === "duplicados" || w.action === "borrador303") {
+          if (w.action === "duplicados" || w.action === "borrador303" || w.action === "riesgo-aeat") {
             return (
               <button
                 key={w.titulo}
@@ -170,6 +179,7 @@ export function WowAutomations() {
 
       {openModal === "duplicados" && <DuplicadosModal onClose={() => setOpenModal(null)} />}
       {openModal === "borrador303" && <Borrador303Modal onClose={() => setOpenModal(null)} />}
+      {openModal === "riesgo-aeat" && <RiesgoAeatModal onClose={() => setOpenModal(null)} />}
     </article>
   );
 }

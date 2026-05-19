@@ -35,13 +35,14 @@ type ResumenAmable = { lineas: ResumenLinea[]; view: ResultView | null };
 
 /**
  * Convierte el `result` crudo de un agente en KPIs legibles + un link
- * a la pantalla donde se ve el trabajo terminado.
+ * a la pantalla donde se ve el trabajo terminado. Cada agente lleva a
+ * SU pantalla específica (no todos a AEAT).
  */
 function resumenAmable(agent: AgentSpec, result: unknown, empresaId: string): ResumenAmable {
   const r = (result ?? {}) as Record<string, unknown>;
   const lineas: ResumenLinea[] = [];
 
-  // --- KPIs por id de agente ---
+  // === FISCAL ===
   if (agent.id === "fiscal-calcular-modelo") {
     const cas = (r.casillas ?? {}) as Record<string, number>;
     const cuotaRep = cas.c27 ?? cas.c03 ?? 0;
@@ -54,7 +55,41 @@ function resumenAmable(agent: AgentSpec, result: unknown, empresaId: string): Re
     if (warns.length) lineas.push({ label: "Avisos", valor: String(warns.length), tono: "warn" });
     const ejercicio = (r.ejercicio as number | undefined) ?? new Date().getUTCFullYear();
     const periodo = (r.periodo as string | undefined) ?? "1T";
-    return { lineas, view: { label: "Abrir borrador en AEAT", href: `/aeat?empresa=${empresaId}&modelo=303&ejercicio=${ejercicio}&periodo=${periodo}` } };
+    // El modelo concreto sale del input del agente (303, 130, 111…) — fallback 303
+    const modeloInput = (r.modelo as string | undefined) ?? "303";
+    return { lineas, view: { label: `Abrir borrador ${modeloInput}`, href: `/aeat?empresa=${empresaId}&modelo=${modeloInput}&ejercicio=${ejercicio}&periodo=${periodo}` } };
+  }
+
+  if (agent.id === "fiscal-presentar-modelo") {
+    if (r.csv) lineas.push({ label: "Justificante AEAT (CSV)", valor: String(r.csv), tono: "ok" });
+    if (r.modelo) lineas.push({ label: "Modelo", valor: String(r.modelo) });
+    if (r.periodo) lineas.push({ label: "Periodo", valor: String(r.periodo) });
+    return { lineas, view: { label: "Ver historial AEAT", href: `/aeat?empresa=${empresaId}` } };
+  }
+
+  if (agent.id === "fiscal-calcular-prorrata") {
+    if (r.prorrata_general != null) lineas.push({ label: "Prorrata general", valor: `${Number(r.prorrata_general).toFixed(2)} %` });
+    if (r.tipo) lineas.push({ label: "Tipo aplicable", valor: String(r.tipo) });
+    return { lineas, view: { label: "Ver contabilidad", href: `/clientes/${empresaId}?tab=contabilidad` } };
+  }
+
+  if (agent.id === "fiscal-cerrar-ejercicio") {
+    if (r.asientos_creados) lineas.push({ label: "Asientos creados", valor: String(r.asientos_creados) });
+    if (r.resultado != null) lineas.push({ label: "Resultado ejercicio", valor: EUR(Number(r.resultado)), tono: Number(r.resultado) > 0 ? "ok" : Number(r.resultado) < 0 ? "bad" : undefined });
+    if (r.preview) lineas.push({ label: "Modo", valor: "Previa (no aplicada)", tono: "warn" });
+    return { lineas, view: { label: "Abrir contabilidad del cliente", href: `/clientes/${empresaId}?tab=contabilidad` } };
+  }
+
+  if (agent.id === "fiscal-calendario") {
+    const items = (r.items as unknown[] | undefined) ?? [];
+    lineas.push({ label: "Próximos vencimientos", valor: String(items.length) });
+    return { lineas, view: { label: "Abrir calendario fiscal del cliente", href: `/clientes/${empresaId}?tab=obligaciones` } };
+  }
+
+  // === LABORAL ===
+  if (agent.id === "laboral-alta-trabajador") {
+    if (r.id || r.trabajador_id) lineas.push({ label: "Trabajador creado", valor: String(r.nombre ?? "✓"), tono: "ok" });
+    return { lineas, view: { label: "Abrir plantilla de trabajadores", href: `/clientes/${empresaId}?tab=laboral` } };
   }
 
   if (agent.id === "laboral-calcular-nomina") {
@@ -71,38 +106,56 @@ function resumenAmable(agent: AgentSpec, result: unknown, empresaId: string): Re
     if (f.bruto) lineas.push({ label: "Bruto", valor: EUR(Number(f.bruto)) });
     if (f.neto) lineas.push({ label: "Neto a abonar", valor: EUR(Number(f.neto)), tono: "ok" });
     if (f.indemnizacion) lineas.push({ label: "Indemnización", valor: EUR(Number(f.indemnizacion)) });
-    return { lineas, view: { label: "Ver área laboral del cliente", href: `/clientes/${empresaId}?tab=laboral` } };
+    return { lineas, view: { label: "Abrir área laboral del cliente", href: `/clientes/${empresaId}?tab=laboral` } };
   }
 
-  if (agent.id === "laboral-alta-trabajador") {
-    if (r.id) lineas.push({ label: "Trabajador creado", valor: String(r.nombre ?? "✓"), tono: "ok" });
-    return { lineas, view: { label: "Ver plantilla", href: `/clientes/${empresaId}?tab=laboral` } };
+  if (agent.id === "laboral-bonificaciones") {
+    if (r.total_bonificacion != null) lineas.push({ label: "Bonificación mensual", valor: EUR(Number(r.total_bonificacion)), tono: "ok" });
+    const items = (r.bonificaciones as unknown[] | undefined) ?? [];
+    if (items.length) lineas.push({ label: "Reducciones aplicables", valor: String(items.length) });
+    return { lineas, view: { label: "Ver bonificaciones del trabajador", href: `/clientes/${empresaId}?tab=laboral` } };
   }
 
-  if (agent.id === "fiscal-cerrar-ejercicio") {
-    if (r.asientos_creados) lineas.push({ label: "Asientos creados", valor: String(r.asientos_creados) });
-    if (r.resultado) lineas.push({ label: "Resultado ejercicio", valor: EUR(Number(r.resultado)) });
-    return { lineas, view: { label: "Abrir contabilidad", href: `/clientes/${empresaId}?tab=contabilidad` } };
-  }
-
-  if (agent.id === "fiscal-presentar-modelo") {
-    if (r.csv) lineas.push({ label: "Justificante AEAT", valor: String(r.csv), tono: "ok" });
-    return { lineas, view: { label: "Ver historial AEAT", href: "/aeat" } };
-  }
-
-  if (agent.id === "fiscal-calendario" || agent.id === "laboral-calendario") {
+  if (agent.id === "laboral-calendario") {
     const items = (r.items as unknown[] | undefined) ?? [];
-    lineas.push({ label: "Eventos próximos", valor: String(items.length) });
-    return { lineas, view: { label: "Ver calendario completo", href: agent.id === "fiscal-calendario" ? "/aeat" : "/laboral" } };
+    lineas.push({ label: "Próximos vencimientos", valor: String(items.length) });
+    return { lineas, view: { label: "Abrir calendario laboral", href: `/clientes/${empresaId}?tab=laboral` } };
   }
 
-  // --- Fallback por categoría ---
+  // === FACTURACIÓN ===
+  if (agent.id === "factura-rapida") {
+    if (r.numero) lineas.push({ label: "Nº factura", valor: String(r.numero) });
+    if (r.total != null) lineas.push({ label: "Total", valor: EUR(Number(r.total)), tono: "ok" });
+    return { lineas, view: { label: "Abrir facturas emitidas del cliente", href: `/clientes/${empresaId}?tab=ingresos` } };
+  }
+
+  if (agent.id === "factura-recordatorio") {
+    if (r.enviado_a) lineas.push({ label: "Enviado a", valor: String(r.enviado_a), tono: "ok" });
+    if (r.factura_numero) lineas.push({ label: "Factura", valor: String(r.factura_numero) });
+    if (r.importe != null) lineas.push({ label: "Importe vencido", valor: EUR(Number(r.importe)), tono: "warn" });
+    return { lineas, view: { label: "Ver facturas vencidas", href: `/facturacion?filtro=vencidas&empresa=${empresaId}` } };
+  }
+
+  // === ANÁLISIS ===
+  if (agent.id === "analisis-inteligencia") {
+    if (r.score != null) lineas.push({ label: "Score de salud", valor: String(r.score) });
+    if (r.alertas != null) lineas.push({ label: "Alertas", valor: String(r.alertas), tono: Number(r.alertas) > 0 ? "warn" : "ok" });
+    return { lineas, view: { label: "Abrir inteligencia del cliente", href: `/inteligencia?empresa=${empresaId}` } };
+  }
+
+  if (agent.id === "analisis-duplicados") {
+    const dup = (r.posibles_duplicados as unknown[] | undefined) ?? [];
+    lineas.push({ label: "Posibles duplicados", valor: String(dup.length), tono: dup.length > 0 ? "warn" : "ok" });
+    return { lineas, view: { label: "Abrir facturación del cliente", href: `/clientes/${empresaId}?tab=ingresos` } };
+  }
+
+  // === Fallback genérico por categoría (mejor que /aeat por defecto) ===
   const byCat: Record<AgentSpec["category"], { label: string; href: string }> = {
-    fiscal: { label: "Ir a Modelos AEAT", href: "/aeat" },
-    laboral: { label: "Ir a Laboral", href: "/laboral" },
-    facturacion: { label: "Ir a Facturación", href: "/facturacion" },
-    contabilidad: { label: "Ir a Contabilidad", href: "/contabilidad" },
-    analisis: { label: "Ver inteligencia", href: "/inteligencia" },
+    fiscal: { label: "Abrir ficha del cliente", href: `/clientes/${empresaId}?tab=modelos` },
+    laboral: { label: "Abrir área laboral del cliente", href: `/clientes/${empresaId}?tab=laboral` },
+    facturacion: { label: "Abrir facturación del cliente", href: `/clientes/${empresaId}?tab=ingresos` },
+    contabilidad: { label: "Abrir contabilidad del cliente", href: `/clientes/${empresaId}?tab=contabilidad` },
+    analisis: { label: "Abrir inteligencia del cliente", href: `/inteligencia?empresa=${empresaId}` },
   };
   return { lineas, view: byCat[agent.category] };
 }
