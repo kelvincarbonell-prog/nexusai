@@ -115,7 +115,9 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         </section>
       ) : null}
 
-      <MiDia nombre={profile?.nombre ?? undefined} />
+      <section className="grid">
+        <MiDia nombre={profile?.nombre ?? undefined} />
+      </section>
 
       <PendingActions />
 
@@ -123,7 +125,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         <UpcomingObligations empresas={empresas} />
         <TareasWidget />
 
-        <article className="card span-5">
+        <article className="card span-7">
           <div className="topbar" style={{ border: 0, padding: 0, margin: 0 }}>
             <span className="card-eyebrow">Honorarios YTD</span>
             <div className="chart-tabs">
@@ -135,6 +137,29 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
           <div className="metric">€ 84.620</div>
           <div className="metric-foot good">+14% vs 2025 &nbsp;·&nbsp; meta Q4 · € 180k</div>
           <Sparkline values={[40, 44, 50, 48, 55, 60, 64, 70, 73, 78, 80, 84]} />
+        </article>
+
+        <article className="card span-5">
+          <span className="card-eyebrow">Esta semana</span>
+          <div style={{ display: "grid", gap: 10, marginTop: 8 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+              <span style={{ fontSize: 13 }}>Modelos firmados</span>
+              <strong style={{ fontSize: 18, fontFamily: "var(--mono, monospace)" }}>12</strong>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+              <span style={{ fontSize: 13 }}>Nóminas generadas</span>
+              <strong style={{ fontSize: 18, fontFamily: "var(--mono, monospace)" }}>47</strong>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+              <span style={{ fontSize: 13 }}>Facturas procesadas</span>
+              <strong style={{ fontSize: 18, fontFamily: "var(--mono, monospace)" }}>318</strong>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+              <span style={{ fontSize: 13 }}>Conciliación bancaria</span>
+              <strong style={{ fontSize: 18, fontFamily: "var(--mono, monospace)", color: "var(--good)" }}>98%</strong>
+            </div>
+          </div>
+          <div className="metric-foot accent" style={{ marginTop: 12 }}>≈ 31 h 12 min ahorradas</div>
         </article>
 
         <article className="card span-12">
