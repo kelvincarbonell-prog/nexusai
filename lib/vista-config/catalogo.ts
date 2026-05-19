@@ -10,6 +10,12 @@
 
 export type Alcance = "asesor" | "cliente";
 
+export type SubModuloDef = {
+  key: string;            // se guarda como "<modulo>.<subkey>" en config
+  label: string;
+  default?: boolean;      // default true si no se especifica
+};
+
 export type ModuloDef = {
   key: string;
   label: string;
@@ -18,13 +24,29 @@ export type ModuloDef = {
   rutas: string[];
   /** Si está activado por defecto. */
   default: boolean;
+  /** Sub-pestañas opcionales dentro del módulo. */
+  subModulos?: SubModuloDef[];
 };
 
 /** Módulos visibles para los asesores del equipo (vista interna). */
 export const MODULOS_ASESOR: ModuloDef[] = [
   { key: "dashboard", label: "Dashboard", descripcion: "Panel inicial con bandeja, KPIs y alertas.", rutas: ["/"], default: true },
   { key: "clientes", label: "Clientes", descripcion: "Cartera de empresas y autónomos asignados.", rutas: ["/clientes"], default: true },
-  { key: "laboral", label: "Laboral / Nóminas", descripcion: "Trabajadores, nóminas, cuadrante, fichajes, finiquitos.", rutas: ["/laboral"], default: true },
+  {
+    key: "laboral",
+    label: "Laboral / Nóminas",
+    descripcion: "Trabajadores, nóminas, cuadrante, fichajes, finiquitos.",
+    rutas: ["/laboral"],
+    default: true,
+    subModulos: [
+      { key: "trabajadores", label: "Trabajadores" },
+      { key: "ausencias", label: "Ausencias e IT" },
+      { key: "horario", label: "Fichajes" },
+      { key: "nominas", label: "Nóminas" },
+      { key: "cuadrante", label: "Cuadrante" },
+      { key: "calendario", label: "Calendario laboral" },
+    ],
+  },
   { key: "fiscal", label: "Fiscal / AEAT", descripcion: "Modelos 303, 130, 390, 200, 111, 347, 349, etc.", rutas: ["/declaraciones", "/aeat"], default: true },
   { key: "contabilidad", label: "Contabilidad", descripcion: "Diario, mayor, balances, cierre y apertura.", rutas: ["/contabilidad"], default: true },
   { key: "bancos", label: "Bancos", descripcion: "Conciliación bancaria PSD2, importación y categorización.", rutas: ["/bancos"], default: true },
@@ -39,14 +61,52 @@ export const MODULOS_ASESOR: ModuloDef[] = [
 /** Módulos visibles para clientes en el portal. */
 export const MODULOS_CLIENTE: ModuloDef[] = [
   { key: "inicio", label: "Inicio", descripcion: "Resumen de su negocio.", rutas: ["/cliente"], default: true },
-  { key: "facturas_emit", label: "Facturas emitidas", descripcion: "Su facturación a clientes propios.", rutas: ["/cliente/facturas"], default: true },
+  {
+    key: "facturas_emit",
+    label: "Facturas emitidas",
+    descripcion: "Su facturación a clientes propios.",
+    rutas: ["/cliente/facturas"],
+    default: true,
+    subModulos: [
+      { key: "crear", label: "Crear factura" },
+      { key: "listado", label: "Listado de facturas" },
+      { key: "presupuestos", label: "Presupuestos" },
+      { key: "recurrentes", label: "Recurrentes" },
+    ],
+  },
   { key: "facturas_recv", label: "Facturas recibidas", descripcion: "Gastos y facturas de proveedores.", rutas: ["/cliente/gastos"], default: true },
   { key: "buzon", label: "Buzón documental", descripcion: "Sube fotos / PDFs y el agente los archiva.", rutas: ["/cliente/buzon"], default: true },
-  { key: "nominas", label: "Nóminas y trabajadores", descripcion: "Ver nóminas, descargar PDF, alta de trabajadores.", rutas: ["/cliente/laboral", "/cliente/nominas"], default: true },
+  {
+    key: "nominas",
+    label: "Nóminas y trabajadores",
+    descripcion: "Ver nóminas, descargar PDF, alta de trabajadores.",
+    rutas: ["/cliente/laboral", "/cliente/nominas"],
+    default: true,
+    subModulos: [
+      { key: "trabajadores", label: "Plantilla" },
+      { key: "nominas", label: "Nóminas" },
+      { key: "ausencias", label: "Bajas e IT" },
+      { key: "horario", label: "Fichajes" },
+      { key: "calendario", label: "Calendario" },
+    ],
+  },
   { key: "modelos", label: "Modelos AEAT", descripcion: "Borradores de 303, 130, 100, 111, etc.", rutas: ["/cliente/modelos"], default: true },
   { key: "bancos", label: "Bancos", descripcion: "Movimientos PSD2 y conciliación.", rutas: ["/cliente/bancos"], default: false },
   { key: "obligaciones", label: "Obligaciones", descripcion: "Calendario fiscal/laboral pendiente.", rutas: ["/cliente/obligaciones"], default: true },
-  { key: "documentos", label: "Documentos", descripcion: "Modelos firmados y contratos.", rutas: ["/cliente/documentos"], default: true },
+  {
+    key: "documentos",
+    label: "Documentos",
+    descripcion: "Modelos firmados y contratos.",
+    rutas: ["/cliente/documentos"],
+    default: true,
+    subModulos: [
+      { key: "todos", label: "Todos" },
+      { key: "impuesto", label: "Impuestos" },
+      { key: "laboral", label: "Laboral" },
+      { key: "contable", label: "Contable" },
+      { key: "nomina", label: "Nóminas" },
+    ],
+  },
   { key: "solicitudes", label: "Solicitudes al gestor", descripcion: "Crear peticiones tipo (vacaciones, alta trabajador…).", rutas: ["/cliente/solicitudes"], default: true },
   { key: "chat", label: "Chat con asesor", descripcion: "Mensajería 1:1 con el equipo.", rutas: ["/cliente/chat"], default: true },
 ];
@@ -66,5 +126,20 @@ export function moduloActivo(alcance: Alcance, config: Record<string, boolean> |
 /** Mezcla la config guardada con los defaults para no perder claves nuevas. */
 export function mergeWithDefaults(alcance: Alcance, config: Record<string, boolean> | null | undefined): Record<string, boolean> {
   const def = defaultModulos(alcance);
+  // Defaults también para sub-módulos (key = "<modulo>.<sub>")
+  const list = alcance === "asesor" ? MODULOS_ASESOR : MODULOS_CLIENTE;
+  for (const m of list) {
+    for (const s of m.subModulos ?? []) {
+      const k = `${m.key}.${s.key}`;
+      if (def[k] === undefined) def[k] = s.default ?? true;
+    }
+  }
   return { ...def, ...(config ?? {}) };
+}
+
+/** ¿Está visible esta sub-pestaña? Cae a default si no hay clave. */
+export function subModuloActivo(config: Record<string, boolean> | null | undefined, moduloKey: string, subKey: string): boolean {
+  if (!config) return true;
+  const k = `${moduloKey}.${subKey}`;
+  return k in config ? Boolean(config[k]) : true;
 }

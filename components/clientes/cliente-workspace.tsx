@@ -195,6 +195,13 @@ const SECTIONS: Section[] = [
 export function ClienteWorkspace({ empresa, modulos = {} }: { empresa: Empresa; modulos?: Record<string, boolean> }) {
   const router = useRouter();
   const visibleSections = SECTIONS.filter((s) => !s.moduloKey || modulos[s.moduloKey] !== false);
+
+  // Filtra sub-tabs según la config; si no hay clave guardada, visible por defecto.
+  const isSubVisible = (section: Section, subKey: string) => {
+    if (!section.moduloKey) return true;
+    const k = `${section.moduloKey}.${subKey}`;
+    return k in modulos ? Boolean(modulos[k]) : true;
+  };
   const [isPending, startTransition] = useTransition();
   const [section, setSection] = useState<SectionKey>("inicio");
 
@@ -386,26 +393,30 @@ export function ClienteWorkspace({ empresa, modulos = {} }: { empresa: Empresa; 
           </div>
         </div>
 
-        {/* Sub-pestañas internas */}
-        {current.subTabs ? (
-          <div role="tablist" aria-label={`Sub-secciones de ${current.label}`} style={{ display: "flex", gap: 4, flexWrap: "wrap", borderBottom: "1px solid var(--line)", paddingBottom: 8 }}>
-            {current.subTabs.map((sub) => {
-              const isActive = activeSub === sub.key;
-              return (
-                <button
-                  key={sub.key}
-                  role="tab"
-                  aria-selected={isActive}
-                  onClick={() => setSub(section, sub.key)}
-                  className={`button compact ${isActive ? "" : "ghost"}`}
-                  style={{ fontSize: 12.5 }}
-                >
-                  {sub.label}
-                </button>
-              );
-            })}
-          </div>
-        ) : null}
+        {/* Sub-pestañas internas (filtradas por config de vista) */}
+        {current.subTabs ? (() => {
+          const visibleSubs = current.subTabs!.filter((sub) => isSubVisible(current, sub.key));
+          if (visibleSubs.length === 0) return null;
+          return (
+            <div role="tablist" aria-label={`Sub-secciones de ${current.label}`} style={{ display: "flex", gap: 4, flexWrap: "wrap", borderBottom: "1px solid var(--line)", paddingBottom: 8 }}>
+              {visibleSubs.map((sub) => {
+                const isActive = activeSub === sub.key;
+                return (
+                  <button
+                    key={sub.key}
+                    role="tab"
+                    aria-selected={isActive}
+                    onClick={() => setSub(section, sub.key)}
+                    className={`button compact ${isActive ? "" : "ghost"}`}
+                    style={{ fontSize: 12.5 }}
+                  >
+                    {sub.label}
+                  </button>
+                );
+              })}
+            </div>
+          );
+        })() : null}
 
         <div style={{ display: "grid", gap: 18 }}>
           {/* INICIO */}

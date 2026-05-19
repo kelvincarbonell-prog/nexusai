@@ -1,19 +1,21 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Save, Layers, Check, Loader2 } from "lucide-react";
+import { Save, Layers, Check, Loader2, Pencil, ChevronDown } from "lucide-react";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 import { MODULOS_ASESOR, MODULOS_CLIENTE, mergeWithDefaults, type Alcance, type ModuloDef } from "@/lib/vista-config/catalogo";
 
 type Especialidad = "generalista" | "laboral" | "fiscal";
 
 /**
- * Panel que edita la config de módulos visibles para una vista concreta.
+ * Edita la config de módulos + sub-pestañas visibles para una vista.
  *
  * - alcance="cliente": una sola config (no requiere especialidad)
- * - alcance="asesor" + especialidad: config específica para asesores de
- *   esa especialidad (generalista / laboral / fiscal). Si no se pasa
- *   especialidad, se usa generalista por defecto.
+ * - alcance="asesor" + especialidad: config específica para esa especialidad.
+ *
+ * Cada módulo se puede activar/desactivar globalmente. El icono de lápiz
+ * abre las sub-pestañas (si el módulo tiene), que se pueden activar
+ * individualmente. Clave de sub-pestaña: "<modulo>.<sub>".
  */
 export function VistaConfigPanel({ alcance, especialidad }: { alcance: Alcance; especialidad?: Especialidad }) {
   const supabase = useMemo(() => createBrowserSupabase(), []);
@@ -22,6 +24,7 @@ export function VistaConfigPanel({ alcance, especialidad }: { alcance: Alcance; 
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
   const modulos: ModuloDef[] = alcance === "asesor" ? MODULOS_ASESOR : MODULOS_CLIENTE;
   const espQS = alcance === "asesor" ? `&especialidad=${especialidad ?? "generalista"}` : "";
@@ -32,9 +35,7 @@ export function VistaConfigPanel({ alcance, especialidad }: { alcance: Alcance; 
   }
 
   async function load() {
-    setLoading(true);
-    setError(null);
-    setSuccess(null);
+    setLoading(true); setError(null); setSuccess(null);
     try {
       const tk = await token();
       const res = await fetch(`/api/gestoria/vista-config?alcance=${alcance}${espQS}`, {
@@ -61,9 +62,7 @@ export function VistaConfigPanel({ alcance, especialidad }: { alcance: Alcance; 
   }
 
   async function guardar() {
-    setSaving(true);
-    setError(null);
-    setSuccess(null);
+    setSaving(true); setError(null); setSuccess(null);
     try {
       const tk = await token();
       const body: Record<string, unknown> = { alcance, modulos: config };
@@ -83,7 +82,7 @@ export function VistaConfigPanel({ alcance, especialidad }: { alcance: Alcance; 
     }
   }
 
-  const activos = Object.values(config).filter(Boolean).length;
+  const activos = modulos.filter((m) => config[m.key] !== false).length;
 
   return (
     <article className="card" style={{ display: "grid", gap: 14 }}>
@@ -111,39 +110,111 @@ export function VistaConfigPanel({ alcance, especialidad }: { alcance: Alcance; 
           <Loader2 size={14} className="animate-spin" /> Cargando…
         </p>
       ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 10 }}>
+        <div style={{ display: "grid", gap: 8 }}>
           {modulos.map((m) => {
-            const on = Boolean(config[m.key]);
+            const on = config[m.key] !== false;
+            const hasSubs = (m.subModulos?.length ?? 0) > 0;
+            const isExp = Boolean(expanded[m.key]);
+            const subActivos = hasSubs
+              ? (m.subModulos ?? []).filter((s) => config[`${m.key}.${s.key}`] !== false).length
+              : 0;
             return (
-              <label
+              <div
                 key={m.key}
                 style={{
-                  display: "grid",
-                  gridTemplateColumns: "auto 1fr",
-                  gap: 10,
-                  alignItems: "start",
-                  padding: 12,
                   borderRadius: 10,
-                  border: `1px solid ${on ? "color-mix(in srgb, var(--accent) 40%, transparent)" : "var(--line, #e5e7eb)"}`,
-                  background: on ? "color-mix(in srgb, var(--accent) 6%, transparent)" : "var(--card, #fff)",
-                  cursor: "pointer",
-                  transition: "background 0.15s, border-color 0.15s",
+                  border: `1px solid ${on ? "color-mix(in srgb, var(--accent) 30%, transparent)" : "var(--line, #e5e7eb)"}`,
+                  background: on ? "color-mix(in srgb, var(--accent) 5%, transparent)" : "color-mix(in srgb, currentColor 3%, transparent)",
+                  overflow: "hidden",
                 }}
               >
-                <input
-                  type="checkbox"
-                  checked={on}
-                  onChange={() => toggle(m.key)}
-                  style={{ marginTop: 3 }}
-                />
-                <div style={{ display: "grid", gap: 2 }}>
-                  <strong style={{ fontSize: 13 }}>{m.label}</strong>
-                  <span className="muted" style={{ fontSize: 11, lineHeight: 1.4 }}>{m.descripcion}</span>
-                  <span className="muted" style={{ fontSize: 10, fontFamily: "var(--mono, monospace)" }}>
-                    {m.rutas.join(" · ")}
-                  </span>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, padding: 12 }}>
+                  <input
+                    type="checkbox"
+                    checked={on}
+                    onChange={() => toggle(m.key)}
+                    aria-label={`Activar módulo ${m.label}`}
+                    style={{ flexShrink: 0 }}
+                  />
+                  <div style={{ flex: 1, display: "grid", gap: 2, minWidth: 0 }}>
+                    <strong style={{ fontSize: 13 }}>
+                      {m.label}
+                      {hasSubs && (
+                        <span className="muted" style={{ fontWeight: 400, fontSize: 11, marginLeft: 6 }}>
+                          · {subActivos}/{m.subModulos!.length} sub-pestañas
+                        </span>
+                      )}
+                    </strong>
+                    <span className="muted" style={{ fontSize: 11, lineHeight: 1.4 }}>{m.descripcion}</span>
+                  </div>
+
+                  {hasSubs && (
+                    <button
+                      type="button"
+                      onClick={() => setExpanded({ ...expanded, [m.key]: !isExp })}
+                      title={isExp ? "Cerrar sub-pestañas" : "Editar sub-pestañas"}
+                      aria-label={isExp ? "Cerrar sub-pestañas" : "Editar sub-pestañas"}
+                      style={{
+                        background: "var(--card, #fff)",
+                        border: "1px solid var(--line, #e5e7eb)",
+                        borderRadius: 8,
+                        width: 30, height: 30,
+                        display: "inline-flex", alignItems: "center", justifyContent: "center",
+                        cursor: "pointer",
+                        color: isExp ? "var(--accent)" : "var(--ink)",
+                        transition: "transform 0.15s",
+                      }}
+                    >
+                      {isExp ? <ChevronDown size={14} /> : <Pencil size={14} />}
+                    </button>
+                  )}
                 </div>
-              </label>
+
+                {hasSubs && isExp && (
+                  <div
+                    style={{
+                      padding: "4px 12px 12px",
+                      borderTop: "1px solid var(--line, #e5e7eb)",
+                      display: "grid",
+                      gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
+                      gap: 6,
+                      background: "color-mix(in srgb, currentColor 2%, transparent)",
+                    }}
+                  >
+                    <p className="muted" style={{ gridColumn: "1 / -1", fontSize: 11, margin: "8px 0 2px" }}>
+                      Sub-pestañas visibles cuando el módulo está activo:
+                    </p>
+                    {(m.subModulos ?? []).map((s) => {
+                      const skey = `${m.key}.${s.key}`;
+                      const sub_on = config[skey] !== false;
+                      return (
+                        <label
+                          key={skey}
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 8,
+                            padding: "6px 10px",
+                            borderRadius: 8,
+                            background: sub_on ? "color-mix(in srgb, var(--accent) 8%, transparent)" : "transparent",
+                            cursor: on ? "pointer" : "not-allowed",
+                            opacity: on ? 1 : 0.45,
+                            fontSize: 12,
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            disabled={!on}
+                            checked={sub_on}
+                            onChange={() => toggle(skey)}
+                          />
+                          {s.label}
+                        </label>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             );
           })}
         </div>
