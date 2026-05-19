@@ -85,27 +85,43 @@ export function WowAutomations() {
               gap: 8,
               padding: 14,
               borderRadius: 10,
-              border: `1px solid ${accent ? "color-mix(in srgb, var(--accent) 30%, transparent)" : "var(--line, #e5e7eb)"}`,
-              background: accent ? "color-mix(in srgb, var(--accent) 5%, transparent)" : "var(--card, #fff)",
+              border: "1px solid var(--line, #e5e7eb)",
+              background: "color-mix(in srgb, var(--accent) 4%, var(--card, transparent))",
               textDecoration: "none",
-              color: "inherit",
+              color: "var(--ink, inherit)",
               transition: "transform 0.12s, border-color 0.15s, box-shadow 0.15s",
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.transform = "translateY(-1px)";
               e.currentTarget.style.boxShadow = "0 8px 20px -12px rgba(0,0,0,0.25)";
+              e.currentTarget.style.borderColor = "color-mix(in srgb, var(--accent) 35%, transparent)";
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.transform = "translateY(0)";
               e.currentTarget.style.boxShadow = "none";
+              e.currentTarget.style.borderColor = "var(--line, #e5e7eb)";
             }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <Icon size={16} color={accent ? "var(--accent)" : "var(--ink)"} />
-              <strong style={{ fontSize: 14 }}>{titulo}</strong>
+              <span
+                aria-hidden
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: 8,
+                  display: "grid",
+                  placeItems: "center",
+                  background: accent ? "color-mix(in srgb, var(--accent) 14%, transparent)" : "color-mix(in srgb, currentColor 6%, transparent)",
+                  color: accent ? "var(--accent)" : "var(--ink, inherit)",
+                  flexShrink: 0,
+                }}
+              >
+                <Icon size={15} />
+              </span>
+              <strong style={{ fontSize: 14, color: "var(--ink, inherit)" }}>{titulo}</strong>
               <ArrowRight size={12} style={{ marginLeft: "auto", opacity: 0.5 }} />
             </div>
-            <p className="muted" style={{ margin: 0, fontSize: 12, lineHeight: 1.45 }}>{descripcion}</p>
+            <p style={{ margin: 0, fontSize: 12.5, lineHeight: 1.5, color: "var(--muted, #6b7280)" }}>{descripcion}</p>
           </Link>
         ))}
       </div>
