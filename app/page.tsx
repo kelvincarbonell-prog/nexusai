@@ -221,7 +221,7 @@ export default function LandingPage() {
             { big: "−31 h", body: "Tiempo medio que M26 le ahorra a un asesor cada mes. Datos reales de 1.842 gestorías." },
             { big: "+€840", body: "Ingreso adicional por gestor al mes. Nuevos clientes onboardeados con Cl@ve sin trabajo manual." },
             { big: "0 plazos", body: "Calendario fiscal unificado por cliente. La IA te avisa el día que toca y prepara el borrador." },
-            { big: "100 %", body: "De tus clientes ven sus facturas, suben gastos por WhatsApp y firman con Cl@ve. Tú no pierdes el control." },
+            { big: "100 %", body: "De tus clientes ven sus facturas, suben gastos desde el portal y firman con Cl@ve. Tú no pierdes el control." },
           ].map((f, i) => (
             <Reveal key={f.big} delay={i * 70}>
               <article className="feature dark tilt">
@@ -370,7 +370,7 @@ export default function LandingPage() {
               </p>
               <ul className="landing-bullets" style={{ marginTop: 16 }}>
                 <li>● Detección automática a 30/60/90 días</li>
-                <li>● Email + WhatsApp + enlace de pago</li>
+                <li>● Email automático + enlace de pago Stripe</li>
                 <li>● Conciliación SEPA al instante</li>
                 <li>● Sin tener llamadas incómodas</li>
               </ul>

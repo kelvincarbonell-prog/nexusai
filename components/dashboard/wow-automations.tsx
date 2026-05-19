@@ -49,7 +49,7 @@ const WOWS = [
   {
     Icon: Mail,
     titulo: "Recordatorios de cobro",
-    descripcion: "Email + WhatsApp + enlace de pago a clientes con facturas vencidas.",
+    descripcion: "Email automático con enlace de pago a clientes con facturas vencidas.",
     href: "/agentes?modulo=cobros",
     accent: false,
   },
