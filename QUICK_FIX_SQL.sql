@@ -863,6 +863,56 @@ alter table public.trabajadores add constraint trabajadores_pagas_anuales_chk
   check (pagas_anuales in (12, 14)) not valid;
 
 -- =========================================================================
+-- SPRINT 25: histórico salarial — cambios de salario base por trabajador
+--   Registro auditable de cada subida/bajada. Útil para:
+--     - calcular atrasos retroactivos por convenio firmado tarde
+--     - histórico de bruto anual del trabajador (gráfica de evolución)
+--     - presentar a inspección en caso de discrepancia
+-- =========================================================================
+create table if not exists public.salario_historico (
+  id uuid primary key default gen_random_uuid(),
+  empresa_id uuid not null references public.empresas(id) on delete cascade,
+  trabajador_id uuid not null references public.trabajadores(id) on delete cascade,
+  gestor_id uuid references auth.users(id) on delete set null,
+  fecha_efecto date not null,
+  bruto_anual numeric(14, 2) not null,
+  motivo text,                                  -- 'subida convenio', 'ascenso', 'revisión', ...
+  convenio_codigo text,
+  bruto_anual_anterior numeric(14, 2),
+  delta_anual numeric(14, 2),                   -- bruto_anual - bruto_anual_anterior
+  metadata jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_salario_hist_trab
+  on public.salario_historico(trabajador_id, fecha_efecto desc);
+create index if not exists idx_salario_hist_empresa
+  on public.salario_historico(empresa_id, fecha_efecto desc);
+
+alter table public.salario_historico enable row level security;
+
+drop policy if exists salario_hist_read on public.salario_historico;
+create policy salario_hist_read on public.salario_historico
+  for select using (
+    exists (
+      select 1 from public.empresas e
+      where e.id = salario_historico.empresa_id
+        and (e.gestor_id = auth.uid() or e.owner_user_id = auth.uid())
+    )
+    or exists (select 1 from public.perfiles p where p.id = auth.uid() and p.rol = 'admin')
+  );
+
+drop policy if exists salario_hist_write on public.salario_historico;
+create policy salario_hist_write on public.salario_historico
+  for all using (
+    exists (
+      select 1 from public.empresas e
+      where e.id = salario_historico.empresa_id and e.gestor_id = auth.uid()
+    )
+    or exists (select 1 from public.perfiles p where p.id = auth.uid() and p.rol = 'admin')
+  );
+
+-- =========================================================================
 -- ÚLTIMO PASO: refresca el cache de PostgREST sin reiniciar
 -- =========================================================================
 notify pgrst, 'reload schema';

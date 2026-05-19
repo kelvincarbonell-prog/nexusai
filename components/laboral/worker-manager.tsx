@@ -15,6 +15,7 @@ import { FiniquitoModal } from "@/components/laboral/finiquito-modal";
 import { BonificacionesModal } from "@/components/laboral/bonificaciones-modal";
 import { AtrasosModal } from "@/components/laboral/atrasos-modal";
 import { ConceptosCatalogPanel } from "@/components/laboral/conceptos-catalog-panel";
+import { HistoricoSalarialModal } from "@/components/laboral/historico-salarial-modal";
 
 type Empresa = { id: string; nombre: string; nif?: string };
 type Trabajador = {
@@ -58,6 +59,7 @@ export function WorkerManager({ empresas, initialTab = "trabajadores" }: { empre
   const [success, setSuccess] = useState<string | null>(null);
   const [finiquitoTrabajador, setFiniquitoTrabajador] = useState<Trabajador | null>(null);
   const [atrasosTrabajador, setAtrasosTrabajador] = useState<Trabajador | null>(null);
+  const [histSalarioTrab, setHistSalarioTrab] = useState<Trabajador | null>(null);
   const [bonisTrabajador, setBonisTrabajador] = useState<Trabajador | null>(null);
   const [accionRapida, setAccionRapida] = useState<{ trabajador: Trabajador; accion: "contrata" | "parte-it" | "anticipo" | "embargo" } | null>(null);
 
@@ -399,6 +401,11 @@ export function WorkerManager({ empresas, initialTab = "trabajadores" }: { empre
                     >Atrasos</button>{" "}
                     <button
                       className="button secondary compact"
+                      title="Histórico salarial del trabajador"
+                      onClick={() => setHistSalarioTrab(t)}
+                    >Histórico</button>{" "}
+                    <button
+                      className="button secondary compact"
                       title="Generar XML Contrat@ (SEPE)"
                       onClick={() => setAccionRapida({ trabajador: t, accion: "contrata" })}
                     >Contrat@</button>{" "}
@@ -563,6 +570,14 @@ export function WorkerManager({ empresas, initialTab = "trabajadores" }: { empre
           empresaId={empresaId}
           trabajador={atrasosTrabajador}
           onClose={() => setAtrasosTrabajador(null)}
+        />
+      ) : null}
+
+      {histSalarioTrab ? (
+        <HistoricoSalarialModal
+          empresaId={empresaId}
+          trabajador={histSalarioTrab}
+          onClose={() => { setHistSalarioTrab(null); }}
         />
       ) : null}
 
