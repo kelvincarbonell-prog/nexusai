@@ -59,7 +59,7 @@ jobs:
             fi
           fi
 
-      - name: Vercel pull + build + deploy production
+      - name: Deploy to Vercel (build se ejecuta en infra Vercel)
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: |
@@ -72,21 +72,17 @@ jobs:
           cat .vercel/project.json
           echo
 
-          echo "::group::vercel pull"
-          vercel pull --yes --environment=production --token=$VERCEL_TOKEN
-          echo "::endgroup::"
-
-          echo "::group::vercel build"
-          vercel build --prod --token=$VERCEL_TOKEN
-          echo "::endgroup::"
-
-          echo "::group::vercel deploy"
-          DEPLOY_URL=$(vercel deploy --prebuilt --prod --token=$VERCEL_TOKEN)
+          echo "::group::vercel deploy --prod"
+          # Sin --prebuilt: Vercel construye en sus servidores con sus env vars.
+          # Esto evita el error de SUPABASE_URL faltante en GH Actions.
+          DEPLOY_URL=$(vercel deploy --prod --yes --token=$VERCEL_TOKEN --archive=tgz)
           echo "::endgroup::"
 
           echo "🚀 DEPLOY URL: $DEPLOY_URL"
           echo "::notice title=Deploy listo::$DEPLOY_URL"
-          echo "## ✅ Deploy listo" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "URL: <$DEPLOY_URL>" >> $GITHUB_STEP_SUMMARY
-          echo "Commit: \`${GITHUB_SHA::7}\`" >> $GITHUB_STEP_SUMMARY
+          {
+            echo "## ✅ Deploy listo"
+            echo
+            echo "URL: <$DEPLOY_URL>"
+            echo "Commit: \`${GITHUB_SHA::7}\`"
+          } >> $GITHUB_STEP_SUMMARY
