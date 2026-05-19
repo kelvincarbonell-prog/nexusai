@@ -11,11 +11,13 @@ import {
   Mail,
   Zap,
   ShieldAlert,
+  Wallet,
   ArrowRight,
 } from "lucide-react";
 import { DuplicadosModal } from "@/components/dashboard/duplicados-modal";
 import { Borrador303Modal } from "@/components/dashboard/borrador-303-modal";
 import { RiesgoAeatModal } from "@/components/dashboard/riesgo-aeat-modal";
+import { TesoreriaModal } from "@/components/dashboard/tesoreria-modal";
 
 /**
  * Atajos automáticos para gestor fiscal: las acciones de mayor impacto
@@ -27,7 +29,7 @@ type Wow = {
   titulo: string;
   descripcion: string;
   accent: boolean;
-} & ({ href: string; action?: undefined } | { action: "duplicados" | "borrador303" | "riesgo-aeat"; href?: undefined });
+} & ({ href: string; action?: undefined } | { action: "duplicados" | "borrador303" | "riesgo-aeat" | "tesoreria"; href?: undefined });
 
 const WOWS: Wow[] = [
   {
@@ -79,10 +81,17 @@ const WOWS: Wow[] = [
     action: "riesgo-aeat",
     accent: false,
   },
+  {
+    Icon: Wallet,
+    titulo: "Tesorería de la cartera",
+    descripcion: "Proyección 30/60/90 días por cliente. Te avisa de quién se quedará en descubierto.",
+    action: "tesoreria",
+    accent: true,
+  },
 ];
 
 export function WowAutomations() {
-  const [openModal, setOpenModal] = useState<null | "duplicados" | "borrador303" | "riesgo-aeat">(null);
+  const [openModal, setOpenModal] = useState<null | "duplicados" | "borrador303" | "riesgo-aeat" | "tesoreria">(null);
 
   const cardStyle = (accent: boolean): React.CSSProperties => ({
     display: "grid",
@@ -148,7 +157,7 @@ export function WowAutomations() {
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 10 }}>
         {WOWS.map((w) => {
-          if (w.action === "duplicados" || w.action === "borrador303" || w.action === "riesgo-aeat") {
+          if (w.action === "duplicados" || w.action === "borrador303" || w.action === "riesgo-aeat" || w.action === "tesoreria") {
             return (
               <button
                 key={w.titulo}
@@ -180,6 +189,7 @@ export function WowAutomations() {
       {openModal === "duplicados" && <DuplicadosModal onClose={() => setOpenModal(null)} />}
       {openModal === "borrador303" && <Borrador303Modal onClose={() => setOpenModal(null)} />}
       {openModal === "riesgo-aeat" && <RiesgoAeatModal onClose={() => setOpenModal(null)} />}
+      {openModal === "tesoreria" && <TesoreriaModal onClose={() => setOpenModal(null)} />}
     </article>
   );
 }
