@@ -6,6 +6,8 @@ import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { canAccessLaborCompany } from "@/lib/laboral/access";
 import type { AeatHeader } from "@/lib/aeat/export/common";
 import {
+  generateFicheroM036,
+  generateFicheroM037,
   generateFicheroM100,
   generateFicheroM111,
   generateFicheroM115,
@@ -25,7 +27,7 @@ import {
   generateFicheroM720,
 } from "@/lib/aeat/export/text-modelos";
 
-const SUPPORTED = ["100", "111", "115", "123", "130", "180", "184", "190", "193", "200", "202", "210", "232", "296", "309", "347", "349", "390", "720"];
+const SUPPORTED = ["036", "037", "100", "111", "115", "123", "130", "180", "184", "190", "193", "200", "202", "210", "232", "296", "309", "347", "349", "390", "720"];
 
 const Query = z.object({
   empresa_id: z.string().uuid(),
@@ -72,6 +74,16 @@ export async function GET(request: NextRequest, ctx: { params: Promise<{ modelo:
 
   let contenido = "";
   switch (modelo) {
+    case "036": {
+      const resumen = (decl.resumen ?? {}) as Record<string, unknown>;
+      contenido = generateFicheroM036(header, casillas as unknown as Parameters<typeof generateFicheroM036>[1], resumen);
+      break;
+    }
+    case "037": {
+      const resumen = (decl.resumen ?? {}) as Record<string, unknown>;
+      contenido = generateFicheroM037(header, casillas as unknown as Parameters<typeof generateFicheroM037>[1], resumen);
+      break;
+    }
     case "100": contenido = generateFicheroM100(header, casillas); break;
     case "111": contenido = generateFicheroM111(header, casillas as { c01: number; c02: number; c03: number; c04: number; c05: number; c06: number; c28: number; [k: string]: number }); break;
     case "115": contenido = generateFicheroM115(header, casillas as { c01: number; c02: number; c03: number; c28: number }); break;

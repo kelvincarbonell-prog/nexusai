@@ -276,6 +276,24 @@ const SECTIONS_309: Section[] = [
   },
 ];
 
+const SECTIONS_036: Section[] = [
+  {
+    eyebrow: "Declaración censal",
+    rows: [
+      { code: "causa", label: "Causa de presentación" },
+      { code: "fecha_efectos", label: "Fecha de efectos" },
+      { code: "regimen_iva", label: "Régimen IVA" },
+      { code: "regimen_irpf", label: "Régimen IRPF" },
+      { code: "num_iaes", label: "Nº de epígrafes IAE" },
+      { code: "num_locales", label: "Nº de locales afectos" },
+      { code: "alta_roi", label: "Alta en ROI (intracom.)" },
+      { code: "obligado_retener", label: "Obligado a retener", accent: true },
+    ],
+  },
+];
+
+const SECTIONS_037: Section[] = SECTIONS_036;
+
 const SECTIONS_720: Section[] = [
   {
     eyebrow: "Bienes en el extranjero",
@@ -292,6 +310,8 @@ const SECTIONS_720: Section[] = [
 ];
 
 const SECTIONS: Record<string, Section[]> = {
+  "036": SECTIONS_036,
+  "037": SECTIONS_037,
   "100": SECTIONS_100,
   "111": SECTIONS_111,
   "115": SECTIONS_115,
@@ -353,7 +373,7 @@ const HINTS: Record<string, string> = {
 
 const EUR = (n: number) => new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR" }).format(n);
 
-export function CasillasSimple({ modelo, empresas }: { modelo: "100" | "111" | "115" | "123" | "130" | "180" | "184" | "190" | "193" | "210" | "232" | "296" | "309" | "347" | "349" | "390" | "720"; empresas: Empresa[] }) {
+export function CasillasSimple({ modelo, empresas }: { modelo: "036" | "037" | "100" | "111" | "115" | "123" | "130" | "180" | "184" | "190" | "193" | "210" | "232" | "296" | "309" | "347" | "349" | "390" | "720"; empresas: Empresa[] }) {
   const supabase = useMemo(() => createBrowserSupabase(), []);
   const now = new Date();
   const defaultYear = now.getUTCFullYear();

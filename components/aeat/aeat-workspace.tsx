@@ -8,11 +8,15 @@ import { Casillas202 } from "@/components/aeat/casillas-202";
 
 type Empresa = { id: string; nombre: string; nif?: string; account_type?: string | null; tipo?: string | null };
 
-type ModeloKey = "100" | "303" | "111" | "115" | "123" | "130" | "180" | "184" | "190" | "193" | "200" | "202" | "210" | "232" | "296" | "309" | "347" | "349" | "390" | "720";
+type ModeloKey = "036" | "037" | "100" | "303" | "111" | "115" | "123" | "130" | "180" | "184" | "190" | "193" | "200" | "202" | "210" | "232" | "296" | "309" | "347" | "349" | "390" | "720";
 
 type Aplicabilidad = ("autonomo" | "empresa")[];
 
-const TABS: { key: ModeloKey; label: string; hint: string; group: "trimestral" | "anual"; aplica: Aplicabilidad }[] = [
+const TABS: { key: ModeloKey; label: string; hint: string; group: "trimestral" | "anual" | "censo"; aplica: Aplicabilidad }[] = [
+  // Censo (cualquier momento)
+  { key: "036", label: "036 · Censo", hint: "Alta / modificación / baja en el censo de actividades AEAT", group: "censo", aplica: ["autonomo", "empresa"] },
+  { key: "037", label: "037 · Censo simple", hint: "Censo simplificado para personas físicas con actividad sencilla", group: "censo", aplica: ["autonomo"] },
+
   // Comunes (autónomo + empresa)
   { key: "303", label: "303 · IVA", hint: "Autoliquidación trimestral de IVA", group: "trimestral", aplica: ["autonomo", "empresa"] },
   { key: "111", label: "111 · IRPF retenciones", hint: "Trabajadores y profesionales", group: "trimestral", aplica: ["autonomo", "empresa"] },

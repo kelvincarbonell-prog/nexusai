@@ -534,3 +534,78 @@ export function generateFicheroM100(
   lines.push(t2);
   return lines.join("\r\n") + "\r\n";
 }
+
+/* ==========================================================================
+   MODELO 036 / 037 — Declaración Censal
+   No es un fichero de importe; es un formulario de datos maestros.
+   El AEAT pide un PDF firmado en su sede, pero para portabilidad
+   exportamos un .txt estructurado con todas las claves.
+========================================================================== */
+function declCensal(
+  header: AeatHeader,
+  modelo: "036" | "037",
+  c: { causa: string; fecha_efectos: string; nif: string; nombre: string; regimen_iva: string; regimen_irpf: string; num_iaes: number; num_locales: number; alta_roi: boolean; obligado_retener: boolean },
+  resumen: Record<string, unknown>,
+): string {
+  const lines: string[] = [];
+  lines.push(cabeceraT1({ ...header, modelo, periodo: "0A" }));
+  const t2 =
+    "2" +
+    padRight(modelo, 3) +
+    padLeft(String(header.ejercicio), 4) +
+    "0A" +
+    nifAeat(c.nif) +
+    padRight((c.nombre ?? "").toUpperCase(), 80) +
+    padRight(c.causa, 12) +
+    padRight(c.fecha_efectos.replace(/-/g, ""), 8) +
+    padRight(c.regimen_iva, 24) +
+    padRight(c.regimen_irpf, 32) +
+    intNum(c.num_iaes, 3) +
+    intNum(c.num_locales, 3) +
+    (c.alta_roi ? "S" : "N") +
+    (c.obligado_retener ? "S" : "N");
+  lines.push(t2);
+
+  // T3: IAEs (epígrafes)
+  const iaes = (resumen.iaes ?? []) as Array<{ epigrafe: string; descripcion?: string; fecha_inicio?: string; principal?: boolean }>;
+  for (const iae of iaes) {
+    lines.push(
+      "3" +
+      padRight(modelo, 3) +
+      padRight(iae.epigrafe ?? "", 6) +
+      padRight((iae.descripcion ?? "").toUpperCase(), 60) +
+      padRight((iae.fecha_inicio ?? "").replace(/-/g, ""), 8) +
+      (iae.principal ? "S" : "N")
+    );
+  }
+
+  // T4: Locales afectos
+  const locales = (resumen.locales ?? []) as Array<{ direccion: string; superficie_m2?: number; uso?: string }>;
+  for (const loc of locales) {
+    lines.push(
+      "4" +
+      padRight(modelo, 3) +
+      padRight((loc.direccion ?? "").toUpperCase(), 80) +
+      intNum(Math.round(loc.superficie_m2 ?? 0), 6) +
+      padRight(loc.uso ?? "principal", 12)
+    );
+  }
+
+  return lines.join("\r\n") + "\r\n";
+}
+
+export function generateFicheroM036(
+  header: AeatHeader,
+  casillas: { causa: string; fecha_efectos: string; nif: string; nombre: string; regimen_iva: string; regimen_irpf: string; num_iaes: number; num_locales: number; alta_roi: boolean; obligado_retener: boolean },
+  resumen: Record<string, unknown>,
+): string {
+  return declCensal(header, "036", casillas, resumen);
+}
+
+export function generateFicheroM037(
+  header: AeatHeader,
+  casillas: { causa: string; fecha_efectos: string; nif: string; nombre: string; regimen_iva: string; regimen_irpf: string; num_iaes: number; num_locales: number; alta_roi: boolean; obligado_retener: boolean },
+  resumen: Record<string, unknown>,
+): string {
+  return declCensal(header, "037", casillas, resumen);
+}
