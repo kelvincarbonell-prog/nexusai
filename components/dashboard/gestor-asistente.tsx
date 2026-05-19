@@ -35,10 +35,22 @@ export function GestorAsistente() {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${tk}` },
         body: JSON.stringify({ message }),
       });
-      const j = await res.json();
-      setMensajes((m) => [...m, { rol: "asistente", texto: j.ok ? j.answer : (j.error ?? "Error") }]);
+      let answer = "";
+      try {
+        const j = await res.json();
+        if (j.ok && typeof j.answer === "string" && j.answer.trim()) {
+          answer = j.answer.trim();
+        } else if (j.error) {
+          answer = `⚠ ${j.error}`;
+        } else {
+          answer = "No he podido procesar la pregunta. Inténtalo de nuevo.";
+        }
+      } catch {
+        answer = `⚠ El servidor respondió ${res.status} sin JSON válido.`;
+      }
+      setMensajes((m) => [...m, { rol: "asistente", texto: answer }]);
     } catch (e: unknown) {
-      setMensajes((m) => [...m, { rol: "asistente", texto: e instanceof Error ? e.message : "Error" }]);
+      setMensajes((m) => [...m, { rol: "asistente", texto: `⚠ ${e instanceof Error ? e.message : "Error de red"}` }]);
     } finally {
       setBusy(false);
       setTimeout(() => inputRef.current?.focus(), 50);
@@ -150,37 +162,43 @@ const panel: React.CSSProperties = {
   bottom: 22,
   right: 22,
   zIndex: 900,
-  width: "min(380px, calc(100vw - 32px))",
-  maxHeight: "min(560px, calc(100vh - 80px))",
-  background: "var(--card, #fff)",
-  border: "1px solid color-mix(in srgb, currentColor 16%, transparent)",
+  width: "min(420px, calc(100vw - 32px))",
+  maxHeight: "min(620px, calc(100vh - 80px))",
+  background: "var(--bg, #ffffff)",
+  color: "var(--ink, #111)",
+  border: "1px solid var(--line, #d1d5db)",
   borderRadius: 14,
-  boxShadow: "0 20px 50px -10px rgba(0,0,0,0.30)",
+  boxShadow: "0 24px 60px -12px rgba(0,0,0,0.38)",
   display: "flex",
   flexDirection: "column",
   overflow: "hidden",
 };
 
 const panelHead: React.CSSProperties = {
-  padding: "10px 12px",
-  borderBottom: "1px solid color-mix(in srgb, currentColor 12%, transparent)",
+  padding: "12px 14px",
+  borderBottom: "1px solid var(--line, #d1d5db)",
+  background: "var(--card, #f9fafb)",
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
+  gap: 8,
 };
 
 const messagesBox: React.CSSProperties = {
   flex: 1,
   overflow: "auto",
-  padding: 10,
+  padding: 12,
   display: "flex",
   flexDirection: "column",
-  gap: 8,
+  gap: 10,
+  background: "var(--bg, #ffffff)",
+  color: "var(--ink, #111)",
 };
 
 const panelFoot: React.CSSProperties = {
   padding: 10,
-  borderTop: "1px solid color-mix(in srgb, currentColor 12%, transparent)",
+  borderTop: "1px solid var(--line, #d1d5db)",
+  background: "var(--card, #f9fafb)",
   display: "flex",
   gap: 6,
   alignItems: "end",
@@ -219,40 +237,45 @@ const iconBtn: React.CSSProperties = {
 
 const closeBtn: React.CSSProperties = {
   border: "1px solid var(--line, #d1d5db)",
-  background: "var(--card, #fff)",
+  background: "#ffffff",
   cursor: "pointer",
-  width: 30,
-  height: 30,
+  width: 34,
+  height: 34,
   borderRadius: 8,
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
-  color: "var(--ink, #111)",
+  color: "#374151",
+  flexShrink: 0,
 };
 
 const chip: React.CSSProperties = {
-  padding: "6px 10px",
+  padding: "8px 12px",
   borderRadius: 8,
-  border: "1px solid color-mix(in srgb, currentColor 16%, transparent)",
-  background: "color-mix(in srgb, currentColor 5%, transparent)",
-  color: "inherit",
+  border: "1px solid var(--line, #d1d5db)",
+  background: "var(--card, #f9fafb)",
+  color: "var(--ink, #111)",
   cursor: "pointer",
-  fontSize: 12,
+  fontSize: 13,
   textAlign: "left",
+  lineHeight: 1.4,
 };
 
 function bubble(rol: Mensaje["rol"]): React.CSSProperties {
   const isUser = rol === "user";
   return {
     alignSelf: isUser ? "flex-end" : "flex-start",
-    maxWidth: "85%",
-    padding: "8px 12px",
-    borderRadius: isUser ? "12px 12px 4px 12px" : "12px 12px 12px 4px",
+    maxWidth: "88%",
+    padding: "10px 14px",
+    borderRadius: isUser ? "14px 14px 4px 14px" : "14px 14px 14px 4px",
     background: isUser
-      ? "color-mix(in srgb, var(--accent, #6366f1) 14%, transparent)"
-      : "color-mix(in srgb, currentColor 6%, transparent)",
-    fontSize: 13,
-    lineHeight: 1.45,
+      ? "var(--accent, #6366f1)"
+      : "var(--card, #f3f4f6)",
+    color: isUser ? "#ffffff" : "var(--ink, #111)",
+    border: isUser ? "none" : "1px solid var(--line, #d1d5db)",
+    fontSize: 14,
+    lineHeight: 1.55,
     whiteSpace: "pre-wrap",
+    wordBreak: "break-word",
   };
 }
