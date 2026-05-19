@@ -117,22 +117,17 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
       showSuperAdmin={isAdmin}
       espacio={{ nombre: profile?.nombre ?? "Mi despacho", tipo: isAdmin ? "super admin" : "despacho", personas: 4 }}
     >
-      <header style={{ display: "flex", justifyContent: "space-between", gap: 24, flexWrap: "wrap" }}>
-        <div style={{ maxWidth: 760 }}>
-          <span className="eyebrow">
-            {greeting()}{firstName ? `, ${firstName}` : ""}
-          </span>
-          <h1 className="display">
-            Esta semana <span className="brand-text">M26</span> te ha ahorrado <em>31 h 12 m</em>.
-          </h1>
-          <p className="subtitle">
-            Tienes 5 cosas listas para firmar. Todo lo demás corre solo. Pulsa <span className="kbd">?</span> en cualquier
-            tarjeta para ver el razonamiento.
+      <header style={{ display: "flex", justifyContent: "space-between", gap: 16, flexWrap: "wrap", alignItems: "baseline" }}>
+        <div>
+          <span className="eyebrow">{greeting()}{firstName ? `, ${firstName}` : ""}</span>
+          <h1 className="title" style={{ fontSize: 28, margin: "4px 0 0" }}>Tu día en M26</h1>
+          <p className="muted" style={{ fontSize: 13, margin: "4px 0 0" }}>
+            5 cosas listas para firmar · todo lo demás corre solo. Pulsa <span className="kbd">?</span> para atajos.
           </p>
         </div>
-        <div className="button-row" style={{ alignItems: "flex-start", marginTop: 24 }}>
-          <Link href="/aeat" className="button secondary">Modelos AEAT</Link>
-          <Link href="/solicitudes" className="button">Bandeja de solicitudes →</Link>
+        <div className="button-row" style={{ alignItems: "center" }}>
+          <Link href="/aeat" className="button secondary compact">Modelos AEAT</Link>
+          <Link href="/solicitudes" className="button compact">Bandeja →</Link>
         </div>
       </header>
 
@@ -176,29 +171,32 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
 
         <article className="card span-5">
           <span className="card-eyebrow">Esta semana</span>
-          <ul style={{ listStyle: "none", padding: 0, margin: "10px 0 0", display: "grid", gap: 0 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 10, marginTop: 10 }}>
             {[
-              { Icon: FileSignature, label: "Modelos firmados", value: "12" },
-              { Icon: Banknote, label: "Nóminas generadas", value: "47" },
-              { Icon: Receipt, label: "Facturas procesadas", value: "318" },
-              { Icon: Landmark, label: "Conciliación bancaria", value: "98 %", tone: "good" as const },
-            ].map(({ Icon, label, value, tone }, i, arr) => (
-              <li
+              { Icon: FileSignature, label: "Modelos firmados", value: "12", tone: "neutral" as const },
+              { Icon: Banknote, label: "Nóminas", value: "47", tone: "neutral" as const },
+              { Icon: Receipt, label: "Facturas", value: "318", tone: "neutral" as const },
+              { Icon: Landmark, label: "Conciliación", value: "98 %", tone: "ok" as const },
+            ].map(({ Icon, label, value, tone }) => (
+              <div
                 key={label}
                 style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
-                  padding: "10px 0",
-                  borderBottom: i < arr.length - 1 ? "1px solid var(--line, #e5e7eb)" : "none",
+                  padding: 12,
+                  borderRadius: 10,
+                  border: `1px solid ${tone === "ok" ? "#10b98155" : "color-mix(in srgb, currentColor 14%, transparent)"}`,
+                  background: `color-mix(in srgb, ${tone === "ok" ? "#10b981" : "currentColor"} 4%, transparent)`,
+                  display: "grid",
+                  gap: 4,
                 }}
               >
-                <Icon size={14} style={{ opacity: 0.55 }} />
-                <span style={{ flex: 1, fontSize: 13 }}>{label}</span>
-                <strong style={{ fontFamily: "var(--mono, monospace)", color: tone === "good" ? "var(--good)" : "var(--ink)" }}>{value}</strong>
-              </li>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, color: tone === "ok" ? "#10b981" : "var(--muted)" }}>
+                  <Icon size={14} />
+                  <span style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.4 }}>{label}</span>
+                </div>
+                <strong style={{ fontSize: 22 }}>{value}</strong>
+              </div>
             ))}
-          </ul>
+          </div>
           <div className="metric-foot accent" style={{ marginTop: 12 }}>≈ 31 h 12 min ahorradas con el copiloto</div>
         </article>
 
