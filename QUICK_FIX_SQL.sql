@@ -808,8 +808,16 @@ alter table public.empresas add column if not exists email text;
 -- SPRINT 22: especialidad del asesor (laboral | fiscal | generalista)
 -- =========================================================================
 alter table public.perfiles add column if not exists especialidad text default 'generalista';
-alter table public.perfiles add constraint perfiles_especialidad_chk
-  check (especialidad in ('laboral', 'fiscal', 'generalista')) not valid;
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'perfiles_especialidad_chk' and conrelid = 'public.perfiles'::regclass
+  ) then
+    alter table public.perfiles add constraint perfiles_especialidad_chk
+      check (especialidad in ('laboral', 'fiscal', 'generalista')) not valid;
+  end if;
+end$$;
 
 -- =========================================================================
 -- SPRINT 23: vista_config — el gestor activa/desactiva módulos por vista
@@ -859,8 +867,16 @@ create policy vista_config_rw on public.vista_config
 alter table public.trabajadores add column if not exists pagas_anuales integer default 12;
 alter table public.trabajadores add column if not exists pagas_prorrateadas boolean default true;
 alter table public.trabajadores add column if not exists trienio_importe numeric(12, 2);
-alter table public.trabajadores add constraint trabajadores_pagas_anuales_chk
-  check (pagas_anuales in (12, 14)) not valid;
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'trabajadores_pagas_anuales_chk' and conrelid = 'public.trabajadores'::regclass
+  ) then
+    alter table public.trabajadores add constraint trabajadores_pagas_anuales_chk
+      check (pagas_anuales in (12, 14)) not valid;
+  end if;
+end$$;
 
 -- =========================================================================
 -- SPRINT 25: histórico salarial — cambios de salario base por trabajador
