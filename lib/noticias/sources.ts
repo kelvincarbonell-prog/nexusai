@@ -36,10 +36,30 @@ export const FUENTES_OFICIALES: FuenteOficial[] = [
   },
   {
     codigo: "boe",
-    nombre: "Boletín Oficial del Estado (BOE)",
+    nombre: "Boletín Oficial del Estado (BOE) — fiscal",
     url: "https://www.boe.es",
-    categoria: "regulacion",
-    temas: ["leyes fiscales", "RD-Leyes", "presupuestos generales", "convenios colectivos"],
+    categoria: "fiscal",
+    temas: ["leyes fiscales", "RD-Leyes tributarios", "presupuestos generales", "reformas IRPF/IVA/IS"],
+  },
+
+  // CONTABLE
+  {
+    codigo: "icac",
+    nombre: "ICAC — Instituto de Contabilidad y Auditoría de Cuentas",
+    url: "https://www.icac.gob.es",
+    categoria: "contable",
+    temas: [
+      "PGC modificaciones", "normas registro y valoración",
+      "consultas BOICAC", "NIIF adaptadas", "auditoría obligatoria",
+      "depósito cuentas anuales", "memoria abreviada",
+    ],
+  },
+  {
+    codigo: "rmc-depositos",
+    nombre: "Registro Mercantil — depósito cuentas anuales",
+    url: "https://www.rmc.es",
+    categoria: "contable",
+    temas: ["depósito cuentas", "plazos depósito", "auditoría obligada", "subsanaciones depósito"],
   },
 
   // LABORAL
@@ -205,7 +225,11 @@ export const CATEGORIA_LABEL: Record<FuenteCategoria, string> = {
   datos: "Datos / Inform. comercial",
 };
 
-/** Categorías principales que el feed muestra por defecto. */
+/**
+ * Pilares principales en orden: fiscal · contable · mercantil. Laboral
+ * va después y subvenciones/regulación/datos al final. El feed filtra
+ * por estas categorías en pill-tabs por defecto.
+ */
 export const CATEGORIAS_PRIORITARIAS: FuenteCategoria[] = ["fiscal", "contable", "mercantil", "laboral"];
 
 export function getFuente(codigo: string): FuenteOficial | undefined {
